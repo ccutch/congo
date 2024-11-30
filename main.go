@@ -41,12 +41,12 @@ func main() {
 	http.Handle("GET /blog/{post}/edit", server.Serve("edit-post.html"))
 
 	if cert, key := sllCerts(); cert != "" && key != "" {
-		log.Print("Serving Blastoff @ https://localhost:443")
+		log.Print("Serving Congo Server @ https://localhost:443")
 		if err := http.ListenAndServeTLS("0.0.0.0:443", cert, key, nil); err != nil {
 			log.Fatal(err)
 		}
 	} else {
-		log.Print("Serving Blastoff @ http://localhost:" + port)
+		log.Print("Serving Congo Server @ http://localhost:" + port)
 		if err := http.ListenAndServe("0.0.0.0:"+port, nil); err != nil {
 			log.Fatal(err)
 		}

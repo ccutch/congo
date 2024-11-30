@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"os"
+	"path/filepath"
 
 	"congo.gitpost.app/internal/hosting"
 )
@@ -14,6 +15,7 @@ func restart(args ...string) error {
 		path   = cmd.String("data-path", "/tmp/congo", "Local storage for SSH Keys")
 		name   = cmd.String("name", "congo-server", "Name of Digital Ocean droplet")
 		region = cmd.String("region", "sfo2", "Region of Digital Ocean droplet")
+		binary = cmd.String("binary", "", "Local binary to copy to Digital Ocean droplet")
 	)
 
 	if err := cmd.Parse(args[1:]); err != nil {
@@ -28,6 +30,11 @@ func restart(args ...string) error {
 	server, err := client.LoadServer(*name, *region)
 	if err != nil {
 		return err
+	}
+
+	if *binary != "" {
+		*binary, server.Err = filepath.Abs(*binary)
+		server.Err = server.Copy(*binary, "/root/congo")
 	}
 
 	server.Start()

@@ -35,7 +35,7 @@ func (client *Client) NewServer(name, region, size string, storage int64) (*Serv
 	server.setupAccessKey()
 	server.setupVolumne(storage)
 	server.startDroplet(size)
-	server.Start()
+	server.setupService()
 	return &server, server.Err
 }
 
@@ -54,12 +54,6 @@ func (server *Server) Refresh() {
 		server.droplet = &droplets[0]
 		server.IP, server.Err = server.droplet.PublicIPv4()
 	}
-}
-
-func (server *Server) Setup() {
-	server.Err = server.Run(fmt.Sprintf(mountVolume, server.Name+"-data"))
-	server.Err = server.Run(installGolang)
-	server.Err = server.Run(setupFirewall)
 }
 
 func (server *Server) Run(args ...string) error {
@@ -97,10 +91,7 @@ func (server *Server) Copy(source, dest string) error {
 }
 
 func (server *Server) Start() {
-	server.Err = exec.Command("go", "build", "-o", "congo", ".").Run()
-	server.Err = server.Copy("./congo", "/root/congo")
-	time.Sleep(2 * time.Second)
-	server.Err = server.Run(fmt.Sprintf(startServer, 80))
+	server.Err = server.Run(fmt.Sprintf(startServer, 8080))
 }
 
 func (server *Server) GenerateCerts(domain string) {
@@ -168,4 +159,16 @@ func (server *Server) startDroplet(size string) {
 		}
 	}
 	time.Sleep(30 * time.Second)
+}
+
+func (server *Server) setupService() {
+	if server.Err != nil {
+		return
+	}
+	server.Err = server.Run(fmt.Sprintf(setupServer, server.Name+"-data"))
+	exec.Command("go", "build", "-o", "congo", ".").Run()
+	if server.Err = server.Copy("./congo", "/root/congo"); server.Err != nil {
+		log.Fatal("Failed to load congo binary", server.Err)
+	}
+	server.Start()
 }
