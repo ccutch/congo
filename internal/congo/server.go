@@ -11,16 +11,17 @@ import (
 )
 
 type Server struct {
+	Auth        Authenticator
 	Controllers map[string]Controller
 	Database    *Database
 	Templates   *template.Template
-	serveMux    *http.ServeMux
+	ServeMux    *http.ServeMux
 }
 
 func NewServer(opts ...ServerOpt) *Server {
 	server := Server{
 		Controllers: map[string]Controller{},
-		serveMux:    http.NewServeMux(),
+		ServeMux:    http.NewServeMux(),
 	}
 	for _, opt := range opts {
 		Must(opt(&server))
@@ -37,7 +38,7 @@ func (server *Server) Serve(name string) (view View) {
 }
 
 func (server Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	server.serveMux.ServeHTTP(w, r)
+	server.ServeMux.ServeHTTP(w, r)
 }
 
 type ServerOpt func(*Server) error
@@ -96,13 +97,19 @@ func (server *Server) WithTemplates(templates fs.FS, patterns ...string) error {
 	return nil
 }
 
-func WithEndpoint(path string, api Endpoint) ServerOpt {
+func WithEndpoint(path string, secure bool, fn http.HandlerFunc) ServerOpt {
 	return func(server *Server) error {
-		return server.WithEndpoint(path, api)
+		return server.WithEndpoint(path, secure, fn)
 	}
 }
 
-func (server *Server) WithEndpoint(path string, api Endpoint) error {
-	server.serveMux.Handle(path, api)
+func (server *Server) WithEndpoint(path string, secure bool, fn http.HandlerFunc) error {
+	if secure {
+		fn = server.Auth.Secure(fn)
+	}
+	server.ServeMux.Handle(path, Endpoint{
+		Server:  server,
+		Handler: fn,
+	})
 	return nil
 }

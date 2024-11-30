@@ -3,7 +3,7 @@ package congo
 import "net/http"
 
 type Endpoint struct {
-	Secure  bool
+	Server  *Server
 	Handler http.HandlerFunc
 }
 

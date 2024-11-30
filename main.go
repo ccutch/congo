@@ -22,22 +22,23 @@ var (
 	path = cmp.Or(os.Getenv("DATA_PATH"), os.TempDir())
 	db   = congo.SetupDatabase(path, migrations)
 
-	posts = controllers.PostController{Database: db}
-
 	server = congo.NewServer(
 		congo.WithDatabase(db),
-		congo.WithController("posts", &posts),
+		congo.WithController("posts", &controllers.PostController{}),
 		congo.WithTemplates(templates),
 	)
 )
 
 func main() {
+	http.Handle("/", server.ServeMux)
+
 	http.Handle("/{$}", server.Serve("homepage.html"))
 	// http.Handle("/_/", server.GitServer())
 
-	http.Handle("/blog", server.Serve("blog-posts.html"))
-	http.Handle("/blog/{post}", server.Serve("post.html"))
-	http.HandleFunc("POST /blog", posts.CreatePost)
+	http.Handle("GET /blog", server.Serve("blog-posts.html"))
+	http.Handle("GET /blog/write", server.Serve("write-post.html"))
+	http.Handle("GET /blog/{post}", server.Serve("read-post.html"))
+	http.Handle("GET /blog/{post}/edit", server.Serve("edit-post.html"))
 
 	log.Println("Serving HTTP @ http://localhost:" + port)
 	http.ListenAndServe("0.0.0.0:"+port, nil)

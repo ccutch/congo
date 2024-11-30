@@ -9,6 +9,7 @@ import (
 )
 
 type BaseController struct {
+	*Server
 	*http.Request
 	Error error
 }
@@ -16,6 +17,11 @@ type BaseController struct {
 type Controller interface {
 	Mount(*Server) error
 	WithRequest(r *http.Request) Controller
+}
+
+func (app *BaseController) Mount(server *Server) error {
+	app.Server = server
+	return nil
 }
 
 func (app *BaseController) Atoi(s string, def int) (i int) {
@@ -51,4 +57,8 @@ func (app *BaseController) Redirect(w http.ResponseWriter, r *http.Request, path
 		return
 	}
 	http.Redirect(w, r, path, http.StatusFound)
+}
+
+func (app *BaseController) Render(w http.ResponseWriter, page string, data any) {
+	app.Server.Templates.ExecuteTemplate(w, page, data)
 }
