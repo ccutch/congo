@@ -31,7 +31,7 @@ func (view View) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for name, ctrl := range view.Controllers {
-		funcs[name] = func() Controller { return ctrl.WithRequest(r) }
+		funcs[name] = func() Controller { return ctrl.OnRequest(r) }
 	}
 
 	if view.Error = view.template.Funcs(funcs).Execute(w, view); view.Error != nil {

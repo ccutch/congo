@@ -15,8 +15,8 @@ type BaseController struct {
 }
 
 type Controller interface {
-	Mount(*Server) error
-	WithRequest(r *http.Request) Controller
+	OnMount(*Server) error
+	OnRequest(r *http.Request) Controller
 }
 
 func (app *BaseController) Mount(server *Server) error {

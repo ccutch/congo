@@ -51,7 +51,7 @@ func WithController(name string, ctrl Controller) ServerOpt {
 
 func (server *Server) WithController(name string, controller Controller) error {
 	server.Controllers[name] = controller
-	return controller.Mount(server)
+	return controller.OnMount(server)
 }
 
 func WithDatabase(db *Database) ServerOpt {
