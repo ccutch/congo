@@ -11,15 +11,15 @@ import (
 )
 
 type Server struct {
-	controllers map[string]Controller
-	database    *Database
-	templates   *template.Template
+	Controllers map[string]Controller
+	Database    *Database
+	Templates   *template.Template
 	serveMux    *http.ServeMux
 }
 
 func NewServer(opts ...ServerOpt) *Server {
 	server := Server{
-		controllers: map[string]Controller{},
+		Controllers: map[string]Controller{},
 		serveMux:    http.NewServeMux(),
 	}
 	for _, opt := range opts {
@@ -28,11 +28,12 @@ func NewServer(opts ...ServerOpt) *Server {
 	return &server
 }
 
-func (server *Server) Serve(name string) View {
-	return View{
-		Server:   server,
-		Template: server.templates.Lookup(name),
+func (server *Server) Serve(name string) (view View) {
+	view.Server = server
+	if view.template = server.Templates.Lookup(name); view.template == nil {
+		log.Fatalf("Template %s not found", name)
 	}
+	return view
 }
 
 func (server Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -48,7 +49,7 @@ func WithController(name string, ctrl Controller) ServerOpt {
 }
 
 func (server *Server) WithController(name string, controller Controller) error {
-	server.controllers[name] = controller
+	server.Controllers[name] = controller
 	return controller.Mount(server)
 }
 
@@ -60,7 +61,7 @@ func WithDatabase(db *Database) ServerOpt {
 
 func (server *Server) WithDatabase(db *Database) error {
 	log.Println("Loading data from", db.Root)
-	server.database = db
+	server.Database = db
 	return db.MigrateUp()
 }
 
@@ -72,8 +73,7 @@ func WithTemplates(templates fs.FS) ServerOpt {
 
 func (server *Server) WithTemplates(templates fs.FS, patterns ...string) error {
 	funcs := template.FuncMap{
-		"db": func() *Database { return server.database },
-
+		"db": func() *Database { return server.Database },
 		"host": func() string {
 			if env := os.Getenv("HOME"); env != "/home/coder" {
 				return ""
@@ -82,15 +82,15 @@ func (server *Server) WithTemplates(templates fs.FS, patterns ...string) error {
 			return fmt.Sprintf("/workspace-cgk/proxy/%s", port)
 		},
 	}
-	for name, ctrl := range server.controllers {
+	for name, ctrl := range server.Controllers {
 		funcs[name] = func() Controller { return ctrl }
 	}
-	server.templates = template.New("").Funcs(funcs)
-	if tmpl, err := server.templates.ParseFS(templates, "templates/*.html"); err == nil {
-		server.templates = tmpl
+	server.Templates = template.New("").Funcs(funcs)
+	if tmpl, err := server.Templates.ParseFS(templates, "templates/*.html"); err == nil {
+		server.Templates = tmpl
 	}
-	if tmpl, err := server.templates.ParseFS(templates, "templates/**/*.html"); err == nil {
-		server.templates = tmpl
+	if tmpl, err := server.Templates.ParseFS(templates, "templates/**/*.html"); err == nil {
+		server.Templates = tmpl
 	}
 
 	return nil

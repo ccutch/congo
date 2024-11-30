@@ -9,7 +9,6 @@ import (
 )
 
 type BaseController struct {
-	*Server
 	*http.Request
 	Error error
 }
@@ -17,11 +16,6 @@ type BaseController struct {
 type Controller interface {
 	Mount(*Server) error
 	WithRequest(r *http.Request) Controller
-}
-
-func (controller *BaseController) Mount(server *Server) error {
-	controller.Server = server
-	return nil
 }
 
 func (app *BaseController) Atoi(s string, def int) (i int) {

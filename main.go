@@ -32,7 +32,7 @@ var (
 )
 
 func main() {
-	http.Handle("/", server.Serve("homepage.html"))
+	http.Handle("/{$}", server.Serve("homepage.html"))
 	// http.Handle("/_/", server.GitServer())
 
 	http.Handle("/blog", server.Serve("blog-posts.html"))

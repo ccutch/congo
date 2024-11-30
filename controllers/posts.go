@@ -12,6 +12,11 @@ type PostController struct {
 	*congo.Database
 }
 
+func (ctrl *PostController) Mount(server *congo.Server) error {
+	ctrl.Database = server.Database
+	return nil
+}
+
 func (ctrl PostController) WithRequest(r *http.Request) congo.Controller {
 	ctrl.Request = r
 	return &ctrl

@@ -1,27 +1,41 @@
 package congo
 
 import (
+	"cmp"
 	"context"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
+	"os"
 )
 
 type View struct {
 	*Server
-	*template.Template
-	Request *http.Request
-	Error   error
+	template *template.Template
+	Request  *http.Request
+	Error    error
 }
 
 func (view View) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if view.Template == nil {
-		http.Error(w, "not found", http.StatusNotFound)
-		return
-	}
 	view.Request = r.WithContext(context.TODO())
-	if view.Error = view.Template.Execute(w, view); view.Error != nil {
-		log.Println("error", view.Error)
-		view.templates.ExecuteTemplate(w, "error-message", view.Error)
+	funcs := template.FuncMap{
+		"db": func() *Database { return view.Database },
+		"host": func() string {
+			if env := os.Getenv("HOME"); env != "/home/coder" {
+				return ""
+			}
+			port := cmp.Or(os.Getenv("PORT"), "5000")
+			return fmt.Sprintf("/workspace-cgk/proxy/%s", port)
+		},
+	}
+
+	for name, ctrl := range view.Controllers {
+		funcs[name] = func() Controller { return ctrl.WithRequest(r) }
+	}
+
+	if view.Error = view.template.Funcs(funcs).Execute(w, view); view.Error != nil {
+		log.Println("view error", view.Error)
+		view.template.ExecuteTemplate(w, "error-message", view.Error)
 	}
 }
