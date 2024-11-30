@@ -40,6 +40,26 @@ func main() {
 	http.Handle("GET /blog/{post}", server.Serve("read-post.html"))
 	http.Handle("GET /blog/{post}/edit", server.Serve("edit-post.html"))
 
-	log.Println("Serving HTTP @ http://localhost:" + port)
-	http.ListenAndServe("0.0.0.0:"+port, nil)
+	if cert, key := sllCerts(); cert != "" && key != "" {
+		log.Print("Serving Blastoff @ https://localhost:443")
+		if err := http.ListenAndServeTLS("0.0.0.0:443", cert, key, nil); err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		log.Print("Serving Blastoff @ http://localhost:" + port)
+		if err := http.ListenAndServe("0.0.0.0:"+port, nil); err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+
+func sllCerts() (string, string) {
+	cert, key := "/root/fullchain.pem", "/root/privkey.pem"
+	if _, err := os.Stat(cert); os.IsNotExist(err) {
+		return "", ""
+	}
+	if _, err := os.Stat(key); os.IsNotExist(err) {
+		return "", ""
+	}
+	return cert, key
 }
