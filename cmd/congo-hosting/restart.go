@@ -3,19 +3,21 @@ package main
 import (
 	"flag"
 	"os"
+	"os/exec"
 	"path/filepath"
 
-	"congo.gitpost.app/internal/hosting"
+	"github.com/ccutch/congo/internal/hosting"
 )
 
 func restart(args ...string) error {
 	var (
-		cmd    = flag.NewFlagSet("restart", flag.ExitOnError)
-		apiKey = cmd.String("api-key", "$DIGITAL_OCEAN_API_KEY", "Digital Ocean API Key")
-		path   = cmd.String("data-path", "/tmp/congo", "Local storage for SSH Keys")
-		name   = cmd.String("name", "congo-server", "Name of Digital Ocean droplet")
-		region = cmd.String("region", "sfo2", "Region of Digital Ocean droplet")
-		binary = cmd.String("binary", "", "Local binary to copy to Digital Ocean droplet")
+		cmd     = flag.NewFlagSet("restart", flag.ExitOnError)
+		apiKey  = cmd.String("api-key", "$DIGITAL_OCEAN_API_KEY", "Digital Ocean API Key")
+		path    = cmd.String("data-path", "/tmp/congo", "Local storage for SSH Keys")
+		name    = cmd.String("name", "congo-server", "Name of Digital Ocean droplet")
+		region  = cmd.String("region", "sfo2", "Region of Digital Ocean droplet")
+		rebuild = cmd.Bool("rebuild", false, "Rebuld local directory as Congo binary")
+		binary  = cmd.String("binary", "", "Local binary to copy to Digital Ocean droplet")
 	)
 
 	if err := cmd.Parse(args[1:]); err != nil {
@@ -30,6 +32,11 @@ func restart(args ...string) error {
 	server, err := client.LoadServer(*name, *region)
 	if err != nil {
 		return err
+	}
+
+	if *rebuild && *binary == "" {
+		exec.Command("go", "build", "-o", "congo", ".").Run()
+		*binary = "./congo"
 	}
 
 	if *binary != "" {

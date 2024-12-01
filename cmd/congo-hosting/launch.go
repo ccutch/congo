@@ -4,7 +4,7 @@ import (
 	"flag"
 	"os"
 
-	"congo.gitpost.app/internal/hosting"
+	"github.com/ccutch/congo/internal/hosting"
 )
 
 func launch(args ...string) (server *hosting.Server, err error) {
