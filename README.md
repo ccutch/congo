@@ -1,18 +1,34 @@
 # Congo
 Welcome to my Go based MVC framework. Feel free to fork this repo and get started with the following.
 
+
+## Installing Tools
+The easiest way to get started is by installing the tools found in this repo's `cmd` directory like so:
+```
+go install github.com/ccutch/congo/...
+
+# This will install three binaries to `$HOME/go/bin`
+congo # To run the example congo server
+
+create-congo-app # To get writing code
+
+congo-hosting # For deploying your app
+```
+
+
+## Running the Project
+To get started running the project locally use the following command:
 ```
 go run .
 ```
 
-
-# Models
+#### Models
 You can find an example of a model in `models/post.go`.
 
-# Views
+#### Views
 You can find an example of a view in `templates/blog-posts.html`.
 
-# Controller
+#### Controller
 You can find an example of a controller in `controllers/posts.go`.
 
 

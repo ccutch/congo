@@ -14,7 +14,7 @@ import (
 //go:embed all:templates/*.tmpl all:templates/**/*.tmpl
 var templateFiles embed.FS
 
-//go:embed all:templates/**/*.html all:templates/**/*.sql
+//go:embed all:templates/**/*.html all:templates/**/**/*.html all:templates/**/*.sql
 var nonTemplateFiles embed.FS
 
 func GenerateExample(dest, name string) error {
