@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/ccutch/congo/internal/generator"
+	"github.com/ccutch/congo/pkg/generator"
 )
 
 func main() {

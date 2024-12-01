@@ -8,7 +8,7 @@ import (
 	"os"
 
 	"github.com/ccutch/congo/controllers"
-	"github.com/ccutch/congo/internal/congo"
+	"github.com/ccutch/congo/pkg/congo"
 )
 
 var (

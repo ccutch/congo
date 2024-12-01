@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/ccutch/congo/internal/hosting"
+	"github.com/ccutch/congo/pkg/hosting"
 )
 
 func genCerts(args ...string) error {

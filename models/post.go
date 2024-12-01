@@ -1,7 +1,7 @@
 package models
 
 import (
-	"github.com/ccutch/congo/internal/congo"
+	"github.com/ccutch/congo/pkg/congo"
 	"github.com/google/uuid"
 )
 

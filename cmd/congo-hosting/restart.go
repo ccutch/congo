@@ -6,7 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/ccutch/congo/internal/hosting"
+	"github.com/ccutch/congo/pkg/hosting"
 )
 
 func restart(args ...string) error {

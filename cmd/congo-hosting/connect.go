@@ -4,7 +4,7 @@ import (
 	"flag"
 	"os"
 
-	"github.com/ccutch/congo/internal/hosting"
+	"github.com/ccutch/congo/pkg/hosting"
 )
 
 func connect(args ...string) error {

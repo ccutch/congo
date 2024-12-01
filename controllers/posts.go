@@ -3,8 +3,8 @@ package controllers
 import (
 	"net/http"
 
-	"github.com/ccutch/congo/internal/congo"
 	"github.com/ccutch/congo/models"
+	"github.com/ccutch/congo/pkg/congo"
 )
 
 type PostController struct{ congo.BaseController }
