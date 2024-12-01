@@ -55,10 +55,10 @@ func main() {
 
 func sllCerts() (string, string) {
 	cert, key := "/root/fullchain.pem", "/root/privkey.pem"
-	if _, err := os.Stat(cert); os.IsNotExist(err) {
+	if _, err := os.Stat(cert); err != nil {
 		return "", ""
 	}
-	if _, err := os.Stat(key); os.IsNotExist(err) {
+	if _, err := os.Stat(key); err != nil {
 		return "", ""
 	}
 	return cert, key
