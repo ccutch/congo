@@ -34,6 +34,11 @@ func main() {
 			log.Fatal("Failed to generate certs:", err)
 		}
 
+	case "destroy":
+		if err := destroy(flag.Args()...); err != nil {
+			log.Fatalf("Failed to destroy server: %v", err)
+		}
+
 	case "help":
 		flag.Usage()
 

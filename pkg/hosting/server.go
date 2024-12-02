@@ -48,11 +48,36 @@ func (client *Client) LoadServer(name, region string) (*Server, error) {
 }
 
 func (server *Server) Refresh() {
-	var droplets []godo.Droplet
-	droplets, _, server.Err = server.platform.Droplets.ListByName(server.ctx, server.Name, nil)
+	var (
+		droplets []godo.Droplet
+		volumes  []godo.Volume
+		keys     []godo.Key
+	)
+	if droplets, _, server.Err = server.platform.Droplets.ListByName(server.ctx, server.Name, nil); server.Err != nil {
+		return
+	}
 	if len(droplets) == 1 {
 		server.droplet = &droplets[0]
 		server.IP, server.Err = server.droplet.PublicIPv4()
+	}
+	opt := &godo.ListVolumeParams{
+		Name:   server.Name + "-data",
+		Region: server.Region,
+	}
+	if volumes, _, server.Err = server.platform.Storage.ListVolumes(server.ctx, opt); server.Err != nil {
+		return
+	}
+	if len(volumes) == 1 {
+		server.volume = &volumes[0]
+	}
+	if keys, _, server.Err = server.platform.Keys.List(server.ctx, nil); server.Err != nil {
+		return
+	}
+	for _, key := range keys {
+		if key.Name == server.Name+"-admin-key" {
+			server.sshKey = &key
+			break
+		}
 	}
 }
 
@@ -112,7 +137,7 @@ func (server *Server) setupAccessKey() {
 		return
 	}
 	server.sshKey, _, server.Err = server.Client.platform.Keys.Create(server.ctx, &godo.KeyCreateRequest{
-		Name:      "congo-admin-key",
+		Name:      server.Name + "-admin-key",
 		PublicKey: string(data),
 	})
 }
@@ -171,4 +196,92 @@ func (server *Server) setupService() {
 		log.Fatal("Failed to load congo binary", server.Err)
 	}
 	server.Start()
+}
+func (server *Server) Destroy() error {
+	if server.Err != nil {
+		return server.Err
+	}
+
+	if err := server.deleteDroplet(); err != nil {
+		return err
+	}
+
+	time.Sleep(5 * time.Second)
+	if err := server.deleteVolume(); err != nil {
+		return err
+	}
+
+	if err := server.deleteSSHKey(); err != nil {
+		return err
+	}
+
+	if err := server.deleteLocalKeys(); err != nil {
+		return err
+	}
+
+	fmt.Println("Server resources destroyed successfully.")
+	return nil
+
+}
+
+func (server *Server) deleteDroplet() error {
+	if server.droplet == nil {
+		return nil
+	}
+
+	fmt.Printf("Deleting droplet %s...\n", server.droplet.Name)
+	_, err := server.platform.Droplets.Delete(server.ctx, server.droplet.ID)
+	if err != nil {
+		return fmt.Errorf("failed to delete droplet: %w", err)
+	}
+
+	server.droplet = nil
+	return nil
+}
+
+func (server *Server) deleteVolume() error {
+	if server.volume == nil {
+		return nil
+	}
+
+	fmt.Printf("Deleting volume %s...\n", server.volume.Name)
+	_, err := server.platform.Storage.DeleteVolume(server.ctx, server.volume.ID)
+	if err != nil {
+		return fmt.Errorf("failed to delete volume: %w", err)
+	}
+
+	server.volume = nil
+	return nil
+}
+
+func (server *Server) deleteSSHKey() error {
+	if server.sshKey == nil {
+		return nil
+	}
+
+	fmt.Printf("Deleting SSH key %s...\n", server.sshKey.Name)
+	_, err := server.platform.Keys.DeleteByID(server.ctx, server.sshKey.ID)
+	if err != nil {
+		return fmt.Errorf("failed to delete SSH key: %w", err)
+	}
+
+	server.sshKey = nil
+	return nil
+}
+
+func (server *Server) deleteLocalKeys() error {
+
+	if server.priKey != "" {
+		if err := os.Remove(server.priKey); err != nil && !os.IsNotExist(err) {
+			return fmt.Errorf("failed to delete private key file: %w", err)
+		}
+	}
+
+	if server.pubKey != "" {
+		if err := os.Remove(server.pubKey); err != nil && !os.IsNotExist(err) {
+			return fmt.Errorf("failed to delete public key file: %w", err)
+		}
+	}
+
+	return nil
 }
