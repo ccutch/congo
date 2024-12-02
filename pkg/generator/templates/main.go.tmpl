@@ -3,7 +3,6 @@ package main
 import (
 	"cmp"
 	"embed"
-	"log"
 	"net/http"
 	"os"
 
@@ -30,8 +29,6 @@ var (
 )
 
 func main() {
-	http.Handle("/", server.ServeMux)
-
 	http.Handle("/{$}", server.Serve("homepage.html"))
 	// http.Handle("/_/", server.GitServer())
 

@@ -5,7 +5,12 @@ Welcome to my Go based MVC framework. Feel free to fork this repo and get starte
 ## Installing Tools
 The easiest way to get started is by installing the tools found in this repo's `cmd` directory like so:
 ```
-go install github.com/ccutch/congo/...
+
+# (Optinally) Install go with the same setup script I use:
+# https://raw.githubusercontent.com/ccutch/congo/refs/heads/master/setup.sh 
+
+
+go install github.com/ccutch/congo/...@latest
 
 # This will install three binaries to `$HOME/go/bin`
 congo # To run the example congo server

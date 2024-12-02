@@ -125,6 +125,7 @@ func (server *Server) Start(addr string) {
 			}
 		}
 	}()
+
 	log.Print("Serving Congo Server @ http://" + addr)
 	if err := http.ListenAndServe(addr, nil); err != nil {
 		log.Fatal(err)
