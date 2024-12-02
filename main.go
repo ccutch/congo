@@ -8,6 +8,7 @@ import (
 
 	"github.com/ccutch/congo/controllers"
 	"github.com/ccutch/congo/pkg/congo"
+	"github.com/ccutch/congo/pkg/monitoring"
 )
 
 var (
@@ -35,5 +36,6 @@ func main() {
 	http.Handle("GET /blog/{post}", server.Serve("read-post.html"))
 	http.Handle("GET /blog/{post}/edit", server.Serve("edit-post.html"))
 
+	go monitoring.Start()
 	server.Start("0.0.0.0:" + port)
 }

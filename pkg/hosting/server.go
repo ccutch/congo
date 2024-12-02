@@ -43,6 +43,7 @@ func (client *Client) LoadServer(name, region string) (*Server, error) {
 	server := Server{Client: client, Name: name, Region: region, ctx: context.Background()}
 	server.pubKey = fmt.Sprintf("%s/id_rsa.pub", filepath.Join(client.dataPath, name))
 	server.priKey = fmt.Sprintf("%s/id_rsa", filepath.Join(client.dataPath, name))
+	server.checkAccessKeys()
 	server.Refresh()
 	return &server, server.Err
 }
@@ -121,6 +122,16 @@ func (server *Server) Start() {
 
 func (server *Server) GenerateCerts(domain string) {
 	server.Err = server.Run(fmt.Sprintf(generateCerts, domain))
+}
+
+func (server *Server) checkAccessKeys() {
+	if server.Err != nil {
+		return
+	}
+	if _, server.Err = os.Stat(server.pubKey); server.Err != nil {
+		return
+	}
+	_, server.Err = os.Stat(server.priKey)
 }
 
 func (server *Server) setupAccessKey() {
