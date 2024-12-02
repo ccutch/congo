@@ -23,13 +23,13 @@ type Database struct {
 	Root       string
 }
 
-func SetupDatabase(root string, migrations fs.FS) *Database {
+func SetupDatabase(root, name string, migrations fs.FS) *Database {
 	db := Database{Root: root}
 	err := os.MkdirAll(root, os.ModePerm)
 	if err != nil {
 		log.Fatalf("Failed to create database directory: %v", err)
 	}
-	dbFilePath := filepath.Join(root, "database.sqlite")
+	dbFilePath := filepath.Join(root, name)
 	if db.DB, err = sql.Open("sqlite3", fmt.Sprintf("file:%s", dbFilePath)); err != nil {
 		log.Fatalf("Failed to connect to datatabase: %v", err)
 	}
@@ -40,7 +40,7 @@ func SetupDatabase(root string, migrations fs.FS) *Database {
 	if err != nil {
 		log.Fatalf("failed to find migrations: %s", err)
 	}
-	dest := fmt.Sprintf("sqlite3://%s/database.sqlite", root)
+	dest := fmt.Sprintf("sqlite3://%s/"+name, root)
 	if db.migrations, err = migrate.NewWithSourceInstance("iofs", fs, dest); err != nil {
 		log.Fatalf("failed to parse migrations: %s", err)
 	}

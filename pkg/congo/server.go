@@ -11,17 +11,17 @@ import (
 )
 
 type Server struct {
-	Auth        Authenticator
-	Controllers map[string]Controller
-	Database    *Database
-	Templates   *template.Template
-	ServeMux    *http.ServeMux
+	*Database
+	auth        Authenticator
+	controllers map[string]Controller
+	templates   *template.Template
+	endpoints   *http.ServeMux
 }
 
 func NewServer(opts ...ServerOpt) *Server {
 	server := Server{
-		Controllers: map[string]Controller{},
-		ServeMux:    http.NewServeMux(),
+		controllers: map[string]Controller{},
+		endpoints:   http.NewServeMux(),
 	}
 	for _, opt := range opts {
 		Must(opt(&server))
@@ -31,14 +31,14 @@ func NewServer(opts ...ServerOpt) *Server {
 
 func (server *Server) Serve(name string) (view View) {
 	view.Server = server
-	if view.template = server.Templates.Lookup(name); view.template == nil {
+	if view.template = server.templates.Lookup(name); view.template == nil {
 		log.Fatalf("Template %s not found", name)
 	}
 	return view
 }
 
 func (server Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	server.ServeMux.ServeHTTP(w, r)
+	server.endpoints.ServeHTTP(w, r)
 }
 
 type ServerOpt func(*Server) error
@@ -50,7 +50,7 @@ func WithController(name string, ctrl Controller) ServerOpt {
 }
 
 func (server *Server) WithController(name string, controller Controller) error {
-	server.Controllers[name] = controller
+	server.controllers[name] = controller
 	return controller.OnMount(server)
 }
 
@@ -83,15 +83,15 @@ func (server *Server) WithTemplates(templates fs.FS, patterns ...string) error {
 			return fmt.Sprintf("/workspace-cgk/proxy/%s", port)
 		},
 	}
-	for name, ctrl := range server.Controllers {
+	for name, ctrl := range server.controllers {
 		funcs[name] = func() Controller { return ctrl }
 	}
-	server.Templates = template.New("").Funcs(funcs)
-	if tmpl, err := server.Templates.ParseFS(templates, "templates/*.html"); err == nil {
-		server.Templates = tmpl
+	server.templates = template.New("").Funcs(funcs)
+	if tmpl, err := server.templates.ParseFS(templates, "templates/*.html"); err == nil {
+		server.templates = tmpl
 	}
-	if tmpl, err := server.Templates.ParseFS(templates, "templates/**/*.html"); err == nil {
-		server.Templates = tmpl
+	if tmpl, err := server.templates.ParseFS(templates, "templates/**/*.html"); err == nil {
+		server.templates = tmpl
 	}
 
 	return nil
@@ -105,11 +105,39 @@ func WithEndpoint(path string, secure bool, fn http.HandlerFunc) ServerOpt {
 
 func (server *Server) WithEndpoint(path string, secure bool, fn http.HandlerFunc) error {
 	if secure {
-		fn = server.Auth.Secure(fn)
+		fn = server.auth.Secure(fn)
 	}
-	server.ServeMux.Handle(path, Endpoint{
+	server.endpoints.Handle(path, Endpoint{
 		Server:  server,
 		Handler: fn,
 	})
 	return nil
+}
+
+func (server *Server) Start(addr string) {
+	http.Handle("/", server.endpoints)
+
+	go func() {
+		if cert, key := server.certs(); cert != "" && key != "" {
+			log.Print("Serving Congo Server @ https://localhost:443")
+			if err := http.ListenAndServeTLS("0.0.0.0:443", cert, key, nil); err != nil {
+				log.Fatal(err)
+			}
+		}
+	}()
+	log.Print("Serving Congo Server @ http://" + addr)
+	if err := http.ListenAndServe(addr, nil); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func (server *Server) certs() (string, string) {
+	cert, key := "/root/fullchain.pem", "/root/privkey.pem"
+	if _, err := os.Stat(cert); err != nil {
+		return "", ""
+	}
+	if _, err := os.Stat(key); err != nil {
+		return "", ""
+	}
+	return cert, key
 }

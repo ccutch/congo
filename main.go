@@ -3,7 +3,6 @@ package main
 import (
 	"cmp"
 	"embed"
-	"log"
 	"net/http"
 	"os"
 
@@ -20,18 +19,14 @@ var (
 
 	port = cmp.Or(os.Getenv("PORT"), "5000")
 	path = cmp.Or(os.Getenv("DATA_PATH"), os.TempDir())
-	db   = congo.SetupDatabase(path, migrations)
+	db   = congo.SetupDatabase(path, "database.sqlite", migrations)
 
-	server = congo.NewServer(
-		congo.WithDatabase(db),
+	server = congo.NewServer(congo.WithDatabase(db),
 		congo.WithController("posts", &controllers.PostController{}),
-		congo.WithTemplates(templates),
-	)
+		congo.WithTemplates(templates))
 )
 
 func main() {
-	http.Handle("/", server.ServeMux)
-
 	http.Handle("/{$}", server.Serve("homepage.html"))
 	// http.Handle("/_/", server.GitServer())
 
@@ -40,26 +35,5 @@ func main() {
 	http.Handle("GET /blog/{post}", server.Serve("read-post.html"))
 	http.Handle("GET /blog/{post}/edit", server.Serve("edit-post.html"))
 
-	if cert, key := sllCerts(); cert != "" && key != "" {
-		log.Print("Serving Congo Server @ https://localhost:443")
-		if err := http.ListenAndServeTLS("0.0.0.0:443", cert, key, nil); err != nil {
-			log.Fatal(err)
-		}
-	} else {
-		log.Print("Serving Congo Server @ http://localhost:" + port)
-		if err := http.ListenAndServe("0.0.0.0:"+port, nil); err != nil {
-			log.Fatal(err)
-		}
-	}
-}
-
-func sllCerts() (string, string) {
-	cert, key := "/root/fullchain.pem", "/root/privkey.pem"
-	if _, err := os.Stat(cert); err != nil {
-		return "", ""
-	}
-	if _, err := os.Stat(key); err != nil {
-		return "", ""
-	}
-	return cert, key
+	server.Start("0.0.0.0:" + port)
 }

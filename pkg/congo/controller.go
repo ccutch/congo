@@ -60,5 +60,5 @@ func (app *BaseController) Redirect(w http.ResponseWriter, r *http.Request, path
 }
 
 func (app *BaseController) Render(w http.ResponseWriter, page string, data any) {
-	app.Server.Templates.ExecuteTemplate(w, page, data)
+	app.Server.templates.ExecuteTemplate(w, page, data)
 }
