@@ -12,7 +12,7 @@ import (
 //go:embed all:migrations
 var migrations embed.FS
 
-func Start() {
+func Start(server *congo.Server) {
 	root := os.Getenv("DATA_PATH")
 	if root == "" {
 		log.Println("[MONITOR] $DATA_PATH not set. Not monitoring")
@@ -26,6 +26,8 @@ func Start() {
 		log.Println("[MONITOR] Failed to setup database:", err)
 		return
 	}
+
+	server.WithEndpoint("/_monitor/", false, DisplaySystemMetrics)
 
 	for {
 		time.Sleep(5 * time.Second)

@@ -97,13 +97,15 @@ func (server *Server) WithTemplates(templates fs.FS, patterns ...string) error {
 	return nil
 }
 
-func WithEndpoint(path string, secure bool, fn http.HandlerFunc) ServerOpt {
+type HandlerFunc func(*Server, http.ResponseWriter, *http.Request)
+
+func WithEndpoint(path string, secure bool, fn HandlerFunc) ServerOpt {
 	return func(server *Server) error {
 		return server.WithEndpoint(path, secure, fn)
 	}
 }
 
-func (server *Server) WithEndpoint(path string, secure bool, fn http.HandlerFunc) error {
+func (server *Server) WithEndpoint(path string, secure bool, fn HandlerFunc) error {
 	if secure {
 		fn = server.auth.Secure(fn)
 	}

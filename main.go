@@ -22,20 +22,22 @@ var (
 	path = cmp.Or(os.Getenv("DATA_PATH"), os.TempDir())
 	db   = congo.SetupDatabase(path, "database.sqlite", migrations)
 
-	server = congo.NewServer(congo.WithDatabase(db),
+	server = congo.NewServer(
+		congo.WithDatabase(db),
 		congo.WithController("posts", &controllers.PostController{}),
 		congo.WithTemplates(templates))
 )
 
 func main() {
+	go monitoring.Start(server)
+
 	http.Handle("/{$}", server.Serve("homepage.html"))
-	// http.Handle("/_/", server.GitServer())
+	// http.Handle("/code/", gitpost.Repo(path, "congo"))
 
 	http.Handle("GET /blog", server.Serve("blog-posts.html"))
 	http.Handle("GET /blog/write", server.Serve("write-post.html"))
 	http.Handle("GET /blog/{post}", server.Serve("read-post.html"))
 	http.Handle("GET /blog/{post}/edit", server.Serve("edit-post.html"))
 
-	go monitoring.Start()
 	server.Start("0.0.0.0:" + port)
 }

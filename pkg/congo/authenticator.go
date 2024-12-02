@@ -14,13 +14,13 @@ import (
 type Authenticator struct {
 }
 
-func (auth *Authenticator) Secure(fn http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func (auth *Authenticator) Secure(fn HandlerFunc) HandlerFunc {
+	return func(server *Server, w http.ResponseWriter, r *http.Request) {
 		if !auth.Authenticate(r) {
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
 		}
-		fn(w, r)
+		fn(server, w, r)
 	}
 }
 

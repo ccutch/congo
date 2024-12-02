@@ -3,20 +3,20 @@ package congo
 import (
 	"cmp"
 	"fmt"
+	"html/template"
 	"net/http"
 	"os"
 	"strconv"
 )
 
-type BaseController struct {
-	*Server
-	*http.Request
-	Error error
-}
-
 type Controller interface {
 	OnMount(*Server) error
 	OnRequest(r *http.Request) Controller
+}
+
+type BaseController struct {
+	*Server
+	*http.Request
 }
 
 func (app *BaseController) Mount(server *Server) error {
@@ -24,10 +24,11 @@ func (app *BaseController) Mount(server *Server) error {
 	return nil
 }
 
-func (app *BaseController) Atoi(s string, def int) (i int) {
+func (app *BaseController) Atoi(s string, def int) int {
 	str := app.Request.URL.Query().Get(s)
 	str = cmp.Or(str, app.Request.FormValue(s))
-	if i, app.Error = strconv.Atoi(str); app.Error != nil {
+	i, err := strconv.Atoi(str)
+	if err != nil {
 		return def
 	}
 	return i
@@ -59,6 +60,21 @@ func (app *BaseController) Redirect(w http.ResponseWriter, r *http.Request, path
 	http.Redirect(w, r, path, http.StatusFound)
 }
 
-func (app *BaseController) Render(w http.ResponseWriter, page string, data any) {
-	app.Server.templates.ExecuteTemplate(w, page, data)
+func (app *BaseController) Render(s *Server, w http.ResponseWriter, r *http.Request, page string, data any) {
+	funcs := template.FuncMap{
+		"db": func() *Database { return s.Database },
+		"host": func() string {
+			if env := os.Getenv("HOME"); env != "/home/coder" {
+				return ""
+			}
+			port := cmp.Or(os.Getenv("PORT"), "5000")
+			return fmt.Sprintf("/workspace-cgk/proxy/%s", port)
+		},
+	}
+	for name, ctrl := range s.controllers {
+		funcs[name] = func() Controller { return ctrl.OnRequest(r) }
+	}
+	if err := app.Server.templates.Funcs(funcs).Execute(w, data); err != nil {
+		app.Server.templates.ExecuteTemplate(w, "error-message", err)
+	}
 }

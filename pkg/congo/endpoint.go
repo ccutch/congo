@@ -4,9 +4,9 @@ import "net/http"
 
 type Endpoint struct {
 	Server  *Server
-	Handler http.HandlerFunc
+	Handler HandlerFunc
 }
 
 func (api Endpoint) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	api.Handler.ServeHTTP(w, r)
+	api.Handler(api.Server, w, r)
 }
