@@ -8,6 +8,7 @@ import (
 
 	"github.com/ccutch/congo/controllers"
 	"github.com/ccutch/congo/pkg/congo"
+	"github.com/ccutch/congo/pkg/congo_auth"
 	"github.com/ccutch/congo/pkg/monitoring"
 )
 
@@ -18,26 +19,28 @@ var (
 	//go:embed all:templates
 	templates embed.FS
 
-	port = cmp.Or(os.Getenv("PORT"), "5000")
-	path = cmp.Or(os.Getenv("DATA_PATH"), os.TempDir())
-	db   = congo.SetupDatabase(path, "database.sqlite", migrations)
+	path = cmp.Or(os.Getenv("DATA_PATH"), os.TempDir()+"/congo-data")
 
-	server = congo.NewServer(
-		congo.WithDatabase(db),
+	app = congo.NewApplication(
+		congo.WithDatabase(congo.SetupDatabase(path, "db.sql", migrations)),
 		congo.WithController("posts", &controllers.PostController{}),
 		congo.WithTemplates(templates))
+
+	auth = congo_auth.NewAuthenticator(app.DB)
 )
 
 func main() {
-	go monitoring.Start(server)
+	go monitoring.Start(app, auth)
 
-	http.Handle("/{$}", server.Serve("homepage.html"))
+	http.Handle("GET /{$}", app.Serve("homepage.html"))
 	// http.Handle("/code/", gitpost.Repo(path, "congo"))
 
-	http.Handle("GET /blog", server.Serve("blog-posts.html"))
-	http.Handle("GET /blog/write", server.Serve("write-post.html"))
-	http.Handle("GET /blog/{post}", server.Serve("read-post.html"))
-	http.Handle("GET /blog/{post}/edit", server.Serve("edit-post.html"))
+	http.Handle("GET /blog", app.Serve("blog-posts.html"))
+	http.Handle("GET /blog/write", app.Serve("write-post.html"))
+	http.Handle("GET /blog/{post}", app.Serve("read-post.html"))
+	http.Handle("GET /blog/{post}/edit", app.Serve("edit-post.html"))
 
-	server.Start("0.0.0.0:" + port)
+	http.Handle("GET /admin", auth.Secure(app.Serve("admin.html")))
+
+	app.Start("0.0.0.0:" + cmp.Or(os.Getenv("PORT"), "5000"))
 }

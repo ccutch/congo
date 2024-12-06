@@ -18,22 +18,22 @@ import (
 )
 
 type Database struct {
-	*sql.DB
+	root       string
+	conn       *sql.DB
 	migrations *migrate.Migrate
-	Root       string
 }
 
 func SetupDatabase(root, name string, migrations fs.FS) *Database {
-	db := Database{Root: root}
+	db := Database{root: root}
 	err := os.MkdirAll(root, os.ModePerm)
 	if err != nil {
 		log.Fatalf("Failed to create database directory: %v", err)
 	}
 	dbFilePath := filepath.Join(root, name)
-	if db.DB, err = sql.Open("sqlite3", fmt.Sprintf("file:%s", dbFilePath)); err != nil {
+	if db.conn, err = sql.Open("sqlite3", fmt.Sprintf("file:%s", dbFilePath)); err != nil {
 		log.Fatalf("Failed to connect to datatabase: %v", err)
 	}
-	if err := db.Ping(); err != nil {
+	if err := db.conn.Ping(); err != nil {
 		log.Fatalf("Failed to ping database: %v", err)
 	}
 	fs, err := iofs.New(migrations, "migrations")
@@ -45,6 +45,10 @@ func SetupDatabase(root, name string, migrations fs.FS) *Database {
 		log.Fatalf("failed to parse migrations: %s", err)
 	}
 	return &db
+}
+
+func (db *Database) Close() error {
+	return db.conn.Close()
 }
 
 func (db *Database) MigrateDown() error {
@@ -77,12 +81,12 @@ type Scanner func(...any) error
 type Reader func(Scanner) error
 
 func (query *query) Exec() error {
-	_, err := query.DB.Exec(query.text, query.args...)
+	_, err := query.conn.Exec(query.text, query.args...)
 	return err
 }
 
 func (query *query) Scan(args ...any) error {
-	row := query.DB.QueryRow(query.text, query.args...)
+	row := query.conn.QueryRow(query.text, query.args...)
 	if err := row.Err(); err != nil {
 		return err
 	}
@@ -90,7 +94,7 @@ func (query *query) Scan(args ...any) error {
 }
 
 func (query *query) One(fn Reader) error {
-	row := query.DB.QueryRow(query.text, query.args...)
+	row := query.conn.QueryRow(query.text, query.args...)
 	if err := row.Err(); err != nil {
 		return err
 	}
@@ -98,7 +102,7 @@ func (query *query) One(fn Reader) error {
 }
 
 func (query *query) All(fn Reader) error {
-	rows, err := query.DB.Query(query.text, query.args...)
+	rows, err := query.conn.Query(query.text, query.args...)
 	if err != nil {
 		return err
 	}
@@ -112,7 +116,7 @@ func (query *query) All(fn Reader) error {
 }
 
 func (query *query) Page(limit int, fn Reader) (more bool, err error) {
-	rows, err := query.DB.Query(query.text, query.args...)
+	rows, err := query.conn.Query(query.text, query.args...)
 	if err != nil {
 		return false, err
 	}

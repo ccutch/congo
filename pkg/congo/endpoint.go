@@ -3,10 +3,12 @@ package congo
 import "net/http"
 
 type Endpoint struct {
-	Server  *Server
-	Handler HandlerFunc
+	App  *Application
+	Func HandlerFunc
 }
 
+type HandlerFunc func(*Application, http.ResponseWriter, *http.Request)
+
 func (api Endpoint) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	api.Handler(api.Server, w, r)
+	api.Func(api.App, w, r)
 }

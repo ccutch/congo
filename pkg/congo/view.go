@@ -11,7 +11,7 @@ import (
 )
 
 type View struct {
-	*Server
+	App      *Application
 	template *template.Template
 	Request  *http.Request
 	Error    error
@@ -20,7 +20,8 @@ type View struct {
 func (view View) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	view.Request = r.WithContext(context.TODO())
 	funcs := template.FuncMap{
-		"db": func() *Database { return view.Database },
+		"db":  func() *Database { return view.App.DB },
+		"req": func() *http.Request { return r },
 		"host": func() string {
 			if env := os.Getenv("HOME"); env != "/home/coder" {
 				return ""
@@ -30,7 +31,7 @@ func (view View) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	for name, ctrl := range view.controllers {
+	for name, ctrl := range view.App.controllers {
 		funcs[name] = func() Controller { return ctrl.OnRequest(r) }
 	}
 

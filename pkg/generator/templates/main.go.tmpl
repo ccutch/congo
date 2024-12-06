@@ -19,10 +19,10 @@ var (
 	templates embed.FS
 
 	port = cmp.Or(os.Getenv("PORT"), "5000")
-	path = cmp.Or(os.Getenv("DATA_PATH"), os.TempDir())
+	path = cmp.Or(os.Getenv("DATA_PATH"), os.TempDir()+"/congo-data")
 	db   = congo.SetupDatabase(path, "database.sqlite", migrations)
 
-	server = congo.NewServer(
+	app = congo.NewApplication(
 		congo.WithDatabase(db),
 		congo.WithController("posts", &controllers.PostController{}),
 		congo.WithTemplates(templates),
@@ -30,14 +30,15 @@ var (
 )
 
 func main() {
-	http.Handle("/{$}", server.Serve("homepage.html"))
-	// http.Handle("/_/", server.GitServer())
+	go monitoring.Start(app)
 
-	http.Handle("GET /blog", server.Serve("blog-posts.html"))
-	http.Handle("GET /blog/write", server.Serve("write-post.html"))
-	http.Handle("GET /blog/{post}", server.Serve("read-post.html"))
-	http.Handle("GET /blog/{post}/edit", server.Serve("edit-post.html"))
+	http.Handle("/{$}", app.Serve("homepage.html"))
+	// http.Handle("/_/", app.GitServer())
 
-	go monitoring.Start(server)
-	server.Start("0.0.0.0:"+port)
+	http.Handle("GET /blog", app.Serve("blog-posts.html"))
+	http.Handle("GET /blog/write", app.Serve("write-post.html"))
+	http.Handle("GET /blog/{post}", app.Serve("read-post.html"))
+	http.Handle("GET /blog/{post}/edit", app.Serve("edit-post.html"))
+
+	app.Start("0.0.0.0:"+port)
 }

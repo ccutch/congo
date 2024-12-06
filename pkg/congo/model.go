@@ -5,7 +5,7 @@ import (
 )
 
 type Model struct {
-	*Database
+	DB        *Database
 	ID        string
 	CreatedAt time.Time
 	UpdatedAt time.Time
@@ -13,7 +13,7 @@ type Model struct {
 
 func (db *Database) NewModel(id string) Model {
 	return Model{
-		Database: db,
-		ID:       id,
+		DB: db,
+		ID: id,
 	}
 }

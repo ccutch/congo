@@ -6,6 +6,6 @@ import (
 	"github.com/ccutch/congo/pkg/congo"
 )
 
-func DisplaySystemMetrics(server *congo.Server, w http.ResponseWriter, r *http.Request) {
+func DisplaySystemMetrics(app *congo.Application, w http.ResponseWriter, r *http.Request) {
 
 }

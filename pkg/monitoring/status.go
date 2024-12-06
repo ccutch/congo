@@ -43,7 +43,7 @@ func GetSystemStatus(db *congo.Database) (*SystemStatus, error) {
 }
 
 func (s *SystemStatus) Save() error {
-	return s.Query(`
+	return s.DB.Query(`
 		
 		INSERT INTO system_status (id, cpu_usage, ram_usage, storage_used, volume_used)
 		VALUES (?, ?, ?, ?, ?)

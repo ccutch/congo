@@ -7,12 +7,13 @@ import (
 	"time"
 
 	"github.com/ccutch/congo/pkg/congo"
+	"github.com/ccutch/congo/pkg/congo_auth"
 )
 
 //go:embed all:migrations
 var migrations embed.FS
 
-func Start(server *congo.Server) {
+func Start(app *congo.Application, auth *congo_auth.Authenticator) {
 	root := os.Getenv("DATA_PATH")
 	if root == "" {
 		log.Println("[MONITOR] $DATA_PATH not set. Not monitoring")
@@ -27,7 +28,11 @@ func Start(server *congo.Server) {
 		return
 	}
 
-	server.WithEndpoint("/_monitor/", false, DisplaySystemMetrics)
+	if auth != nil {
+		log.Println("Secure this route pls")
+	}
+
+	app.HandleFunc("/_monitor/", DisplaySystemMetrics)
 
 	for {
 		time.Sleep(5 * time.Second)

@@ -9,10 +9,10 @@ import (
 
 type PostController struct{ congo.BaseController }
 
-func (ctrl *PostController) OnMount(server *congo.Server) error {
-	ctrl.Server = server
-	server.WithEndpoint("POST /blog", false, ctrl.handleCreate)
-	server.WithEndpoint("PUT /blog/{post}", false, ctrl.handleUpdate)
+func (ctrl *PostController) OnMount(app *congo.Application) error {
+	ctrl.Application = app
+	app.HandleFunc("POST /blog", ctrl.handleCreate)
+	app.HandleFunc("PUT /blog/{post}", ctrl.handleUpdate)
 	return nil
 }
 
@@ -22,16 +22,16 @@ func (ctrl PostController) OnRequest(r *http.Request) congo.Controller {
 }
 
 func (app *PostController) CurrentPost() (*models.Post, error) {
-	return models.GetPost(app.Database, app.PathValue("post"))
+	return models.GetPost(app.Application.DB, app.PathValue("post"))
 }
 
 func (app *PostController) SearchPosts() ([]*models.Post, error) {
-	return models.SearchPosts(app.Database, app.PathValue("query"))
+	return models.SearchPosts(app.DB, app.PathValue("query"))
 }
 
-func (app PostController) handleCreate(s *congo.Server, w http.ResponseWriter, r *http.Request) {
+func (app PostController) handleCreate(s *congo.Application, w http.ResponseWriter, r *http.Request) {
 	title, content := r.FormValue("title"), r.FormValue("content")
-	post, err := models.NewPost(app.Database, title, content)
+	post, err := models.NewPost(app.DB, title, content)
 	if err != nil {
 		app.Render(s, w, r, "error-message", err)
 		return
@@ -39,8 +39,8 @@ func (app PostController) handleCreate(s *congo.Server, w http.ResponseWriter, r
 	app.Redirect(w, r, "/blog/"+post.ID)
 }
 
-func (app PostController) handleUpdate(s *congo.Server, w http.ResponseWriter, r *http.Request) {
-	post, err := models.GetPost(app.Database, r.PathValue("post"))
+func (app PostController) handleUpdate(s *congo.Application, w http.ResponseWriter, r *http.Request) {
+	post, err := models.GetPost(app.DB, r.PathValue("post"))
 	if err != nil {
 		app.Render(s, w, r, "error-message", err)
 		return
