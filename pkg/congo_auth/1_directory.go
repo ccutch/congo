@@ -26,7 +26,7 @@ func OpenDirectory(app *congo.Application, opts ...DirectoryOpt) *Directory {
 		}
 	}
 	app.WithController("auth", dir.Controller())
-	app.WithTemplates(Templates)
+	// TODO: app.WithTemplates(Templates)
 	return dir
 }
 
