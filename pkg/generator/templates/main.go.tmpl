@@ -20,10 +20,9 @@ var (
 	templates embed.FS
 
 	path = cmp.Or(os.Getenv("DATA_PATH"), os.TempDir()+"/congo-data")
-	db   = congo.SetupDatabase(path, "database.sqlite", migrations)
 
 	app = congo.NewApplication(
-		congo.WithDatabase(db),
+		congo.WithDatabase(congo.SetupDatabase(path, "app.db", migrations)),
 		congo.WithController("posts", &controllers.PostController{}),
 		congo.WithTemplates(templates))
 	

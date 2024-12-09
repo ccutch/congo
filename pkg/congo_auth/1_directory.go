@@ -19,7 +19,7 @@ type Directory struct {
 var migrations embed.FS
 
 func OpenDirectory(app *congo.Application, opts ...DirectoryOpt) *Directory {
-	dir := &Directory{DB: congo.SetupDatabase(app.DB.Root, "directory.sql", migrations)}
+	dir := &Directory{DB: congo.SetupDatabase(app.DB.Root, "directory.db", migrations)}
 	for _, opt := range opts {
 		if err := opt(dir); err != nil {
 			log.Fatalf("Failed to open Directory @ %s: %s", app.DB.Root, err)

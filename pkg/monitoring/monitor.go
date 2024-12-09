@@ -20,7 +20,7 @@ func Start(app *congo.Application, dir *congo_auth.Directory, roles ...string) {
 		return
 	}
 
-	db := congo.SetupDatabase(root, "_monitor_.sqlite", migrations)
+	db := congo.SetupDatabase(root, "monitor.db", migrations)
 	defer db.Close()
 
 	if err := db.MigrateUp(); err != nil {

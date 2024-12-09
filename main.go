@@ -22,7 +22,7 @@ var (
 	path = cmp.Or(os.Getenv("DATA_PATH"), os.TempDir()+"/congo-data")
 
 	app = congo.NewApplication(
-		congo.WithDatabase(congo.SetupDatabase(path, "db.sql", migrations)),
+		congo.WithDatabase(congo.SetupDatabase(path, "app.db", migrations)),
 		congo.WithController("posts", &controllers.PostController{}),
 		congo.WithTemplates(templates))
 
