@@ -13,7 +13,7 @@ import (
 //go:embed all:migrations
 var migrations embed.FS
 
-func Start(app *congo.Application, dir *congo_auth.Directory) {
+func Start(app *congo.Application, dir *congo_auth.Directory, roles ...string) {
 	root := os.Getenv("DATA_PATH")
 	if root == "" {
 		log.Println("[MONITOR] $DATA_PATH not set. Not monitoring")
@@ -28,7 +28,11 @@ func Start(app *congo.Application, dir *congo_auth.Directory) {
 		return
 	}
 
-	app.HandleFunc("/_monitor/", dir.SecureFunc(DisplaySystemMetrics))
+	if dir != nil {
+		app.HandleFunc("/_stat/", dir.SecureFunc(DisplaySystemMetrics))
+	} else {
+		log.Println("Provide an auth directory to secure")
+	}
 
 	for {
 		time.Sleep(5 * time.Second)
