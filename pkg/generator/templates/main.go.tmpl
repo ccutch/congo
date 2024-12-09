@@ -8,6 +8,7 @@ import (
 
 	"{{.}}/controllers"
 	"github.com/ccutch/congo/pkg/congo"
+	"github.com/ccutch/congo/pkg/congo_auth"
 	"github.com/ccutch/congo/pkg/monitoring"
 )
 
@@ -18,19 +19,19 @@ var (
 	//go:embed all:templates
 	templates embed.FS
 
-	port = cmp.Or(os.Getenv("PORT"), "5000")
 	path = cmp.Or(os.Getenv("DATA_PATH"), os.TempDir()+"/congo-data")
 	db   = congo.SetupDatabase(path, "database.sqlite", migrations)
 
 	app = congo.NewApplication(
 		congo.WithDatabase(db),
 		congo.WithController("posts", &controllers.PostController{}),
-		congo.WithTemplates(templates),
-	)
+		congo.WithTemplates(templates))
+	
+	dir = congo_auth.OpenDirectory(app)
 )
 
 func main() {
-	go monitoring.Start(app)
+	go monitoring.Start(app, dir)
 
 	http.Handle("/{$}", app.Serve("homepage.html"))
 	// http.Handle("/_/", app.GitServer())
@@ -40,5 +41,5 @@ func main() {
 	http.Handle("GET /blog/{post}", app.Serve("read-post.html"))
 	http.Handle("GET /blog/{post}/edit", app.Serve("edit-post.html"))
 
-	app.Start("0.0.0.0:"+port)
+	app.Start("0.0.0.0:" + cmp.Or(os.Getenv("PORT"), "5000"))
 }

@@ -18,13 +18,13 @@ import (
 )
 
 type Database struct {
-	root       string
+	Root       string
 	conn       *sql.DB
 	migrations *migrate.Migrate
 }
 
 func SetupDatabase(root, name string, migrations fs.FS) *Database {
-	db := Database{root: root}
+	db := Database{Root: root}
 	err := os.MkdirAll(root, os.ModePerm)
 	if err != nil {
 		log.Fatalf("Failed to create database directory: %v", err)

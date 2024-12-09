@@ -18,11 +18,11 @@ type Directory struct {
 //go:embed all:migrations
 var migrations embed.FS
 
-func OpenDirectory(root string, opts ...DirectoryOpt) *Directory {
-	dir := &Directory{DB: congo.SetupDatabase(root, "directory.sql", migrations)}
+func OpenDirectory(app *congo.Application, opts ...DirectoryOpt) *Directory {
+	dir := &Directory{DB: congo.SetupDatabase(app.DB.Root, "directory.sql", migrations)}
 	for _, opt := range opts {
 		if err := opt(dir); err != nil {
-			log.Fatalf("Failed to open Directory @ %s: %s", root, err)
+			log.Fatalf("Failed to open Directory @ %s: %s", app.DB.Root, err)
 		}
 	}
 	return dir

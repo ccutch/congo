@@ -14,7 +14,28 @@ type Usage struct {
 	Allowed  bool
 }
 
-func (dir *Directory) Secure(fn congo.HandlerFunc, roles ...string) congo.HandlerFunc {
+func (dir *Directory) Secure(fn http.Handler, roles ...string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if i, _ := dir.Authenticate(r); i != nil {
+			if len(roles) == 0 {
+				dir.TrackUsage(i, r.URL.String(), true)
+				fn.ServeHTTP(w, r)
+				return
+			}
+			for _, role := range roles {
+				if i.Role == role {
+					dir.TrackUsage(i, r.URL.String(), true)
+					fn.ServeHTTP(w, r)
+					return
+				}
+			}
+			dir.TrackUsage(i, r.URL.String(), false)
+		}
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+	}
+}
+
+func (dir *Directory) SecureFunc(fn congo.HandlerFunc, roles ...string) congo.HandlerFunc {
 	return func(app *congo.Application, w http.ResponseWriter, r *http.Request) {
 		if i, _ := dir.Authenticate(r); i != nil {
 			if len(roles) == 0 {

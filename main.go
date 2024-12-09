@@ -26,11 +26,11 @@ var (
 		congo.WithController("posts", &controllers.PostController{}),
 		congo.WithTemplates(templates))
 
-	auth = congo_auth.NewAuthenticator(app.DB)
+	dir = congo_auth.OpenDirectory(app)
 )
 
 func main() {
-	go monitoring.Start(app, auth)
+	go monitoring.Start(app, dir)
 
 	http.Handle("GET /{$}", app.Serve("homepage.html"))
 	// http.Handle("/code/", gitpost.Repo(path, "congo"))
@@ -40,7 +40,7 @@ func main() {
 	http.Handle("GET /blog/{post}", app.Serve("read-post.html"))
 	http.Handle("GET /blog/{post}/edit", app.Serve("edit-post.html"))
 
-	http.Handle("GET /admin", auth.Secure(app.Serve("admin.html")))
+	http.Handle("GET /admin", dir.Secure(app.Serve("admin.html")))
 
 	app.Start("0.0.0.0:" + cmp.Or(os.Getenv("PORT"), "5000"))
 }
