@@ -25,6 +25,8 @@ func OpenDirectory(app *congo.Application, opts ...DirectoryOpt) *Directory {
 			log.Fatalf("Failed to open Directory @ %s: %s", app.DB.Root, err)
 		}
 	}
+	app.WithController("auth", dir.Controller())
+	app.WithTemplates(Templates)
 	return dir
 }
 
