@@ -31,9 +31,9 @@ func (ctrl *Controller) OnMount(app *congo.Application) error {
 	return nil
 }
 
-func (ctrl Controller) OnRequest(r *http.Request) Controller {
+func (ctrl Controller) OnRequest(r *http.Request) congo.Controller {
 	ctrl.Request = r
-	return ctrl
+	return &ctrl
 }
 
 func (ctrl Controller) handleSignup(app *congo.Application, w http.ResponseWriter, r *http.Request) {
