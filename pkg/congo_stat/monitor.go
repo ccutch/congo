@@ -1,4 +1,4 @@
-package monitoring
+package congo_stat
 
 import (
 	"embed"
@@ -13,11 +13,20 @@ import (
 //go:embed all:migrations
 var migrations embed.FS
 
-func Start(app *congo.Application, dir *congo_auth.Directory, roles ...string) {
+type Monitor struct {
+	app *congo.Application
+	dir *congo_auth.Directory
+}
+
+func NewMonitor(app *congo.Application, dir *congo_auth.Directory) *Monitor {
+	return &Monitor{app, dir}
+}
+
+func (m *Monitor) Start() error {
 	root := os.Getenv("DATA_PATH")
 	if root == "" {
 		log.Println("[MONITOR] $DATA_PATH not set. Not monitoring")
-		return
+		return nil
 	}
 
 	db := congo.SetupDatabase(root, "monitor.db", migrations)
@@ -25,11 +34,11 @@ func Start(app *congo.Application, dir *congo_auth.Directory, roles ...string) {
 
 	if err := db.MigrateUp(); err != nil {
 		log.Println("[MONITOR] Failed to setup database:", err)
-		return
+		return err
 	}
 
-	if dir != nil {
-		app.HandleFunc("/_stat/", dir.SecureFunc(DisplaySystemMetrics))
+	if m.dir != nil {
+		m.app.HandleFunc("/_stat/", m.dir.SecureFunc(m.viewStatusHistory))
 	} else {
 		log.Println("Provide an auth directory to secure")
 	}

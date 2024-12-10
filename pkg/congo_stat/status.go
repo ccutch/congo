@@ -1,4 +1,4 @@
-package monitoring
+package congo_stat
 
 import (
 	"github.com/ccutch/congo/pkg/congo"

@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/ccutch/congo/pkg/generator"
+	"github.com/ccutch/congo/pkg/congo_code"
 )
 
 func main() {
@@ -27,7 +27,7 @@ func main() {
 
 	// Run the generator
 	log.Printf("Generating files in '%s' with namespace '%s'...", *dest, *name)
-	err := generator.GenerateExample(*dest, *name)
+	err := congo_code.GenerateExample(*dest, *name)
 	if err != nil {
 		log.Fatalf("Error: %v", err)
 	}

@@ -9,7 +9,8 @@ import (
 	"github.com/ccutch/congo/controllers"
 	"github.com/ccutch/congo/pkg/congo"
 	"github.com/ccutch/congo/pkg/congo_auth"
-	"github.com/ccutch/congo/pkg/monitoring"
+	"github.com/ccutch/congo/pkg/congo_run"
+	"github.com/ccutch/congo/pkg/congo_stat"
 )
 
 var (
@@ -30,8 +31,6 @@ var (
 )
 
 func main() {
-	go monitoring.Start(app, dir)
-
 	http.Handle("GET /{$}", app.Serve("homepage.html"))
 	// http.Handle("/code/", gitpost.Repo(path, "congo"))
 
@@ -42,5 +41,5 @@ func main() {
 
 	http.Handle("GET /admin", dir.Secure(app.Serve("admin.html")))
 
-	app.Start("0.0.0.0:" + cmp.Or(os.Getenv("PORT"), "5000"))
+	congo_run.StartFromEnv(app, congo_stat.NewMonitor(app, dir))
 }

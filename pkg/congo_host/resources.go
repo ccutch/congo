@@ -1,4 +1,4 @@
-package hosting
+package congo_host
 
 import _ "embed"
 

@@ -4,10 +4,10 @@ import (
 	"flag"
 	"os"
 
-	"github.com/ccutch/congo/pkg/hosting"
+	"github.com/ccutch/congo/pkg/congo_host"
 )
 
-func launch(args ...string) (server *hosting.Server, err error) {
+func launch(args ...string) (server *congo_host.Server, err error) {
 	var (
 		cmd     = flag.NewFlagSet("launch", flag.ExitOnError)
 		apiKey  = cmd.String("api-key", "$DIGITAL_OCEAN_API_KEY", "Digital Ocean API Key")
@@ -26,6 +26,6 @@ func launch(args ...string) (server *hosting.Server, err error) {
 		*apiKey = os.Getenv("DIGITAL_OCEAN_API_KEY")
 	}
 
-	client := hosting.NewClient(*path, *apiKey)
+	client := congo_host.NewClient(*path, *apiKey)
 	return client.NewServer(*name, *region, *size, *storage)
 }

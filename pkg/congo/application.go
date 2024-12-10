@@ -15,6 +15,12 @@ type Application struct {
 	controllers map[string]Controller
 	templates   *template.Template
 	endpoints   *http.ServeMux
+	creds       *Credentials
+}
+
+type Credentials struct {
+	fullchain string
+	privkey   string
 }
 
 type ApplicationOpt func(*Application) error
@@ -44,6 +50,26 @@ func (app *Application) Serve(name string) (view View) {
 
 func (app Application) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	app.endpoints.ServeHTTP(w, r)
+}
+
+func (app *Application) Start() error {
+	http.Handle("/", app.endpoints)
+	go app.sslServer()
+	addr := "0.0.0.0:" + cmp.Or(os.Getenv("PORT"), "5000")
+	log.Print("Serving Unsecure Congo @ http://" + addr)
+	return http.ListenAndServe(addr, nil)
+}
+
+func (app *Application) sslServer() {
+	if app.creds.fullchain == "" || app.creds.privkey == "" {
+		return
+	}
+	cert, key := app.creds.fullchain, app.creds.privkey
+	log.Print("Serving Secure Congo @ https://localhost:443")
+	err := http.ListenAndServeTLS("0.0.0.0:443", cert, key, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func WithController(name string, ctrl Controller) ApplicationOpt {
@@ -117,38 +143,9 @@ func (app *Application) HandleFunc(path string, fn HandlerFunc) {
 	})
 }
 
-func (app *Application) Start(addr string) {
-	http.Handle("/", app.endpoints)
-
-	go func() {
-		cert, key := app.certs()
-		if cert == "" || key == "" {
-			return
-		}
-		log.Print("Serving Secure Congo @ https://localhost:443")
-		if err := http.ListenAndServeTLS("0.0.0.0:443", cert, key, nil); err != nil {
-			log.Fatal(err)
-		}
-	}()
-
-	log.Print("Serving Unsecure Congo @ http://" + addr)
-	if err := http.ListenAndServe(addr, nil); err != nil {
-		log.Fatal(err)
+func WithCredentials(cert, key string) ApplicationOpt {
+	return func(app *Application) error {
+		app.creds = &Credentials{cert, key}
+		return nil
 	}
-}
-
-func (app *Application) certs() (string, string) {
-	cert := os.Getenv("CONGO_SSL_FULLCHAIN")
-	cert = cmp.Or(cert, "/root/fullchain.pem")
-	if _, err := os.Stat(cert); err != nil {
-		return "", ""
-	}
-
-	key := os.Getenv("CONGO_SSL_PRIVKEY")
-	key = cmp.Or(key, "/root/privkey.pem")
-	if _, err := os.Stat(key); err != nil {
-		return "", ""
-	}
-
-	return cert, key
 }

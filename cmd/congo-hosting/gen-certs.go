@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/ccutch/congo/pkg/hosting"
+	"github.com/ccutch/congo/pkg/congo_host"
 )
 
 func genCerts(args ...string) error {
@@ -30,7 +30,7 @@ func genCerts(args ...string) error {
 		log.Fatal("Missing domain name")
 	}
 
-	client := hosting.NewClient(*path, *apiKey)
+	client := congo_host.NewClient(*path, *apiKey)
 	server, err := client.LoadServer(*name, *region)
 	if err != nil {
 		return err

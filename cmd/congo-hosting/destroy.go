@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/ccutch/congo/pkg/hosting"
+	"github.com/ccutch/congo/pkg/congo_host"
 )
 
 func destroy(args ...string) error {
@@ -25,7 +25,7 @@ func destroy(args ...string) error {
 		*apiKey = os.Getenv("DIGITAL_OCEAN_API_KEY")
 	}
 
-	client := hosting.NewClient(*path, *apiKey)
+	client := congo_host.NewClient(*path, *apiKey)
 
 	server, err := client.LoadServer(*name, *region)
 	if err != nil {
