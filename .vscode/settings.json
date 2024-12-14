@@ -1,0 +1,5 @@
+{
+    "html.format.wrapAttributes": "preserve-aligned",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 2
+}
