@@ -102,23 +102,26 @@ func WithTemplates(templates fs.FS) ApplicationOpt {
 }
 
 func (app *Application) WithTemplates(templates fs.FS, patterns ...string) error {
-	funcs := template.FuncMap{
-		"db":  func() *Database { return app.DB },
-		"req": func() *http.Request { return nil },
-		"host": func() string {
-			if env := os.Getenv("HOME"); env != "/home/coder" {
-				return ""
-			}
-			port := cmp.Or(os.Getenv("PORT"), "5000")
-			return fmt.Sprintf("/workspace-cgk/proxy/%s", port)
-		},
+	if app.templates == nil {
+		funcs := template.FuncMap{
+			"db":  func() *Database { return app.DB },
+			"req": func() *http.Request { return nil },
+			"host": func() string {
+				if env := os.Getenv("HOME"); env != "/home/coder" {
+					return ""
+				}
+				port := cmp.Or(os.Getenv("PORT"), "5000")
+				return fmt.Sprintf("/workspace-cgk/proxy/%s", port)
+			},
+		}
+
+		for name, ctrl := range app.controllers {
+			funcs[name] = func() Controller { return ctrl }
+		}
+
+		app.templates = template.New("").Funcs(funcs)
 	}
 
-	for name, ctrl := range app.controllers {
-		funcs[name] = func() Controller { return ctrl }
-	}
-
-	app.templates = template.New("").Funcs(funcs)
 	if tmpl, err := app.templates.ParseFS(templates, "templates/*.html"); err == nil {
 		app.templates = tmpl
 	}
