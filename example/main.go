@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/ccutch/congo/controllers"
+	"github.com/ccutch/congo/example/controllers"
 	"github.com/ccutch/congo/pkg/congo"
 	"github.com/ccutch/congo/pkg/congo_auth"
 	"github.com/ccutch/congo/pkg/congo_boot"

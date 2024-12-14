@@ -4,37 +4,31 @@ Welcome to my Go based MVC framework. Feel free to fork this repo and get starte
 
 ## Installing Tools
 The easiest way to get started is by installing the tools found in this repo's `cmd` directory like so:
+
 ```
+go install github.com/ccutch/congo/...
 
-# (Optinally) Install go with the same setup script I use:
-# https://raw.githubusercontent.com/ccutch/congo/refs/heads/master/setup.sh 
+create-congo-app # To get help writing code
 
-
-go install github.com/ccutch/congo/...@latest
-
-# This will install three binaries to `$HOME/go/bin`
-congo # To run the example congo server
-
-create-congo-app # To get writing code
-
-congo-hosting # For deploying your app
+congo-hosting # For help deploying your app
 ```
 
 
 ## Running the Project
 To get started running the project locally use the following command:
+
 ```
-go run .
+go run ./example
 ```
 
 #### Models
-You can find an example of a model in `models/post.go`.
+You can find an example of a model in `example/models/post.go`.
 
 #### Views
-You can find an example of a view in `templates/blog-posts.html`.
+You can find an example of a view in `example/templates/blog-posts.html`.
 
 #### Controller
-You can find an example of a controller in `controllers/posts.go`.
+You can find an example of a controller in `example/controllers/posts.go`.
 
 
 ## Deploying to Digital Ocean
@@ -47,7 +41,6 @@ go run ./cmd/congo-hosting launch
 
 curl http://<your-ip-address>:8080
 ```
-
 
 
 #### Forwarding Traffic
