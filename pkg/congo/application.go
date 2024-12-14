@@ -61,7 +61,7 @@ func (app *Application) Start() error {
 }
 
 func (app *Application) sslServer() {
-	if app.creds.fullchain == "" || app.creds.privkey == "" {
+	if app.creds == nil {
 		return
 	}
 	cert, key := app.creds.fullchain, app.creds.privkey
@@ -80,7 +80,8 @@ func WithController(name string, ctrl Controller) ApplicationOpt {
 
 func (app *Application) WithController(name string, controller Controller) error {
 	app.controllers[name] = controller
-	return controller.OnMount(app)
+	controller.Setup(app)
+	return nil
 }
 
 func WithDatabase(db *Database) ApplicationOpt {

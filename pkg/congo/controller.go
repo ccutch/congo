@@ -10,8 +10,8 @@ import (
 )
 
 type Controller interface {
-	OnMount(*Application) error
-	OnRequest(r *http.Request) Controller
+	Setup(*Application)
+	Handle(*http.Request) Controller
 }
 
 type BaseController struct {
@@ -19,9 +19,8 @@ type BaseController struct {
 	*http.Request
 }
 
-func (ctrl *BaseController) Mount(app *Application) error {
+func (ctrl *BaseController) Setup(app *Application) {
 	ctrl.Application = app
-	return nil
 }
 
 func (ctrl *BaseController) Atoi(s string, def int) int {
@@ -60,9 +59,9 @@ func (ctrl *BaseController) Redirect(w http.ResponseWriter, r *http.Request, pat
 	http.Redirect(w, r, path, http.StatusFound)
 }
 
-func (ctrl *BaseController) Render(s *Application, w http.ResponseWriter, r *http.Request, page string, data any) {
+func (ctrl *BaseController) Render(w http.ResponseWriter, r *http.Request, page string, data any) {
 	funcs := template.FuncMap{
-		"db":  func() *Database { return s.DB },
+		"db":  func() *Database { return ctrl.DB },
 		"req": func() *http.Request { return r },
 		"host": func() string {
 			if env := os.Getenv("HOME"); env != "/home/coder" {
@@ -72,8 +71,8 @@ func (ctrl *BaseController) Render(s *Application, w http.ResponseWriter, r *htt
 			return fmt.Sprintf("/workspace-cgk/proxy/%s", port)
 		},
 	}
-	for name, ctrl := range s.controllers {
-		funcs[name] = func() Controller { return ctrl.OnRequest(r) }
+	for name, ctrl := range ctrl.controllers {
+		funcs[name] = func() Controller { return ctrl.Handle(r) }
 	}
 	if err := ctrl.Application.templates.Funcs(funcs).Execute(w, data); err != nil {
 		ctrl.Application.templates.ExecuteTemplate(w, "error-message", err)

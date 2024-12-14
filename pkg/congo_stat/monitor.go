@@ -37,12 +37,6 @@ func (m *Monitor) Start() error {
 		return err
 	}
 
-	if m.dir != nil {
-		m.app.HandleFunc("/_stat/", m.dir.SecureFunc(m.viewStatusHistory))
-	} else {
-		log.Println("Provide an auth directory to secure")
-	}
-
 	for {
 		time.Sleep(5 * time.Second)
 		if status, err := GetSystemStatus(db); err != nil {

@@ -9,7 +9,7 @@ import (
 	"github.com/ccutch/congo/controllers"
 	"github.com/ccutch/congo/pkg/congo"
 	"github.com/ccutch/congo/pkg/congo_auth"
-	"github.com/ccutch/congo/pkg/congo_run"
+	"github.com/ccutch/congo/pkg/congo_boot"
 	"github.com/ccutch/congo/pkg/congo_stat"
 )
 
@@ -24,22 +24,24 @@ var (
 
 	app = congo.NewApplication(
 		congo.WithDatabase(congo.SetupDatabase(path, "app.db", migrations)),
-		congo.WithController("posts", &controllers.PostController{}),
+		congo.WithController("posts", new(controllers.PostController)),
 		congo.WithTemplates(templates))
 
-	dir = congo_auth.OpenDirectory(app)
+	auth    = congo_auth.OpenDirectory(app)
+	monitor = congo_stat.NewMonitor(app, auth)
 )
 
 func main() {
+	app.WithController("auth", auth.Controller())
+	app.WithController("status", monitor.Controller())
+
 	http.Handle("GET /{$}", app.Serve("homepage.html"))
-	// http.Handle("/code/", gitpost.Repo(path, "congo"))
+	http.Handle("GET /admin", auth.Secure(app.Serve("admin.html")))
 
 	http.Handle("GET /blog", app.Serve("blog-posts.html"))
-	http.Handle("GET /blog/write", app.Serve("write-post.html"))
+	http.Handle("GET /blog/write", auth.Secure(app.Serve("write-post.html")))
 	http.Handle("GET /blog/{post}", app.Serve("read-post.html"))
 	http.Handle("GET /blog/{post}/edit", app.Serve("edit-post.html"))
 
-	http.Handle("GET /admin", dir.Secure(app.Serve("admin.html")))
-
-	congo_run.StartFromEnv(app, congo_stat.NewMonitor(app, dir))
+	congo_boot.StartFromEnv(app, monitor)
 }

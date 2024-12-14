@@ -9,7 +9,7 @@ import (
 	"{{.}}/controllers"
 	"github.com/ccutch/congo/pkg/congo"
 	"github.com/ccutch/congo/pkg/congo_auth"
-	"github.com/ccutch/congo/pkg/congo_run"
+	"github.com/ccutch/congo/pkg/congo_boot"
 	"github.com/ccutch/congo/pkg/congo_stat"
 )
 
@@ -20,11 +20,11 @@ var (
 	//go:embed all:templates
 	templates embed.FS
 
-	path = cmp.Or(os.Getenv("DATA_PATH"), os.TempDir()+"/congo-data")
+	path = cmp.Or(os.Getenv("DATA_PATH"), os.TempDir()+"/{{.}}")
 
 	app = congo.NewApplication(
 		congo.WithDatabase(congo.SetupDatabase(path, "app.db", migrations)),
-		congo.WithController("posts", &controllers.PostController{}),
+		congo.WithController("posts", new(controllers.PostController)),
 		congo.WithTemplates(templates))
 	
 	dir = congo_auth.OpenDirectory(app)
@@ -32,12 +32,11 @@ var (
 
 func main() {
 	http.Handle("/{$}", app.Serve("homepage.html"))
-	// http.Handle("/_/", app.GitServer())
 
 	http.Handle("GET /blog", app.Serve("blog-posts.html"))
 	http.Handle("GET /blog/write", app.Serve("write-post.html"))
 	http.Handle("GET /blog/{post}", app.Serve("read-post.html"))
 	http.Handle("GET /blog/{post}/edit", app.Serve("edit-post.html"))
 
-	congo_run.StartFromEnv(app, congo_stat.NewMonitor(app, dir))
+	congo_boot.StartFromEnv(app, congo_stat.NewMonitor(app, dir))
 }

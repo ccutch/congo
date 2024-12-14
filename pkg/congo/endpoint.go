@@ -7,8 +7,8 @@ type Endpoint struct {
 	Func HandlerFunc
 }
 
-type HandlerFunc func(*Application, http.ResponseWriter, *http.Request)
+type HandlerFunc func(http.ResponseWriter, *http.Request)
 
 func (api Endpoint) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	api.Func(api.App, w, r)
+	api.Func(w, r)
 }
