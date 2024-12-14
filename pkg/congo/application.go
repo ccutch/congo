@@ -141,11 +141,11 @@ func (app *Application) HandleFunc(path string, fn HandlerFunc) {
 	})
 }
 
-func WithCredentials(cert, key string) ApplicationOpt {
-	return func(app *Application) error {
-		app.creds = &Credentials{cert, key}
-		return nil
+func (app *Application) WithCredentials(cert, key string) {
+	if cert == "" || key == "" {
+		return
 	}
+	app.creds = &Credentials{cert, key}
 }
 
 func WithHostPrefix(prefix string) ApplicationOpt {

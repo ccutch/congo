@@ -13,7 +13,7 @@ type Service interface {
 }
 
 func StartFromEnv(app *congo.Application, services ...Service) {
-	LoadEnv(app)
+	app.WithCredentials(LoadEnv(app))
 	Start(app, services...)
 }
 
@@ -33,7 +33,7 @@ func LoadEnv(app *congo.Application) (string, string) {
 	return cert, key
 }
 
-func Start(main *congo.Application, services ...Service) {
+func Start(app *congo.Application, services ...Service) {
 	for i, s := range services {
 		go func() {
 			if err := s.Start(); err != nil {
@@ -42,7 +42,7 @@ func Start(main *congo.Application, services ...Service) {
 		}()
 	}
 
-	if err := main.Start(); err != nil {
+	if err := app.Start(); err != nil {
 		log.Fatalf("Failed to start main service: %s", err)
 	}
 
