@@ -61,19 +61,19 @@ You can find an example of a controller in `example/controllers/posts.go`.
 
 type PostController struct{ congo.BaseController }
 
-func (ctrl *PostController) Setup(app *congo.Application) {
-	ctrl.Application = app
-	app.HandleFunc("POST /blog", ctrl.handleCreate)
-	app.HandleFunc("PUT /blog/{post}", ctrl.handleUpdate)
+func (posts *PostController) Setup(app *congo.Application) {
+	posts.Application = app
+	app.HandleFunc("POST /blog", posts.handleCreate)
+	app.HandleFunc("PUT /blog/{post}", posts.handleUpdate)
 }
 
-func (ctrl PostController) Handle(r *http.Request) congo.Controller {
-	ctrl.Request = r
-	return &ctrl
+func (posts PostController) Handle(r *http.Request) congo.Controller {
+	posts.Request = r
+	return &posts
 }
 
-func (app *PostController) SearchPosts() ([]*models.Post, error) {
-	return models.SearchPosts(app.DB, app.PathValue("query"))
+func (posts *PostController) SearchPosts() ([]*models.Post, error) {
+	return models.SearchPosts(posts.DB, posts.PathValue("query"))
 }
 
 //...
@@ -96,6 +96,36 @@ You can find an example of a view in `example/templates/blog-posts.html`.
 {{end}}
 
 <!-- ... -->
+
+```
+
+#### Runner
+To run the app setup the app like shown in ./examples/main.go:
+```go
+
+//...
+var (
+	//go:embed all:migrations
+	migrations embed.FS
+
+	//go:embed all:templates
+	templates embed.FS
+
+	path = cmp.Or(os.Getenv("DATA_PATH"), os.TempDir()+"/congo-data")
+
+	app = congo.NewApplication(
+		congo.WithDatabase(congo.SetupDatabase(path, "app.db", migrations)),
+		congo.WithController("posts", new(controllers.PostController)),
+		congo.WithTemplates(templates))
+)
+
+func main() {
+	//...
+
+	http.Handle("GET /blog", app.Serve("blog-posts.html"))
+
+	congo_boot.StartFromEnv(app)
+}
 
 ```
 
