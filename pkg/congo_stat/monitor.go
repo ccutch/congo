@@ -37,6 +37,8 @@ func (m *Monitor) Start() error {
 		return err
 	}
 
+	m.app.WithController("status", m.Controller())
+
 	for {
 		time.Sleep(5 * time.Second)
 		if status, err := GetSystemStatus(db); err != nil {

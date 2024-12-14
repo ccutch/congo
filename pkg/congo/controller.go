@@ -2,10 +2,8 @@ package congo
 
 import (
 	"cmp"
-	"fmt"
 	"html/template"
 	"net/http"
-	"os"
 	"strconv"
 )
 
@@ -33,12 +31,8 @@ func (ctrl *BaseController) Atoi(s string, def int) int {
 	return i
 }
 
-func (*BaseController) Host() string {
-	if env := os.Getenv("HOME"); env != "/home/coder" {
-		return ""
-	}
-	port := cmp.Or(os.Getenv("PORT"), "5000")
-	return fmt.Sprintf("/workspace-cgk/proxy/%s", port)
+func (ctrl *BaseController) Host() string {
+	return ctrl.hostPrefix
 }
 
 func (ctrl *BaseController) Refresh(w http.ResponseWriter, r *http.Request) {
@@ -61,15 +55,9 @@ func (ctrl *BaseController) Redirect(w http.ResponseWriter, r *http.Request, pat
 
 func (ctrl *BaseController) Render(w http.ResponseWriter, r *http.Request, page string, data any) {
 	funcs := template.FuncMap{
-		"db":  func() *Database { return ctrl.DB },
-		"req": func() *http.Request { return r },
-		"host": func() string {
-			if env := os.Getenv("HOME"); env != "/home/coder" {
-				return ""
-			}
-			port := cmp.Or(os.Getenv("PORT"), "5000")
-			return fmt.Sprintf("/workspace-cgk/proxy/%s", port)
-		},
+		"db":   func() *Database { return ctrl.DB },
+		"req":  func() *http.Request { return r },
+		"host": func() string { return ctrl.hostPrefix },
 	}
 	for name, ctrl := range ctrl.controllers {
 		funcs[name] = func() Controller { return ctrl.Handle(r) }

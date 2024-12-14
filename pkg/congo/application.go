@@ -2,7 +2,6 @@ package congo
 
 import (
 	"cmp"
-	"fmt"
 	"html/template"
 	"io/fs"
 	"log"
@@ -16,6 +15,7 @@ type Application struct {
 	templates   *template.Template
 	endpoints   *http.ServeMux
 	creds       *Credentials
+	hostPrefix  string
 }
 
 type Credentials struct {
@@ -104,15 +104,9 @@ func WithTemplates(templates fs.FS) ApplicationOpt {
 func (app *Application) WithTemplates(templates fs.FS, patterns ...string) error {
 	if app.templates == nil {
 		funcs := template.FuncMap{
-			"db":  func() *Database { return app.DB },
-			"req": func() *http.Request { return nil },
-			"host": func() string {
-				if env := os.Getenv("HOME"); env != "/home/coder" {
-					return ""
-				}
-				port := cmp.Or(os.Getenv("PORT"), "5000")
-				return fmt.Sprintf("/workspace-cgk/proxy/%s", port)
-			},
+			"db":   func() *Database { return app.DB },
+			"req":  func() *http.Request { return nil },
+			"host": func() string { return app.hostPrefix },
 		}
 
 		for name, ctrl := range app.controllers {
@@ -150,6 +144,13 @@ func (app *Application) HandleFunc(path string, fn HandlerFunc) {
 func WithCredentials(cert, key string) ApplicationOpt {
 	return func(app *Application) error {
 		app.creds = &Credentials{cert, key}
+		return nil
+	}
+}
+
+func WithHostPrefix(prefix string) ApplicationOpt {
+	return func(app *Application) error {
+		app.hostPrefix = prefix
 		return nil
 	}
 }

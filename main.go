@@ -3,6 +3,7 @@ package main
 import (
 	"cmp"
 	"embed"
+	"fmt"
 	"net/http"
 	"os"
 
@@ -20,21 +21,19 @@ var (
 	//go:embed all:templates
 	templates embed.FS
 
+	port = cmp.Or(os.Getenv("PORT"), "5000")
 	path = cmp.Or(os.Getenv("DATA_PATH"), os.TempDir()+"/congo-data")
 
 	app = congo.NewApplication(
+		congo.WithHostPrefix(fmt.Sprintf("/workspace-cgk/proxy/%s", port)),
 		congo.WithDatabase(congo.SetupDatabase(path, "app.db", migrations)),
 		congo.WithController("posts", new(controllers.PostController)),
 		congo.WithTemplates(templates))
 
-	auth    = congo_auth.OpenDirectory(app)
-	monitor = congo_stat.NewMonitor(app, auth)
+	auth = congo_auth.OpenDirectory(app)
 )
 
 func main() {
-	app.WithController("auth", auth.Controller())
-	app.WithController("status", monitor.Controller())
-
 	http.Handle("GET /{$}", app.Serve("homepage.html"))
 	http.Handle("GET /admin", auth.Secure(app.Serve("admin.html")))
 
@@ -43,5 +42,5 @@ func main() {
 	http.Handle("GET /blog/{post}", app.Serve("read-post.html"))
 	http.Handle("GET /blog/{post}/edit", app.Serve("edit-post.html"))
 
-	congo_boot.StartFromEnv(app, monitor)
+	congo_boot.StartFromEnv(app, congo_stat.NewMonitor(app, auth))
 }

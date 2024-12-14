@@ -1,2 +1,29 @@
-{{define "signup-form"}}
+{{define "congo-auth/signup-form"}}
+<div id="congo-auth--signup-form">
+
+  <div class="error"></div>
+
+  <form class="flex flex-col gap-y-4"
+        hx-post="{{host}}/_auth/signup"
+        hx-target="previous .error">
+
+    <input class="input input-bordered"
+           required name="name" type="text"
+           placeholder="Your user name">
+
+    <input class="input input-bordered"
+           required name="email" type="email"
+           placeholder="Your email address">
+
+    <input class="input input-bordered"
+           required name="password" type="password"
+           placeholder="A unique password">
+
+    <button class="btn btn-primary">
+      Signup
+    </button>
+
+  </form>
+
+</div>
 {{end}}

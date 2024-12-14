@@ -1,13 +1,10 @@
 package congo
 
 import (
-	"cmp"
 	"context"
-	"fmt"
 	"html/template"
 	"log"
 	"net/http"
-	"os"
 )
 
 type View struct {
@@ -17,22 +14,15 @@ type View struct {
 	Error    error
 }
 
-func (view View) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	view.Request = r.WithContext(context.TODO())
+func (view View) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	view.Request = req.WithContext(context.TODO())
 	funcs := template.FuncMap{
 		"db":  func() *Database { return view.App.DB },
-		"req": func() *http.Request { return r },
-		"host": func() string {
-			if env := os.Getenv("HOME"); env != "/home/coder" {
-				return ""
-			}
-			port := cmp.Or(os.Getenv("PORT"), "5000")
-			return fmt.Sprintf("/workspace-cgk/proxy/%s", port)
-		},
+		"req": func() *http.Request { return req },
 	}
 
 	for name, ctrl := range view.App.controllers {
-		funcs[name] = func() Controller { return ctrl.Handle(r) }
+		funcs[name] = func() Controller { return ctrl.Handle(req) }
 	}
 
 	if view.Error = view.template.Funcs(funcs).Execute(w, view); view.Error != nil {

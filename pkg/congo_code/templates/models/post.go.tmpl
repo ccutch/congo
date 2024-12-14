@@ -27,7 +27,7 @@ func NewPost(db *congo.Database, title, content string) (*Post, error) {
 }
 
 func GetPost(db *congo.Database, id string) (*Post, error) {
-	post := Post{Model: congo.Model{Database: db}}
+	post := Post{Model: congo.Model{DB: db}}
 	return &post, db.Query(`
 	
 		SELECT id, title, content, created_at, updated_at
@@ -46,14 +46,14 @@ func SearchPosts(db *congo.Database, query string) ([]*Post, error) {
 		WHERE title LIKE ?
 	
 	`, "%"+query+"%").All(func(scan congo.Scanner) error {
-		post := Post{Model: congo.Model{Database: db}}
+		post := Post{Model: congo.Model{DB: db}}
 		posts = append(posts, &post)
 		return scan(&post.ID, &post.Title, &post.Content, &post.CreatedAt, &post.UpdatedAt)
 	})
 }
 
 func (post *Post) Save() error {
-	return post.Query(`
+	return post.DB.Query(`
 	
 		UPDATE posts
 		SET title = ?, content = ?
@@ -64,7 +64,7 @@ func (post *Post) Save() error {
 }
 
 func (post *Post) Delete() error {
-	return post.Query(`
+	return post.DB.Query(`
 	
 		DELETE FROM posts
 		WHERE id = ?
