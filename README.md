@@ -34,6 +34,20 @@ type Post struct {
 	Content string
 }
 
+func SearchPosts(db *congo.Database, query string) (posts []*Post, err error) {
+	return posts, db.Query(`
+	
+		SELECT id, title, content, created_at, updated_at
+		FROM posts
+		WHERE title LIKE ?
+	
+	`, "%"+query+"%").All(func(scan congo.Scanner) (err error) {
+		post := Post{Model: congo.Model{DB: db}}
+		posts = append(posts, &post)
+		return scan(&post.ID, &post.Title, &post.Content, &post.CreatedAt, &post.UpdatedAt)
+	})
+}
+
 //...
 
 ```
@@ -58,6 +72,10 @@ func (ctrl PostController) Handle(r *http.Request) congo.Controller {
 	return &ctrl
 }
 
+func (app *PostController) SearchPosts() ([]*models.Post, error) {
+	return models.SearchPosts(app.DB, app.PathValue("query"))
+}
+
 //...
 
 ```
@@ -71,9 +89,9 @@ You can find an example of a view in `example/templates/blog-posts.html`.
 
 {{range posts.SearchPosts}}
 <a href="{{host}}/blog/{{.ID}}" class="card bg-base-300 shadow">
-  <div class="card-body">
-    <h2 class="card-title">{{.Title}}</h2>
-  </div>
+    <div class="card-body">
+        <h2 class="card-title">{{.Title}}</h2>
+    </div>
 </a>
 {{end}}
 

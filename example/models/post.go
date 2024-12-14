@@ -37,15 +37,14 @@ func GetPost(db *congo.Database, id string) (*Post, error) {
 	`, id).Scan(&post.ID, &post.Title, &post.Content, &post.CreatedAt, &post.UpdatedAt)
 }
 
-func SearchPosts(db *congo.Database, query string) ([]*Post, error) {
-	var posts []*Post
+func SearchPosts(db *congo.Database, query string) (posts []*Post, err error) {
 	return posts, db.Query(`
 	
 		SELECT id, title, content, created_at, updated_at
 		FROM posts
 		WHERE title LIKE ?
 	
-	`, "%"+query+"%").All(func(scan congo.Scanner) error {
+	`, "%"+query+"%").All(func(scan congo.Scanner) (err error) {
 		post := Post{Model: congo.Model{DB: db}}
 		posts = append(posts, &post)
 		return scan(&post.ID, &post.Title, &post.Content, &post.CreatedAt, &post.UpdatedAt)
