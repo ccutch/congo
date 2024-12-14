@@ -5,7 +5,7 @@ Welcome to my Go based MVC framework. Feel free to fork this repo and get starte
 ## Installing Tools
 The easiest way to get started is by installing the tools found in this repo's `cmd` directory like so:
 
-```
+```bash
 go install github.com/ccutch/congo/...
 
 create-congo-app # To get help writing code
@@ -17,19 +17,65 @@ congo-hosting # For help deploying your app
 ## Running the Project
 To get started running the project locally use the following command:
 
-```
+```bash
 go run ./example
 ```
 
 #### Models
-You can find an example of a model in `example/models/post.go`.
+You can find a full example of a model in `example/models/post.go`.
 
-#### Views
-You can find an example of a view in `example/templates/blog-posts.html`.
+```go
+
+type Post struct {
+	congo.Model
+	Title   string
+	Content string
+}
+
+//...
+
+```
 
 #### Controller
 You can find an example of a controller in `example/controllers/posts.go`.
 
+```go
+
+type PostController struct{ congo.BaseController }
+
+func (ctrl *PostController) Setup(app *congo.Application) {
+	ctrl.Application = app
+	app.HandleFunc("POST /blog", ctrl.handleCreate)
+	app.HandleFunc("PUT /blog/{post}", ctrl.handleUpdate)
+}
+
+func (ctrl PostController) Handle(r *http.Request) congo.Controller {
+	ctrl.Request = r
+	return &ctrl
+}
+
+//...
+
+```
+
+#### Views
+You can find an example of a view in `example/templates/blog-posts.html`.
+
+```html
+
+<!-- ... -->
+
+  {{range posts.SearchPosts}}
+  <a href="{{host}}/blog/{{.ID}}" class="card bg-base-300 shadow">
+    <div class="card-body">
+      <h2 class="card-title">{{.Title}}</h2>
+    </div>
+  </a>
+  {{end}}
+
+<!-- ... -->
+
+```
 
 ## Deploying to Digital Ocean
 You can use the command line tool found in `cmd/congo-hosting` to quickly get setup hosting you own congo instance. Run the following commands:
