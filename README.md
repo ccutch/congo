@@ -26,6 +26,8 @@ You can find a full example of a model in `example/models/post.go`.
 
 ```go
 
+//...
+
 type Post struct {
 	congo.Model
 	Title   string
@@ -40,6 +42,8 @@ type Post struct {
 You can find an example of a controller in `example/controllers/posts.go`.
 
 ```go
+
+//...
 
 type PostController struct{ congo.BaseController }
 
@@ -65,13 +69,13 @@ You can find an example of a view in `example/templates/blog-posts.html`.
 
 <!-- ... -->
 
-  {{range posts.SearchPosts}}
-  <a href="{{host}}/blog/{{.ID}}" class="card bg-base-300 shadow">
-    <div class="card-body">
-      <h2 class="card-title">{{.Title}}</h2>
-    </div>
-  </a>
-  {{end}}
+{{range posts.SearchPosts}}
+<a href="{{host}}/blog/{{.ID}}" class="card bg-base-300 shadow">
+  <div class="card-body">
+    <h2 class="card-title">{{.Title}}</h2>
+  </div>
+</a>
+{{end}}
 
 <!-- ... -->
 
