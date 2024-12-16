@@ -42,9 +42,11 @@ func SearchPosts(db *congo.Database, query string) (posts []*Post, err error) {
 		WHERE title LIKE ?
 	
 	`, "%"+query+"%").All(func(scan congo.Scanner) (err error) {
-		post := Post{Model: congo.Model{DB: db}}
-		posts = append(posts, &post)
-		return scan(&post.ID, &post.Title, &post.Content, &post.CreatedAt, &post.UpdatedAt)
+
+		p := Post{Model: congo.Model{DB: db}}
+		posts = append(posts, &p)
+		return scan(&p.ID, &p.Title, &p.Content, &p.CreatedAt, &p.UpdatedAt)
+
 	})
 }
 
