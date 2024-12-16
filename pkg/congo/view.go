@@ -26,7 +26,7 @@ func (view View) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if view.Error = view.template.Funcs(funcs).Execute(w, view); view.Error != nil {
-		log.Println("view error", view.Error)
+		log.Print("Error rendering view: ", view.Error)
 		view.template.ExecuteTemplate(w, "error-message", view.Error)
 	}
 }

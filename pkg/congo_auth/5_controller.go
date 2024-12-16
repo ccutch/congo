@@ -22,94 +22,104 @@ func (dir *Directory) Controller() *Controller {
 	return &Controller{congo.BaseController{}, dir}
 }
 
-func (ctrl *Controller) Setup(app *congo.Application) {
-	ctrl.Application = app
-	app.HandleFunc("POST /_auth/signup", ctrl.handleSignup)
-	app.HandleFunc("POST /_auth/signin", ctrl.handleSignin)
-	app.HandleFunc("POST /_auth/usage", ctrl.handleMyUsage)
-	app.HandleFunc("POST /_auth/logout", ctrl.handleLogout)
+func (auth *Controller) Setup(app *congo.Application) {
+	auth.Application = app
+	app.HandleFunc("GET /_auth/signup/{role}", auth.Template("congo-auth/signup-form"))
+	app.HandleFunc("POST /_auth/signup/{role}", auth.handleSignup)
+	app.HandleFunc("GET /_auth/signin/{role}", auth.Template("congo-auth/signin-form"))
+	app.HandleFunc("POST /_auth/signin/{role}", auth.handleSignin)
+	app.HandleFunc("GET /_auth/usage/{role}", auth.handleMyUsage)
+	app.HandleFunc("GET /_auth/logout/{role}", auth.handleLogout)
 }
 
-func (ctrl Controller) Handle(r *http.Request) congo.Controller {
-	ctrl.Request = r
-	return &ctrl
+func (auth Controller) Handle(r *http.Request) congo.Controller {
+	auth.Request = r
+	return &auth
 }
 
-func (ctrl Controller) handleSignup(w http.ResponseWriter, r *http.Request) {
-	role := cmp.Or(r.FormValue("role"), ctrl.dir.DefaultRole)
+func (auth *Controller) Current(role string) *Identity {
+	identity, _ := auth.dir.Authenticate(role, auth.Request)
+	return identity
+}
+
+func (auth Controller) handleSignup(w http.ResponseWriter, r *http.Request) {
+	role := cmp.Or(r.FormValue("role"), auth.dir.DefaultRole)
 	email, username, password := r.FormValue("email"), r.FormValue("username"), r.FormValue("password")
 	if email == "" || username == "" || password == "" {
-		ctrl.Render(w, r, "signup-form", fmt.Errorf("missing required fields"))
+		auth.Render(w, r, "congo-auth/error-message", fmt.Errorf("missing required fields"))
 		return
 	}
-	identity, err := ctrl.dir.Create(role, email, username, password)
+	identity, err := auth.dir.Create(role, email, username, password)
 	if err != nil {
-		ctrl.Render(w, r, "signup-form", fmt.Errorf("failed to create identity: %s", err))
+		auth.Render(w, r, "congo-auth/error-message", fmt.Errorf("failed to create identity: %s", err))
 		return
 	}
 	session, err := identity.NewSession()
 	if err != nil {
-		ctrl.Render(w, r, "signup-form", fmt.Errorf("failed to start session: %s", err))
+		auth.Render(w, r, "congo-auth/error-message", fmt.Errorf("failed to start session: %s", err))
 		return
 	}
-	r.AddCookie(&http.Cookie{
-		Name:     ctrl.dir.CookieName,
+	token := session.Token()
+	http.SetCookie(w, &http.Cookie{
+		Name:     auth.dir.CookieName + "-" + role,
 		Path:     "/",
-		Value:    session.Token(),
+		Value:    token,
 		Expires:  time.Now().Add(24 * time.Hour),
 		HttpOnly: true,
 	})
-	ctrl.Refresh(w, r)
+	auth.Refresh(w, r)
 }
 
-func (ctrl Controller) handleSignin(w http.ResponseWriter, r *http.Request) {
-	identity, err := ctrl.dir.Lookup(r.FormValue("username"))
+func (auth Controller) handleSignin(w http.ResponseWriter, r *http.Request) {
+	identity, err := auth.dir.Lookup(r.FormValue("username"))
 	if err != nil {
-		ctrl.Render(w, r, "signin-form", fmt.Errorf("failed to find identity"))
+		auth.Render(w, r, "congo-auth/error-message", fmt.Errorf("failed to find identity"))
 		return
 	}
 	if !identity.Verify(r.FormValue("password")) {
-		ctrl.Render(w, r, "signin-form", fmt.Errorf("failed to find identity"))
+		auth.Render(w, r, "congo-auth/error-message", fmt.Errorf("failed to find identity"))
 		return
 	}
 	session, err := identity.NewSession()
 	if err != nil {
-		ctrl.Render(w, r, "signin-form", fmt.Errorf("failed to start session: %s", err))
+		auth.Render(w, r, "congo-auth/error-message", fmt.Errorf("failed to start session: %s", err))
 		return
 	}
-	r.AddCookie(&http.Cookie{
-		Name:     ctrl.dir.CookieName,
+	http.SetCookie(w, &http.Cookie{
+		Name:     auth.dir.CookieName + "-" + r.PathValue("role"),
 		Path:     "/",
 		Value:    session.Token(),
 		Expires:  time.Now().Add(24 * time.Hour),
 		HttpOnly: true,
 	})
-	ctrl.Refresh(w, r)
+	auth.Refresh(w, r)
 }
 
-func (ctrl Controller) handleMyUsage(w http.ResponseWriter, r *http.Request) {
-	i, _ := ctrl.dir.Authenticate(r)
+func (auth Controller) handleMyUsage(w http.ResponseWriter, r *http.Request) {
+	role := r.PathValue("role")
+	i, _ := auth.dir.Authenticate(role, r)
 	if i == nil {
-		ctrl.Render(w, r, "signin-form", nil)
+		auth.Render(w, r, "congo-auth/signin-form", role)
 		return
 	}
 	usages, err := i.Usages()
-	ctrl.Render(w, r, "my-usages", struct {
+	auth.Render(w, r, "my-usages", struct {
 		Usages []*Usage
 		Error  error
 	}{usages, err})
 }
 
-func (ctrl Controller) handleLogout(w http.ResponseWriter, r *http.Request) {
-	if _, s := ctrl.dir.Authenticate(r); s != nil {
+func (auth Controller) handleLogout(w http.ResponseWriter, r *http.Request) {
+	role := r.PathValue("role")
+	if _, s := auth.dir.Authenticate(role, r); s != nil {
 		s.End()
-		r.AddCookie(&http.Cookie{
-			Name:     ctrl.dir.CookieName,
+		http.SetCookie(w, &http.Cookie{
+			Name:     auth.dir.CookieName + "-" + role,
 			Path:     "/",
 			Value:    "",
 			Expires:  time.Now().Add(-1 * time.Hour),
 			HttpOnly: true,
 		})
 	}
-	ctrl.Redirect(w, r, ctrl.dir.LogoutRedirect)
+	auth.Redirect(w, r, auth.dir.LogoutRedirect)
 }

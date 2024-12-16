@@ -16,41 +16,23 @@ type Usage struct {
 
 func (dir *Directory) Secure(fn http.Handler, roles ...string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if i, _ := dir.Authenticate(r); i != nil {
-			if len(roles) == 0 {
+		for _, role := range roles {
+			if i, _ := dir.Authenticate(role, r); i != nil {
 				dir.TrackUsage(i, r.URL.String(), true)
 				fn.ServeHTTP(w, r)
-				return
 			}
-			for _, role := range roles {
-				if i.Role == role {
-					dir.TrackUsage(i, r.URL.String(), true)
-					fn.ServeHTTP(w, r)
-					return
-				}
-			}
-			dir.TrackUsage(i, r.URL.String(), false)
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
 		}
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
 	}
 }
 
-func (dir *Directory) SecureFunc(fn congo.HandlerFunc, roles ...string) congo.HandlerFunc {
+func (dir *Directory) SecureFunc(fn http.HandlerFunc, roles ...string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if i, _ := dir.Authenticate(r); i != nil {
-			if len(roles) == 0 {
+		for _, role := range roles {
+			if i, _ := dir.Authenticate(role, r); i != nil {
 				dir.TrackUsage(i, r.URL.String(), true)
 				fn(w, r)
-				return
 			}
-			for _, role := range roles {
-				if i.Role == role {
-					dir.TrackUsage(i, r.URL.String(), true)
-					fn(w, r)
-					return
-				}
-			}
-			dir.TrackUsage(i, r.URL.String(), false)
 		}
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 	}

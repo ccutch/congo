@@ -49,8 +49,8 @@ func (s *Session) End() error {
 	`, s.ID).Exec()
 }
 
-func (dir *Directory) Authenticate(r *http.Request) (*Identity, *Session) {
-	cookie, err := r.Cookie(dir.CookieName)
+func (dir *Directory) Authenticate(role string, r *http.Request) (*Identity, *Session) {
+	cookie, err := r.Cookie(dir.CookieName + "-" + role)
 	if err != nil {
 		return nil, nil
 	}
@@ -92,5 +92,5 @@ func (dir *Directory) GetSession(id string) (*Session, error) {
 		SELECT id, identity_id, created_at, updated_at
 		FROM sessions
 		WHERE id = ?
-	`).Scan(&s.ID, &s.IdentID, &s.CreatedAt, &s.UpdatedAt)
+	`, id).Scan(&s.ID, &s.IdentID, &s.CreatedAt, &s.UpdatedAt)
 }

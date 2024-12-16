@@ -3,13 +3,13 @@
 
   <div class="error"></div>
 
-  <form class="flex flex-col gap-y-4"
-        hx-post="{{host}}/_auth/signin"
+  <form class="flex flex-col gap-y-4 mb-0"
+        hx-post="{{host}}/_auth/signin/{{.}}"
         hx-target="previous .error">
 
     <input class="input input-bordered"
-           required name="email" type="email"
-           placeholder="Your email address">
+           required name="username" type="text"
+           placeholder="Username or email">
 
     <input class="input input-bordered"
            required name="password" type="password"

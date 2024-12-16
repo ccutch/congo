@@ -7,7 +7,6 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -31,7 +30,6 @@ func NewClient(path, apiKey string) *Client {
 
 func (client *Client) GenerateSSHKey(name string) (string, string, error) {
 	serverData := filepath.Join(client.dataPath, name)
-	log.Println("server data", serverData)
 	os.MkdirAll(serverData, 0700)
 	publicKeyPath := fmt.Sprintf("%s/id_rsa.pub", serverData)
 	privateKeyPath := fmt.Sprintf("%s/id_rsa", serverData)

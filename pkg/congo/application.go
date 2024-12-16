@@ -12,10 +12,11 @@ import (
 type Application struct {
 	DB          *Database
 	controllers map[string]Controller
-	templates   *template.Template
 	endpoints   *http.ServeMux
 	creds       *Credentials
 	hostPrefix  string
+	sources     []fs.FS
+	templates   *template.Template
 }
 
 type Credentials struct {
@@ -29,6 +30,7 @@ func NewApplication(opts ...ApplicationOpt) *Application {
 	app := Application{
 		controllers: map[string]Controller{},
 		endpoints:   http.NewServeMux(),
+		sources:     []fs.FS{},
 	}
 
 	for _, opt := range opts {
@@ -38,6 +40,17 @@ func NewApplication(opts ...ApplicationOpt) *Application {
 	}
 
 	return &app
+}
+
+func (app *Application) Template(name string) http.HandlerFunc {
+	view := View{App: app}
+	return func(w http.ResponseWriter, r *http.Request) {
+		if view.template = app.templates.Lookup(name); view.template != nil {
+			view.ServeHTTP(w, r)
+			return
+		}
+		http.NotFound(w, r)
+	}
 }
 
 func (app *Application) Serve(name string) (view View) {
@@ -101,40 +114,26 @@ func WithTemplates(templates fs.FS) ApplicationOpt {
 	}
 }
 
-func (app *Application) WithTemplates(templates fs.FS, patterns ...string) error {
-	if app.templates == nil {
-		funcs := template.FuncMap{
-			"db":   func() *Database { return app.DB },
-			"req":  func() *http.Request { return nil },
-			"host": func() string { return app.hostPrefix },
-		}
-
-		for name, ctrl := range app.controllers {
-			funcs[name] = func() Controller { return ctrl }
-		}
-
-		app.templates = template.New("").Funcs(funcs)
-	}
-
-	if tmpl, err := app.templates.ParseFS(templates, "templates/*.html"); err == nil {
-		app.templates = tmpl
-	}
-
-	if tmpl, err := app.templates.ParseFS(templates, "templates/**/*.html"); err == nil {
-		app.templates = tmpl
-	}
-
+func (app *Application) WithTemplates(source fs.FS) error {
+	app.sources = append(app.sources, source)
 	return nil
 }
 
-func WithEndpoint(path string, fn HandlerFunc) ApplicationOpt {
+func WithEndpoint(path string, fn http.HandlerFunc) ApplicationOpt {
 	return func(app *Application) error {
 		app.HandleFunc(path, fn)
 		return nil
 	}
 }
 
-func (app *Application) HandleFunc(path string, fn HandlerFunc) {
+func (app *Application) Handle(path string, fn http.Handler) {
+	app.endpoints.Handle(path, Endpoint{
+		App:  app,
+		Func: fn.ServeHTTP,
+	})
+}
+
+func (app *Application) HandleFunc(path string, fn http.HandlerFunc) {
 	app.endpoints.Handle(path, Endpoint{
 		App:  app,
 		Func: fn,
@@ -152,5 +151,37 @@ func WithHostPrefix(prefix string) ApplicationOpt {
 	return func(app *Application) error {
 		app.hostPrefix = prefix
 		return nil
+	}
+}
+
+func (app *Application) PrepareTemplates() {
+	if app.templates != nil {
+		return
+	}
+
+	funcs := template.FuncMap{
+		"db":   func() *Database { return app.DB },
+		"req":  func() *http.Request { return nil },
+		"host": func() string { return app.hostPrefix },
+	}
+
+	for name, ctrl := range app.controllers {
+		funcs[name] = func() Controller { return ctrl }
+	}
+
+	app.templates = template.New("").Funcs(funcs)
+
+	for _, source := range app.sources {
+		if tmpl, err := app.templates.ParseFS(source, "templates/*.html"); err == nil {
+			app.templates = tmpl
+		} else {
+			log.Fatal("Failed to parse root templates", err)
+		}
+
+		if tmpl, err := app.templates.ParseFS(source, "templates/**/*.html"); err == nil {
+			app.templates = tmpl
+		} else {
+			log.Print("Failed to parse root templates", err)
+		}
 	}
 }

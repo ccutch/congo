@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/ccutch/congo/example/controllers"
+
 	"github.com/ccutch/congo/pkg/congo"
 	"github.com/ccutch/congo/pkg/congo_auth"
 	"github.com/ccutch/congo/pkg/congo_boot"
@@ -34,8 +35,10 @@ var (
 )
 
 func main() {
+	app.PrepareTemplates()
+
 	http.Handle("GET /{$}", app.Serve("homepage.html"))
-	http.Handle("GET /admin", auth.Secure(app.Serve("admin.html")))
+	http.Handle("GET /admin", auth.Secure(app.Serve("admin.html"), "admin"))
 
 	http.Handle("GET /blog", app.Serve("blog-posts.html"))
 	http.Handle("GET /blog/write", auth.Secure(app.Serve("write-post.html")))
