@@ -10,9 +10,9 @@ import (
 )
 
 type Application struct {
+	*http.ServeMux
 	DB          *Database
 	controllers map[string]Controller
-	endpoints   *http.ServeMux
 	creds       *Credentials
 	hostPrefix  string
 	sources     []fs.FS
@@ -28,45 +28,33 @@ type ApplicationOpt func(*Application) error
 
 func NewApplication(opts ...ApplicationOpt) *Application {
 	app := Application{
+		ServeMux:    http.NewServeMux(),
 		controllers: map[string]Controller{},
-		endpoints:   http.NewServeMux(),
 		sources:     []fs.FS{},
 	}
-
 	for _, opt := range opts {
 		if err := opt(&app); err != nil {
 			log.Fatal("Failed to setup Congo server:", err)
 		}
 	}
-
 	return &app
 }
 
-func (app *Application) Template(name string) http.HandlerFunc {
-	view := View{App: app}
-	return func(w http.ResponseWriter, r *http.Request) {
-		if view.template = app.templates.Lookup(name); view.template != nil {
-			view.ServeHTTP(w, r)
-			return
-		}
-		http.NotFound(w, r)
-	}
-}
-
-func (app *Application) Serve(name string) (view View) {
-	view.App = app
-	if view.template = app.templates.Lookup(name); view.template == nil {
+func (app *Application) Serve(name string) http.Handler {
+	if page := app.templates.Lookup(name); page == nil {
 		log.Fatalf("Template %s not found", name)
 	}
-	return view
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		app.Render(w, r, name, nil)
+	})
 }
 
 func (app Application) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	app.endpoints.ServeHTTP(w, r)
+	app.ServeMux.ServeHTTP(w, r)
 }
 
 func (app *Application) Start() error {
-	http.Handle("/", app.endpoints)
+	http.Handle("/", app.ServeMux)
 	go app.sslServer()
 	addr := "0.0.0.0:" + cmp.Or(os.Getenv("PORT"), "5000")
 	log.Print("Serving Unsecure Congo @ http://" + addr)
@@ -126,20 +114,6 @@ func WithEndpoint(path string, fn http.HandlerFunc) ApplicationOpt {
 	}
 }
 
-func (app *Application) Handle(path string, fn http.Handler) {
-	app.endpoints.Handle(path, Endpoint{
-		App:  app,
-		Func: fn.ServeHTTP,
-	})
-}
-
-func (app *Application) HandleFunc(path string, fn http.HandlerFunc) {
-	app.endpoints.Handle(path, Endpoint{
-		App:  app,
-		Func: fn,
-	})
-}
-
 func (app *Application) WithCredentials(cert, key string) {
 	if cert == "" || key == "" {
 		return
@@ -155,10 +129,6 @@ func WithHostPrefix(prefix string) ApplicationOpt {
 }
 
 func (app *Application) PrepareTemplates() {
-	if app.templates != nil {
-		return
-	}
-
 	funcs := template.FuncMap{
 		"db":   func() *Database { return app.DB },
 		"req":  func() *http.Request { return nil },
@@ -183,5 +153,23 @@ func (app *Application) PrepareTemplates() {
 		} else {
 			log.Print("Failed to parse root templates", err)
 		}
+	}
+}
+
+func (app *Application) Render(w http.ResponseWriter, r *http.Request, page string, data any) {
+	funcs := template.FuncMap{
+		"db":   func() *Database { return app.DB },
+		"req":  func() *http.Request { return r },
+		"host": func() string { return app.hostPrefix },
+	}
+
+	for name, ctrl := range app.controllers {
+		funcs[name] = func() Controller { return ctrl.Handle(r) }
+	}
+
+	template := app.templates.Lookup(page)
+	if err := template.Funcs(funcs).Execute(w, data); err != nil {
+		log.Print("Error rendering: ", err)
+		app.templates.ExecuteTemplate(w, "error-message", err)
 	}
 }

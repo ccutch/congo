@@ -24,12 +24,9 @@ func (dir *Directory) Controller() *Controller {
 
 func (auth *Controller) Setup(app *congo.Application) {
 	auth.Application = app
-	app.HandleFunc("GET /_auth/signup/{role}", auth.Template("congo-auth/signup-form"))
 	app.HandleFunc("POST /_auth/signup/{role}", auth.handleSignup)
-	app.HandleFunc("GET /_auth/signin/{role}", auth.Template("congo-auth/signin-form"))
 	app.HandleFunc("POST /_auth/signin/{role}", auth.handleSignin)
-	app.HandleFunc("GET /_auth/usage/{role}", auth.handleMyUsage)
-	app.HandleFunc("GET /_auth/logout/{role}", auth.handleLogout)
+	app.HandleFunc("POST /_auth/logout/{role}", auth.handleLogout)
 }
 
 func (auth Controller) Handle(r *http.Request) congo.Controller {
@@ -40,6 +37,11 @@ func (auth Controller) Handle(r *http.Request) congo.Controller {
 func (auth *Controller) Current(role string) *Identity {
 	identity, _ := auth.dir.Authenticate(role, auth.Request)
 	return identity
+}
+
+func (auth *Controller) Usage() ([]*Usage, error) {
+	identity := auth.Current(auth.PathValue("role"))
+	return identity.Usages()
 }
 
 func (auth Controller) handleSignup(w http.ResponseWriter, r *http.Request) {
@@ -93,20 +95,6 @@ func (auth Controller) handleSignin(w http.ResponseWriter, r *http.Request) {
 		HttpOnly: true,
 	})
 	auth.Refresh(w, r)
-}
-
-func (auth Controller) handleMyUsage(w http.ResponseWriter, r *http.Request) {
-	role := r.PathValue("role")
-	i, _ := auth.dir.Authenticate(role, r)
-	if i == nil {
-		auth.Render(w, r, "congo-auth/signin-form", role)
-		return
-	}
-	usages, err := i.Usages()
-	auth.Render(w, r, "my-usages", struct {
-		Usages []*Usage
-		Error  error
-	}{usages, err})
 }
 
 func (auth Controller) handleLogout(w http.ResponseWriter, r *http.Request) {

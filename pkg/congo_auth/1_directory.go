@@ -9,6 +9,7 @@ import (
 )
 
 type Directory struct {
+	app            *congo.Application
 	DB             *congo.Database
 	CookieName     string
 	DefaultRole    string
@@ -20,6 +21,7 @@ var migrations embed.FS
 
 func OpenDirectory(app *congo.Application, opts ...DirectoryOpt) *Directory {
 	dir := &Directory{
+		app:            app,
 		DB:             congo.SetupDatabase(app.DB.Root, "directory.db", migrations),
 		CookieName:     "congo-app",
 		DefaultRole:    "user",

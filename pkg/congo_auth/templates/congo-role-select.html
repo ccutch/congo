@@ -1,0 +1,19 @@
+<html>
+
+<head>
+  <title>Select Role</title>
+  {{template "includes"}}
+</head>
+
+<body>
+  {{block "congo-auth/role-select" .}}
+  {{range $role := .}}
+  <button class="btn btn-sm btn-primary"
+          hx-get="{{host}}/_auth/signin/{{$role}}" >
+    {{$role}}
+  </button>
+  {{end}}
+  {{end}}
+</body>
+
+</html>

@@ -2,7 +2,6 @@ package congo
 
 import (
 	"cmp"
-	"html/template"
 	"net/http"
 	"strconv"
 )
@@ -51,18 +50,4 @@ func (ctrl *BaseController) Redirect(w http.ResponseWriter, r *http.Request, pat
 		return
 	}
 	http.Redirect(w, r, path, http.StatusFound)
-}
-
-func (ctrl *BaseController) Render(w http.ResponseWriter, r *http.Request, page string, data any) {
-	funcs := template.FuncMap{
-		"db":   func() *Database { return ctrl.DB },
-		"req":  func() *http.Request { return r },
-		"host": func() string { return ctrl.hostPrefix },
-	}
-	for name, ctrl := range ctrl.controllers {
-		funcs[name] = func() Controller { return ctrl.Handle(r) }
-	}
-	if err := ctrl.Application.templates.Funcs(funcs).Execute(w, data); err != nil {
-		ctrl.Application.templates.ExecuteTemplate(w, "error-message", err)
-	}
 }

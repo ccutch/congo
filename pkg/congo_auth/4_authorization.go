@@ -14,19 +14,14 @@ type Usage struct {
 	Allowed  bool
 }
 
-func (dir *Directory) Secure(fn http.Handler, roles ...string) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		for _, role := range roles {
-			if i, _ := dir.Authenticate(role, r); i != nil {
-				dir.TrackUsage(i, r.URL.String(), true)
-				fn.ServeHTTP(w, r)
-			}
-			http.Error(w, "unauthorized", http.StatusUnauthorized)
-		}
-	}
+func (dir *Directory) Secure(h http.Handler, roles ...string) http.HandlerFunc {
+	return dir.SecureFunc(h.ServeHTTP, roles...)
 }
 
 func (dir *Directory) SecureFunc(fn http.HandlerFunc, roles ...string) http.HandlerFunc {
+	if len(roles) == 0 {
+		roles = []string{dir.DefaultRole}
+	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		for _, role := range roles {
 			if i, _ := dir.Authenticate(role, r); i != nil {
@@ -34,7 +29,11 @@ func (dir *Directory) SecureFunc(fn http.HandlerFunc, roles ...string) http.Hand
 				fn(w, r)
 			}
 		}
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		if len(roles) == 1 {
+			dir.app.Render(w, r, "congo-signin-form.html", roles[0])
+		} else {
+			dir.app.Render(w, r, "congo-role-select.html", roles)
+		}
 	}
 }
 
