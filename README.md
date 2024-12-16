@@ -104,6 +104,7 @@ To run the app setup the app like shown in ./examples/main.go:
 ```go
 
 //...
+
 var (
 	//go:embed all:migrations
 	migrations embed.FS
@@ -135,7 +136,7 @@ You can use the command line tool found in `cmd/congo-hosting` to quickly get se
 ```bash
 export DIGITAL_OCEAN_API_KEY=<your-digital-ocean-api-key>
 
-go run ./cmd/congo-hosting launch
+congo-hosting launch
 
 curl http://<your-ip-address>:8080
 ```
@@ -144,7 +145,7 @@ curl http://<your-ip-address>:8080
 #### Forwarding Traffic
 First take the IP address given to you when the server was launch and create an A record with your DNS provider. Then run the following:
 ```bash
-go run ./cmd/congo-hosting gen-certs --domain www.example.com
+congo-hosting gen-certs --domain www.example.com
 
 curl https://www.example.com
 ```
@@ -153,7 +154,7 @@ curl https://www.example.com
 #### Connect to Server
 If you want to connect to the server directly via a secure connection use:
 ```bash
-go run ./cmd/congo-hosting connect
+congo-hosting connect
 
 tmux ls # <-- check for the running server process in tmux
 ```
@@ -163,5 +164,5 @@ tmux ls # <-- check for the running server process in tmux
 If you need to restart the server, and maybe want to update the binary use:
 ```bash
 go build -o congo . # Building a new binary executable
-go run ./cmd/congo-hosting restart --binary ./congo
+congo-hosting restart --binary ./congo
 ```
