@@ -21,9 +21,12 @@ var (
 	//go:embed all:templates
 	templates embed.FS
 
+	port = cmp.Or(os.Getenv("PORT"), "5000")
 	path = cmp.Or(os.Getenv("DATA_PATH"), os.TempDir()+"/{{.}}")
 
 	app = congo.NewApplication(
+	  // TODO: Uncomment if you are using Coder server
+		// congo.WithHostPrefix(fmt.Sprintf("/proxy/%s", port)),
 		congo.WithDatabase(congo.SetupDatabase(path, "app.db", migrations)),
 		congo.WithController("posts", new(controllers.PostController)),
 		congo.WithTemplates(templates))

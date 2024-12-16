@@ -35,8 +35,6 @@ var (
 )
 
 func main() {
-	app.PrepareTemplates()
-
 	http.Handle("GET /{$}", app.Serve("homepage.html"))
 	http.Handle("GET /admin", auth.Secure(app.Serve("admin.html"), "admin"))
 

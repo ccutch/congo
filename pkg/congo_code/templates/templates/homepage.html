@@ -1,4 +1,4 @@
-<html data-theme="emerald">
+<html data-theme="dim">
 
 <head>
   <title>Welcome to Congo</title>
@@ -10,6 +10,46 @@
   <h1>Welcome !</h1>
 
   <a href="{{host}}/blog" class="btn btn-primary">View Blog Posts</a>
+
+
+  {{with auth.Current "user"}}
+  <div class="card w-full max-w-sm my-12 mx-auto bg-base-300 shadow">
+    <div class="card-body">
+      <h2 class="card-title">
+        Welcome Back!
+      </h2>
+      <h3 class="text-3xl font-semibold">
+        {{.Username}}
+      </h3>
+
+      <div class="card-actions justify-end">
+        <a hx-post="{{host}}/_auth/logout/user" class="btn btn-primary btn-sm">
+          Signout
+        </a>
+      </div>
+    </div>
+  </div>
+
+  {{else}}
+  <div class="card w-full max-w-sm my-12 mx-auto bg-base-300 shadow">
+    <div class="card-body">
+      <h2 class="card-title">Welcome Aboard!</h2>
+
+      <div role="tablist" class="tabs tabs-bordered pt-2">
+        <input type="radio" name="auth-tabs" role="tab" class="tab px-6 mr-3" aria-label="Signup" checked="checked" />
+        <div role="tabpanel" class="tab-content pt-3">
+          {{template "congo-auth/signup-form" "user"}}
+        </div>
+
+        <input type="radio" name="auth-tabs" role="tab" class="tab px-6" aria-label="Signin" />
+        <div role="tabpanel" class="tab-content pt-3">
+          {{template "congo-auth/signin-form" "user"}}
+        </div>
+      </div>
+    </div>
+  </div>
+  {{end}}
+
 </body>
 
 </html>

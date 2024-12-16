@@ -10,7 +10,7 @@ import (
 )
 
 type Application struct {
-	*http.ServeMux
+	router      *http.ServeMux
 	DB          *Database
 	controllers map[string]Controller
 	creds       *Credentials
@@ -28,7 +28,7 @@ type ApplicationOpt func(*Application) error
 
 func NewApplication(opts ...ApplicationOpt) *Application {
 	app := Application{
-		ServeMux:    http.NewServeMux(),
+		router:      http.NewServeMux(),
 		controllers: map[string]Controller{},
 		sources:     []fs.FS{},
 	}
@@ -41,6 +41,9 @@ func NewApplication(opts ...ApplicationOpt) *Application {
 }
 
 func (app *Application) Serve(name string) http.Handler {
+	if app.templates == nil {
+		app.PrepareTemplates()
+	}
 	if page := app.templates.Lookup(name); page == nil {
 		log.Fatalf("Template %s not found", name)
 	}
@@ -50,11 +53,11 @@ func (app *Application) Serve(name string) http.Handler {
 }
 
 func (app Application) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	app.ServeMux.ServeHTTP(w, r)
+	app.router.ServeHTTP(w, r)
 }
 
 func (app *Application) Start() error {
-	http.Handle("/", app.ServeMux)
+	http.Handle("/", app.router)
 	go app.sslServer()
 	addr := "0.0.0.0:" + cmp.Or(os.Getenv("PORT"), "5000")
 	log.Print("Serving Unsecure Congo @ http://" + addr)
@@ -112,6 +115,14 @@ func WithEndpoint(path string, fn http.HandlerFunc) ApplicationOpt {
 		app.HandleFunc(path, fn)
 		return nil
 	}
+}
+
+func (app *Application) Handle(path string, fn http.Handler) {
+	app.router.Handle(path, fn)
+}
+
+func (app *Application) HandleFunc(path string, fn http.HandlerFunc) {
+	app.router.HandleFunc(path, fn)
 }
 
 func (app *Application) WithCredentials(cert, key string) {

@@ -9,12 +9,14 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/mattn/go-sqlite3 v1.14.24
 	github.com/shirou/gopsutil/v3 v3.24.5
+	github.com/sosedoff/gitkit v0.4.0
 	golang.org/x/crypto v0.27.0
 	golang.org/x/oauth2 v0.23.0
 )
 
 require (
 	github.com/go-ole/go-ole v1.2.6 // indirect
+	github.com/gofrs/uuid v4.0.0+incompatible // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
