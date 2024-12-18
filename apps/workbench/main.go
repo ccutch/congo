@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/ccutch/congo/example/controllers"
 
@@ -41,9 +42,9 @@ var (
 	repo, _ = code.Repo("code",
 		congo_code.WithName("Code"))
 
-	workspace, err = code.Workspace("workspace-2",
-		congo_code.WithPort(5001),
-		congo_code.WithRepo(repo))
+	workspace, err = code.Workspace("workspace2",
+		congo_code.WithRepo(repo),
+		congo_code.WithPort(5001))
 )
 
 func main() {
@@ -51,20 +52,18 @@ func main() {
 		log.Println("Failed to setup workspace", err)
 	}
 
-	if err = workspace.Start(); err != nil {
-		log.Println("Failed to start workspace", err)
-	}
-
-	app.Handle("/code/", repo.Server())
-	app.Handle("/coder/", http.StripPrefix("/coder/", workspace.Server()))
+	go func() {
+		time.Sleep(time.Second)
+		if err = workspace.Start(); err != nil {
+			log.Println("Failed to start workspace", err)
+		}
+	}()
 
 	app.Handle("GET /{$}", app.Serve("homepage.html"))
-	app.Handle("GET /admin", auth.Secure(app.Serve("admin.html"), "admin"))
+	app.Handle("/code/", repo.Server())
 
-	app.Handle("GET /blog", app.Serve("blog-posts.html"))
-	app.Handle("GET /blog/write", auth.Secure(app.Serve("write-post.html")))
-	app.Handle("GET /blog/{post}", app.Serve("read-post.html"))
-	app.Handle("GET /blog/{post}/edit", app.Serve("edit-post.html"))
+	coder := auth.Secure(workspace.Server())
+	app.Handle("/coder/", http.StripPrefix("/coder/", coder))
 
 	congo_boot.StartFromEnv(app, congo_stat.NewMonitor(app, auth))
 }

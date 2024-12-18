@@ -1,0 +1,7 @@
+CREATE TABLE posts (
+    id         TEXT PRIMARY KEY,
+    title      TEXT NOT NULL UNIQUE,
+    content    TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

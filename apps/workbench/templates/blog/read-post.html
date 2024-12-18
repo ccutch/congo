@@ -1,0 +1,30 @@
+<html data-theme="dim">
+
+<head>
+  <title>Welcome to Congo</title>
+  <meta name="description" content="Connor + GoLang">
+  {{template "includes"}}
+</head>
+
+<body hx-boost="true">
+  {{with posts.CurrentPost}}
+  <div class="flex flex-col gap-4 max-w-screen-lg w-full mx-auto my-12">
+    <div class="flex gap-4">
+      <a href="{{host}}/blog" class="btn btn-sm btn-ghost">
+        Blog Posts
+      </a>
+      <a href="{{host}}/blog/{{.ID}}/edit" class="btn btn-sm btn-ghost">
+        Edit Post
+      </a>
+    </div>
+    <div class="card bg-base-300 shadow">
+      <div class="card-body">
+        <h2 class="card-title">{{.Title}}</h2>
+        <p class="whitespace-pre">{{.Content}}</p>
+      </div>
+    </div>
+  </div>
+  {{end}}
+</body>
+
+</html>
