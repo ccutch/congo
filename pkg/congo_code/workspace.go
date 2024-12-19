@@ -3,9 +3,9 @@ package congo_code
 import (
 	"bytes"
 	_ "embed"
+	"errors"
 	"fmt"
 	"log"
-	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"strings"
@@ -22,45 +22,52 @@ var startWorkspace string
 var cloneRepository string
 
 type Workspace struct {
+	Name string
+	Port int
 	code *CongoCode
 	repo *Repository
-	name string
-	port int
+	*httputil.ReverseProxy
 }
 
+type WorkspaceOpt func(*Workspace) error
+
 func (code *CongoCode) Workspace(name string, opts ...WorkspaceOpt) (*Workspace, error) {
-	w := Workspace{code, nil, name, 8081}
+	w := Workspace{name, 8081, code, nil, nil}
 	for _, opt := range opts {
 		if err := opt(&w); err != nil {
 			return nil, err
 		}
 	}
+	url, err := url.Parse(fmt.Sprintf("http://localhost:%d", w.Port))
+	if err != nil {
+		return nil, err
+	}
+	w.ReverseProxy = httputil.NewSingleHostReverseProxy(url)
 	return &w, nil
 }
 
 func (w *Workspace) Running() bool {
-	stdout, _, err := w.code.docker("inspect", "-f", "{{.State.Status}}", w.name)
+	stdout, _, err := w.code.docker("inspect", "-f", "{{.State.Status}}", w.Name)
 	return err == nil && strings.TrimSpace(stdout.String()) == "running"
 }
 
 func (w *Workspace) Start() error {
 	if w.Running() {
-		log.Printf("Workspace %s already running", w.name)
+		log.Printf("Workspace %s already running", w.Name)
 		return nil
 	}
-	_, _, err := w.code.bash(fmt.Sprintf(setupWorkspace, w.name, w.code.app.DB.Root))
+	_, output, err := w.code.bash(fmt.Sprintf(setupWorkspace, w.Name, w.code.app.DB.Root))
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to setup workspace: %s", output.String())
 	}
 	time.Sleep(time.Second)
-	_, _, err = w.code.bash(fmt.Sprintf(startWorkspace, w.name, w.code.app.DB.Root, w.port))
+	_, output, err = w.code.bash(fmt.Sprintf(startWorkspace, w.Name, w.code.app.DB.Root, w.Port))
 	if err != nil {
-		return err
+		return errors.Join(errors.New("failed to start workspace"), err)
 	}
 	if w.repo != nil {
-		output, errput, err := w.Run(cloneRepository)
+		output, errput, _ := w.Run(cloneRepository)
 		log.Println("cloning", output.String(), errput.String())
-		return err
 	} else {
 		log.Println("No repo detected")
 	}
@@ -68,22 +75,26 @@ func (w *Workspace) Start() error {
 }
 
 func (w *Workspace) Run(args ...string) (bytes.Buffer, bytes.Buffer, error) {
-	return w.code.docker("exec", w.name, "sh", "-c", strings.Join(args, " "))
+	return w.code.docker("exec", w.Name, "sh", "-c", strings.Join(args, " "))
 }
 
-func (w *Workspace) Server() http.Handler {
-	url, err := url.Parse(fmt.Sprintf("http://localhost:%d", w.port))
-	if err != nil {
-		log.Fatalf("Failed to forward to: localhost:%d", w.port)
+func (w *Workspace) Stop() error {
+	if !w.Running() {
+		log.Printf("Workspace %s is not running", w.Name)
+		return nil
 	}
-	return httputil.NewSingleHostReverseProxy(url)
+	if _, _, err := w.code.docker("stop", w.Name); err != nil {
+		return fmt.Errorf("failed to stop workspace %s: %w", w.Name, err)
+	}
+	if _, _, err := w.code.docker("rm", w.Name); err != nil {
+		return fmt.Errorf("failed to remove workspace %s: %w", w.Name, err)
+	}
+	return nil
 }
-
-type WorkspaceOpt func(*Workspace) error
 
 func WithPort(port int) WorkspaceOpt {
 	return func(w *Workspace) error {
-		w.port = port
+		w.Port = port
 		return nil
 	}
 }

@@ -49,8 +49,8 @@ func (s *Session) End() error {
 	`, s.ID).Exec()
 }
 
-func (dir *Directory) Authenticate(role string, r *http.Request) (*Identity, *Session) {
-	cookie, err := r.Cookie(dir.CookieName + "-" + role)
+func (auth *CongoAuth) Authenticate(role string, r *http.Request) (*Identity, *Session) {
+	cookie, err := r.Cookie(auth.CookieName + "-" + role)
 	if err != nil {
 		return nil, nil
 	}
@@ -73,12 +73,12 @@ func (dir *Directory) Authenticate(role string, r *http.Request) (*Identity, *Se
 	if !valid {
 		return nil, nil
 	}
-	session, err := dir.GetSession(sessionID)
+	session, err := auth.GetSession(sessionID)
 	if err != nil {
 		log.Printf("Failed to lookup session %s: %s", sessionID, err)
 		return nil, nil
 	}
-	identity, err := dir.Lookup(session.IdentID)
+	identity, err := auth.Lookup(session.IdentID)
 	if err != nil {
 		log.Printf("Failed to lookup identity %s: %s", session.IdentID, err)
 		return nil, nil
@@ -86,8 +86,8 @@ func (dir *Directory) Authenticate(role string, r *http.Request) (*Identity, *Se
 	return identity, session
 }
 
-func (dir *Directory) GetSession(id string) (*Session, error) {
-	s := &Session{Model: congo.Model{DB: dir.DB}}
+func (auth *CongoAuth) GetSession(id string) (*Session, error) {
+	s := &Session{Model: congo.Model{DB: auth.DB}}
 	return s, s.DB.Query(`
 		SELECT id, identity_id, created_at, updated_at
 		FROM sessions

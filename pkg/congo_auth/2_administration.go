@@ -23,8 +23,8 @@ func hash(pass string) (hash []byte, err error) {
 	return bcrypt.GenerateFromPassword([]byte(pass), bcrypt.DefaultCost)
 }
 
-func (dir *Directory) Create(role, email, name, password string) (i *Identity, err error) {
-	i = &Identity{Model: dir.DB.NewModel(uuid.NewString()), Role: role, Email: email, Username: name}
+func (auth *CongoAuth) Create(role, email, name, password string) (i *Identity, err error) {
+	i = &Identity{Model: auth.DB.NewModel(uuid.NewString()), Role: role, Email: email, Username: name}
 	if i.PassHash, err = hash(password); err != nil {
 		return nil, err
 	}
@@ -35,8 +35,8 @@ func (dir *Directory) Create(role, email, name, password string) (i *Identity, e
 	`, i.ID, i.Role, i.Email, i.Username, i.PassHash).Scan(&i.CreatedAt, &i.UpdatedAt)
 }
 
-func (dir *Directory) Lookup(ident string) (*Identity, error) {
-	i := &Identity{Model: congo.Model{DB: dir.DB}}
+func (auth *CongoAuth) Lookup(ident string) (*Identity, error) {
+	i := &Identity{Model: congo.Model{DB: auth.DB}}
 	return i, i.DB.Query(`
 		SELECT id, role, email, username, passhash, created_at, updated_at
 		FROM identities
@@ -44,14 +44,19 @@ func (dir *Directory) Lookup(ident string) (*Identity, error) {
 	`, ident).Scan(&i.ID, &i.Role, &i.Email, &i.Username, &i.PassHash, &i.CreatedAt, &i.UpdatedAt)
 }
 
-func (dir *Directory) Search(query string) (imap map[string][]*Identity, err error) {
+func (auth *CongoAuth) count() (count int) {
+	auth.DB.Query(` SELECT count(*) FROM identities `).Scan(&count)
+	return count
+}
+
+func (auth *CongoAuth) Search(query string) (imap map[string][]*Identity, err error) {
 	imap = map[string][]*Identity{}
-	return imap, dir.DB.Query(`
+	return imap, auth.DB.Query(`
 		SELECT id, role, email, username, passhash, created_at, updated_at
 		FROM identities
 		WHERE id LIKE $1 OR email LIKE $1 OR username LIKE $1
 	`, "%"+query+"%").All(func(scan congo.Scanner) error {
-		i := &Identity{Model: congo.Model{DB: dir.DB}}
+		i := &Identity{Model: congo.Model{DB: auth.DB}}
 		err = scan(&i.ID, &i.Role, &i.Email, &i.Username, &i.PassHash, &i.CreatedAt, &i.UpdatedAt)
 		if err != nil {
 			return err
@@ -61,14 +66,14 @@ func (dir *Directory) Search(query string) (imap map[string][]*Identity, err err
 	})
 }
 
-func (dir *Directory) SearchByRole(role, query string) (iarr []*Identity, err error) {
+func (auth *CongoAuth) SearchByRole(role, query string) (iarr []*Identity, err error) {
 	iarr = []*Identity{}
-	return iarr, dir.DB.Query(`
+	return iarr, auth.DB.Query(`
 		SELECT id, role, email, username, passhash, created_at, updated_at
 		FROM identities
 		WHERE role = $1 AND (id LIKE $2 OR email LIKE $2 OR username LIKE $2)
 	`, role, "%"+query+"%").All(func(scan congo.Scanner) error {
-		i := Identity{Model: congo.Model{DB: dir.DB}}
+		i := Identity{Model: congo.Model{DB: auth.DB}}
 		iarr = append(iarr, &i)
 		return scan(&i.ID, &i.Role, &i.Email, &i.Username, &i.PassHash, &i.CreatedAt, &i.UpdatedAt)
 	})

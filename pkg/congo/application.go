@@ -17,6 +17,7 @@ type Application struct {
 	hostPrefix  string
 	sources     []fs.FS
 	templates   *template.Template
+	theme       string
 }
 
 type Credentials struct {
@@ -139,11 +140,19 @@ func WithHostPrefix(prefix string) ApplicationOpt {
 	}
 }
 
+func WithHtmlTheme(theme string) ApplicationOpt {
+	return func(app *Application) error {
+		app.theme = theme
+		return nil
+	}
+}
+
 func (app *Application) PrepareTemplates() {
 	funcs := template.FuncMap{
-		"db":   func() *Database { return app.DB },
-		"req":  func() *http.Request { return nil },
-		"host": func() string { return app.hostPrefix },
+		"db":    func() *Database { return app.DB },
+		"req":   func() *http.Request { return nil },
+		"host":  func() string { return app.hostPrefix },
+		"theme": func() string { return app.theme },
 	}
 
 	for name, ctrl := range app.controllers {

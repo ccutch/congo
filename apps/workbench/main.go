@@ -3,67 +3,52 @@ package main
 import (
 	"cmp"
 	"embed"
-	"fmt"
-	"log"
 	"net/http"
 	"os"
-	"time"
-
-	"github.com/ccutch/congo/example/controllers"
 
 	"github.com/ccutch/congo/pkg/congo"
 	"github.com/ccutch/congo/pkg/congo_auth"
 	"github.com/ccutch/congo/pkg/congo_boot"
 	"github.com/ccutch/congo/pkg/congo_code"
 	"github.com/ccutch/congo/pkg/congo_stat"
+
+	"github.com/ccutch/congo/apps/workbench/controllers"
 )
 
 var (
-	//go:embed all:migrations
-	migrations embed.FS
-
 	//go:embed all:templates
 	templates embed.FS
 
-	port = cmp.Or(os.Getenv("PORT"), "5000")
-	path = cmp.Or(os.Getenv("DATA_PATH"), os.TempDir()+"/congo-data")
+	//go:embed all:migrations
+	migrations embed.FS
+
+	path = cmp.Or(os.Getenv("DATA_PATH"), os.TempDir()+"/congo-workbench")
 
 	app = congo.NewApplication(
-		congo.WithHostPrefix(fmt.Sprintf("/workspace-cgk/proxy/%s", port)),
 		congo.WithDatabase(congo.SetupDatabase(path, "app.db", migrations)),
-		congo.WithController("posts", new(controllers.PostController)),
-		congo.WithTemplates(templates))
+		congo.WithController("settings", new(controllers.SettingsController)),
+		congo.WithTemplates(templates),
+		congo.WithHtmlTheme("business"))
 
-	auth = congo_auth.InitCongoAuth(app)
+	auth = congo_auth.InitCongoAuth(app,
+		congo_auth.WithDefaultRole("developer"),
+		congo_auth.WithSetupView("setup.html"),
+		congo_auth.WithLoginView("login.html"))
 
 	code = congo_code.InitCongoCode(app,
 		congo_code.WithGitServer(auth))
-
-	repo, _ = code.Repo("code",
-		congo_code.WithName("Code"))
-
-	workspace, err = code.Workspace("workspace2",
-		congo_code.WithRepo(repo),
-		congo_code.WithPort(5001))
 )
 
 func main() {
-	if err != nil {
-		log.Println("Failed to setup workspace", err)
-	}
+	app.Handle("/", auth.Secure(app.Serve("workbench.html")))
 
-	go func() {
-		time.Sleep(time.Second)
-		if err = workspace.Start(); err != nil {
-			log.Println("Failed to start workspace", err)
-		}
-	}()
+	repo, _ := code.Repo("code", congo_code.WithName("Code"))
+	app.Handle("/code/", repo)
 
-	app.Handle("GET /{$}", app.Serve("homepage.html"))
-	app.Handle("/code/", repo.Server())
+	workspace, _ := code.Workspace("workspace", congo_code.WithRepo(repo))
+	app.Handle("/coder/", auth.Secure(http.StripPrefix("/coder/", workspace)))
 
-	coder := auth.Secure(workspace.Server())
-	app.Handle("/coder/", http.StripPrefix("/coder/", coder))
-
-	congo_boot.StartFromEnv(app, congo_stat.NewMonitor(app, auth))
+	congo_boot.StartFromEnv(app,
+		congo_boot.IgnoreErr(workspace),
+		congo_stat.NewMonitor(app, auth))
 }

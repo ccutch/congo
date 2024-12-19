@@ -14,32 +14,37 @@ type Usage struct {
 	Allowed  bool
 }
 
-func (dir *Directory) Secure(h http.Handler, roles ...string) http.HandlerFunc {
-	return dir.SecureFunc(h.ServeHTTP, roles...)
+func (auth *CongoAuth) Secure(h http.Handler, roles ...string) http.HandlerFunc {
+	return auth.SecureFunc(h.ServeHTTP, roles...)
 }
 
-func (dir *Directory) SecureFunc(fn http.HandlerFunc, roles ...string) http.HandlerFunc {
+func (auth *CongoAuth) SecureFunc(fn http.HandlerFunc, roles ...string) http.HandlerFunc {
 	if len(roles) == 0 {
-		roles = []string{dir.DefaultRole}
+		roles = []string{auth.DefaultRole}
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
+		if auth.SetupView != "" && auth.count() == 0 {
+			auth.app.Render(w, r, auth.SetupView, nil)
+			return
+		}
 		for _, role := range roles {
-			if i, _ := dir.Authenticate(role, r); i != nil {
-				dir.TrackUsage(i, r.URL.String(), true)
+			if i, _ := auth.Authenticate(role, r); i != nil {
+				auth.TrackUsage(i, r.URL.String(), true)
 				fn(w, r)
+				return
 			}
 		}
 		if len(roles) == 1 {
-			dir.app.Render(w, r, "congo-signin-form.html", roles[0])
+			auth.app.Render(w, r, auth.LoginView, roles[0])
 		} else {
-			dir.app.Render(w, r, "congo-role-select.html", roles)
+			auth.app.Render(w, r, "congo-role-select.html", roles)
 		}
 	}
 }
 
-func (dir *Directory) TrackUsage(i *Identity, url string, allowed bool) error {
-	u := Usage{dir.DB.NewModel(uuid.NewString()), i.ID, url, allowed}
-	return dir.DB.Query(`
+func (auth *CongoAuth) TrackUsage(i *Identity, url string, allowed bool) error {
+	u := Usage{auth.DB.NewModel(uuid.NewString()), i.ID, url, allowed}
+	return auth.DB.Query(`
 		INSERT INTO usages (id, identity_id, resource, allowed)
 		VALUES (?, ?, ?, ?)
 		RETURNING created_at

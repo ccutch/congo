@@ -36,13 +36,15 @@ func SetupDatabase(root, name string, migrations fs.FS) *Database {
 	if err := db.conn.Ping(); err != nil {
 		log.Fatalf("Failed to ping database: %v", err)
 	}
-	fs, err := iofs.New(migrations, "migrations")
-	if err != nil {
-		log.Fatalf("failed to find migrations: %s", err)
-	}
-	dest := fmt.Sprintf("sqlite3://%s/"+name, root)
-	if db.migrations, err = migrate.NewWithSourceInstance("iofs", fs, dest); err != nil {
-		log.Fatalf("failed to parse migrations: %s", err)
+	if migrations != nil {
+		fs, err := iofs.New(migrations, "migrations")
+		if err != nil {
+			log.Fatalf("failed to find migrations: %s", err)
+		}
+		dest := fmt.Sprintf("sqlite3://%s/"+name, root)
+		if db.migrations, err = migrate.NewWithSourceInstance("iofs", fs, dest); err != nil {
+			log.Fatalf("failed to parse migrations: %s", err)
+		}
 	}
 	return &db
 }
@@ -52,6 +54,9 @@ func (db *Database) Close() error {
 }
 
 func (db *Database) MigrateDown() error {
+	if db.migrations == nil {
+		return nil
+	}
 	err := db.migrations.Down()
 	if err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		return err
@@ -60,6 +65,9 @@ func (db *Database) MigrateDown() error {
 }
 
 func (db *Database) MigrateUp() error {
+	if db.migrations == nil {
+		return nil
+	}
 	err := db.migrations.Up()
 	if err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		return err

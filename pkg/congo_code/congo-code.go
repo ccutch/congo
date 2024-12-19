@@ -43,7 +43,7 @@ func (code *CongoCode) docker(args ...string) (bytes.Buffer, bytes.Buffer, error
 
 type CongoCodeOpt func(*CongoCode) error
 
-func WithGitServer(auth *congo_auth.Directory) CongoCodeOpt {
+func WithGitServer(auth *congo_auth.CongoAuth) CongoCodeOpt {
 	return func(code *CongoCode) error {
 		code.git = gitkit.New(gitkit.Config{
 			Dir:        code.app.DB.Root,

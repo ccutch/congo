@@ -15,10 +15,10 @@ var migrations embed.FS
 
 type Monitor struct {
 	app *congo.Application
-	dir *congo_auth.Directory
+	dir *congo_auth.CongoAuth
 }
 
-func NewMonitor(app *congo.Application, dir *congo_auth.Directory) *Monitor {
+func NewMonitor(app *congo.Application, dir *congo_auth.CongoAuth) *Monitor {
 	return &Monitor{app, dir}
 }
 

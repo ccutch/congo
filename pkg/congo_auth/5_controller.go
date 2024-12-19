@@ -15,11 +15,11 @@ var Templates embed.FS
 
 type Controller struct {
 	congo.BaseController
-	dir *Directory
+	dir *CongoAuth
 }
 
-func (dir *Directory) Controller() *Controller {
-	return &Controller{congo.BaseController{}, dir}
+func (auth *CongoAuth) Controller() *Controller {
+	return &Controller{congo.BaseController{}, auth}
 }
 
 func (auth *Controller) Setup(app *congo.Application) {

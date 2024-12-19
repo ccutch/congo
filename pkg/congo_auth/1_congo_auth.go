@@ -8,24 +8,27 @@ import (
 	"github.com/ccutch/congo/pkg/congo"
 )
 
-type Directory struct {
+type CongoAuth struct {
 	app            *congo.Application
 	DB             *congo.Database
 	CookieName     string
 	DefaultRole    string
 	LogoutRedirect string
+	SetupView      string
+	LoginView      string
 }
 
 //go:embed all:migrations
 var migrations embed.FS
 
-func InitCongoAuth(app *congo.Application, opts ...DirectoryOpt) *Directory {
-	dir := &Directory{
+func InitCongoAuth(app *congo.Application, opts ...DirectoryOpt) *CongoAuth {
+	dir := &CongoAuth{
 		app:            app,
-		DB:             congo.SetupDatabase(app.DB.Root, "directory.db", migrations),
+		DB:             congo.SetupDatabase(app.DB.Root, "auth.db", migrations),
 		CookieName:     "congo-app",
 		DefaultRole:    "user",
 		LogoutRedirect: "/",
+		LoginView:      "congo-signin.html",
 	}
 	if err := dir.DB.MigrateUp(); err != nil {
 		log.Fatal("Failed to setup auth database:", err)
@@ -40,10 +43,10 @@ func InitCongoAuth(app *congo.Application, opts ...DirectoryOpt) *Directory {
 	return dir
 }
 
-type DirectoryOpt func(*Directory) error
+type DirectoryOpt func(*CongoAuth) error
 
 func WithCookieName(name string) DirectoryOpt {
-	return func(d *Directory) error {
+	return func(d *CongoAuth) error {
 		if name == "" {
 			return errors.New("cannot have empty cookie name")
 		}
@@ -53,7 +56,7 @@ func WithCookieName(name string) DirectoryOpt {
 }
 
 func WithDefaultRole(role string) DirectoryOpt {
-	return func(d *Directory) error {
+	return func(d *CongoAuth) error {
 		if role == "" {
 			return errors.New("cannot have empty default role")
 		}
@@ -61,12 +64,27 @@ func WithDefaultRole(role string) DirectoryOpt {
 		return nil
 	}
 }
+
 func WithLogoutRedirect(url string) DirectoryOpt {
-	return func(d *Directory) error {
+	return func(d *CongoAuth) error {
 		if url == "" {
 			return errors.New("cannot have empty logout redirect url")
 		}
 		d.LogoutRedirect = url
+		return nil
+	}
+}
+
+func WithSetupView(view string) DirectoryOpt {
+	return func(auth *CongoAuth) error {
+		auth.SetupView = view
+		return nil
+	}
+}
+
+func WithLoginView(view string) DirectoryOpt {
+	return func(auth *CongoAuth) error {
+		auth.LoginView = view
 		return nil
 	}
 }
