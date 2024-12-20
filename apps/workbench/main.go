@@ -30,7 +30,8 @@ var (
 	app = congo.NewApplication(
 		congo.WithDatabase(congo.SetupDatabase(path, "app.db", migrations)),
 		congo.WithController("hosting", host.Controller()),
-		congo.WithController("settings", &controllers.SettingsController{Host: host}),
+		congo.WithController("coding", new(controllers.CodingController)),
+		congo.WithController("settings", new(controllers.SettingsController)),
 		congo.WithTemplates(templates),
 		congo.WithHtmlTheme("business"))
 
@@ -38,28 +39,19 @@ var (
 		congo_auth.WithDefaultRole("developer"),
 		congo_auth.WithSetupView("setup.html"),
 		congo_auth.WithLoginView("login.html"))
-
-	code = congo_code.InitCongoCode(app,
-		congo_code.WithGitServer(auth))
 )
 
-func init() {
-	settings := app.Use("settings").(*controllers.SettingsController)
-	if token := settings.Get("token"); token != "" {
-		host.WithApiToken(token)
-	}
-}
-
 func main() {
-	repo, _ := code.Repo("code", congo_code.WithName("Code"))
-	app.Handle("/code/", repo)
 
-	workspace, _ := code.Workspace("workspace", congo_code.WithRepo(repo))
-	app.Handle("/coder/", auth.Secure(http.StripPrefix("/coder/", workspace)))
+	coding := app.Use("coding").(*controllers.CodingController)
+	coding.Repo, _ = coding.Repository("code", congo_code.WithName("Code"))
+	coding.Work, _ = coding.Workspace("coder", congo_code.WithRepo(coding.Repo))
 
 	app.Handle("/", auth.Secure(app.Serve("workbench.html")))
+	app.Handle("/code/", coding.Repo)
+	app.Handle("/coder/", auth.Secure(http.StripPrefix("/coder/", coding.Work)))
 
 	congo_boot.StartFromEnv(app,
-		congo_boot.IgnoreErr(workspace),
+		congo_boot.IgnoreErr(coding.Work),
 		congo_stat.NewMonitor(app, auth))
 }

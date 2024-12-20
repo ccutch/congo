@@ -13,14 +13,19 @@
         Welcome back {{.Username}}!
       </h1>
       {{end}}
+
       <div class="flex items-center gap-4">
         <a target="_blank" href="/coder/?folder=/home/coder/project" class="btn btn-sm btn-primary">
           <img class="w-4" src="https://coder.com/favicon-light.png">
           Start Coding
         </a>
         {{template "theme-selector" "garden"}}
-        <a class="btn btn-sm btn-outline btn-secondary w-max"
+        <a class="btn btn-sm btn-outline btn-accent w-max"
            hx-post="/_auth/logout/developer" hx-confirm="Are you sure you want to logout?">
+          <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 24 24" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
+            <path fill="none" d="M0 0h24v24H0z"></path>
+            <path d="m17 7-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"></path>
+          </svg>
           Logout
         </a>
       </div>
@@ -31,6 +36,7 @@
         <!-- TODO: Code explorer -->
       </div>
       <div class="flex flex-col w-full">
+
         {{if not (settings.Has "token")}}
         <div class="alert alert-error">
           <span class="font-medium">
@@ -43,6 +49,14 @@
         {{else}}
         <button hx-post="/_settings/token" class="btn btn-primary">Unset API Key</button>
         {{end}}
+
+        <div class="flex gap-4">
+          {{range hosting.Servers}}
+          <div class="card bg-base-100 shadow p-8">
+            {{.}}
+          </div>
+          {{end}}
+        </div>
       </div>
     </div>
   </div>

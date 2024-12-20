@@ -38,7 +38,7 @@ var (
 	code = congo_code.InitCongoCode(app,
 		congo_code.WithGitServer(auth))
 
-	repo, _ = code.Repo("code",
+	repo, _ = code.Repository("code",
 		congo_code.WithName("Code"))
 
 	workspace, err = code.Workspace("workspace-2",

@@ -13,7 +13,7 @@ type Repository struct {
 
 type RepoOpt func(*Repository) error
 
-func (code *CongoCode) Repo(id string, opts ...RepoOpt) (*Repository, error) {
+func (code *CongoCode) Repository(id string, opts ...RepoOpt) (*Repository, error) {
 	repo := Repository{code, id, id, nil}
 	for _, opt := range opts {
 		if err := opt(&repo); err != nil {

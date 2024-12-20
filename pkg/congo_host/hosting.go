@@ -90,7 +90,7 @@ func (host *CongoHost) WithApiToken(token string) {
 func (host *CongoHost) ListServers() ([]*Server, error) {
 	var servers []*Server
 	if _, err := os.Stat(host.path); os.IsNotExist(err) {
-		return nil, fmt.Errorf("path does not exist: %s", host.path)
+		return []*Server{}, nil
 	}
 	entries, err := os.ReadDir(host.path)
 	if err != nil {

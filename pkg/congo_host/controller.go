@@ -9,11 +9,11 @@ import (
 
 type Controller struct {
 	congo.BaseController
-	host *CongoHost
+	*CongoHost
 }
 
 func (c *CongoHost) Controller() *Controller {
-	return &Controller{host: c}
+	return &Controller{CongoHost: c}
 }
 
 func (c *Controller) Setup(app *congo.Application) {
@@ -27,7 +27,7 @@ func (c Controller) Handle(req *http.Request) congo.Controller {
 }
 
 func (c *Controller) Servers() ([]*Server, error) {
-	return c.host.ListServers()
+	return c.CongoHost.ListServers()
 }
 
 func (c Controller) launchServer(w http.ResponseWriter, r *http.Request) {
@@ -37,7 +37,7 @@ func (c Controller) launchServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	name, region, size := r.FormValue("name"), r.FormValue("region"), r.FormValue("size")
-	server, err := c.host.NewServer(name, region, size, int64(storage))
+	server, err := c.CongoHost.NewServer(name, region, size, int64(storage))
 	if err != nil {
 		c.Render(w, r, "error-message", err)
 		return

@@ -32,7 +32,7 @@ type Workspace struct {
 type WorkspaceOpt func(*Workspace) error
 
 func (code *CongoCode) Workspace(name string, opts ...WorkspaceOpt) (*Workspace, error) {
-	w := Workspace{name, 8081, code, nil, nil}
+	w := Workspace{name, 7000, code, nil, nil}
 	for _, opt := range opts {
 		if err := opt(&w); err != nil {
 			return nil, err
