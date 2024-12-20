@@ -77,6 +77,10 @@ func (app *Application) sslServer() {
 	}
 }
 
+func (app Application) Use(name string) Controller {
+	return app.controllers[name]
+}
+
 func WithController(name string, ctrl Controller) ApplicationOpt {
 	return func(app *Application) error {
 		return app.WithController(name, ctrl)

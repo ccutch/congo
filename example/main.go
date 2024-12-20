@@ -55,8 +55,8 @@ func main() {
 		log.Println("Failed to start workspace", err)
 	}
 
-	app.Handle("/code/", repo.Server())
-	app.Handle("/coder/", http.StripPrefix("/coder/", workspace.Server()))
+	app.Handle("/code/", repo)
+	app.Handle("/coder/", http.StripPrefix("/coder/", workspace))
 
 	app.Handle("GET /{$}", app.Serve("homepage.html"))
 	app.Handle("GET /admin", auth.Secure(app.Serve("admin.html"), "admin"))

@@ -15,7 +15,7 @@ import (
 )
 
 type Server struct {
-	*Client
+	*CongoHost
 	Name   string
 	Region string
 	IP     string
@@ -30,8 +30,8 @@ type Server struct {
 	priKey string
 }
 
-func (client *Client) NewServer(name, region, size string, storage int64) (*Server, error) {
-	server := Server{Client: client, Name: name, Region: region, ctx: context.Background()}
+func (client *CongoHost) NewServer(name, region, size string, storage int64) (*Server, error) {
+	server := Server{CongoHost: client, Name: name, Region: region, ctx: context.Background()}
 	server.setupAccessKey()
 	server.setupVolumne(storage)
 	server.startDroplet(size)
@@ -39,10 +39,10 @@ func (client *Client) NewServer(name, region, size string, storage int64) (*Serv
 	return &server, server.Err
 }
 
-func (client *Client) LoadServer(name, region string) (*Server, error) {
-	server := Server{Client: client, Name: name, Region: region, ctx: context.Background()}
-	server.pubKey = fmt.Sprintf("%s/id_rsa.pub", filepath.Join(client.dataPath, name))
-	server.priKey = fmt.Sprintf("%s/id_rsa", filepath.Join(client.dataPath, name))
+func (client *CongoHost) LoadServer(name, region string) (*Server, error) {
+	server := Server{CongoHost: client, Name: name, Region: region, ctx: context.Background()}
+	server.pubKey = fmt.Sprintf("%s/id_rsa.pub", filepath.Join(client.path, name))
+	server.priKey = fmt.Sprintf("%s/id_rsa", filepath.Join(client.path, name))
 	server.checkAccessKeys()
 	server.Refresh()
 	return &server, server.Err
@@ -147,7 +147,7 @@ func (server *Server) setupAccessKey() {
 	if server.Err != nil {
 		return
 	}
-	server.sshKey, _, server.Err = server.Client.platform.Keys.Create(server.ctx, &godo.KeyCreateRequest{
+	server.sshKey, _, server.Err = server.CongoHost.platform.Keys.Create(server.ctx, &godo.KeyCreateRequest{
 		Name:      server.Name + "-admin-key",
 		PublicKey: string(data),
 	})

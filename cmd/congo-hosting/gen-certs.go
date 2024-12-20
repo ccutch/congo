@@ -30,8 +30,8 @@ func genCerts(args ...string) error {
 		log.Fatal("Missing domain name")
 	}
 
-	client := congo_host.NewClient(*path, *apiKey)
-	server, err := client.LoadServer(*name, *region)
+	host := congo_host.InitCongoHost(*path, congo_host.WithApiToken(*apiKey))
+	server, err := host.LoadServer(*name, *region)
 	if err != nil {
 		return err
 	}

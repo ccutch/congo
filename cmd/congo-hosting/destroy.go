@@ -25,9 +25,8 @@ func destroy(args ...string) error {
 		*apiKey = os.Getenv("DIGITAL_OCEAN_API_KEY")
 	}
 
-	client := congo_host.NewClient(*path, *apiKey)
-
-	server, err := client.LoadServer(*name, *region)
+	host := congo_host.InitCongoHost(*path, congo_host.WithApiToken(*apiKey))
+	server, err := host.LoadServer(*name, *region)
 	if err != nil {
 		return fmt.Errorf("failed to load server: %w", err)
 	}

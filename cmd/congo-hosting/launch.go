@@ -26,6 +26,6 @@ func launch(args ...string) (server *congo_host.Server, err error) {
 		*apiKey = os.Getenv("DIGITAL_OCEAN_API_KEY")
 	}
 
-	client := congo_host.NewClient(*path, *apiKey)
-	return client.NewServer(*name, *region, *size, *storage)
+	host := congo_host.InitCongoHost(*path, congo_host.WithApiToken(*apiKey))
+	return host.NewServer(*name, *region, *size, *storage)
 }

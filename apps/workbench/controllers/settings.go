@@ -4,9 +4,13 @@ import (
 	"net/http"
 
 	"github.com/ccutch/congo/pkg/congo"
+	"github.com/ccutch/congo/pkg/congo_host"
 )
 
-type SettingsController struct{ congo.BaseController }
+type SettingsController struct {
+	congo.BaseController
+	Host *congo_host.CongoHost
+}
 
 func (settings *SettingsController) Setup(app *congo.Application) {
 	settings.BaseController.Setup(app)
@@ -50,6 +54,8 @@ func (settings SettingsController) updateTheme(w http.ResponseWriter, r *http.Re
 }
 
 func (settings SettingsController) updateToken(w http.ResponseWriter, r *http.Request) {
-	settings.set("token", r.FormValue("token"))
-	w.WriteHeader(http.StatusNoContent)
+	token := r.FormValue("token")
+	settings.set("token", token)
+	settings.Host.WithApiToken(token)
+	settings.Refresh(w, r)
 }
