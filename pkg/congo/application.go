@@ -17,7 +17,6 @@ type Application struct {
 	hostPrefix  string
 	sources     []fs.FS
 	templates   *template.Template
-	theme       string
 }
 
 type Credentials struct {
@@ -42,9 +41,7 @@ func NewApplication(opts ...ApplicationOpt) *Application {
 }
 
 func (app *Application) Serve(name string) http.Handler {
-	if app.templates == nil {
-		app.PrepareTemplates()
-	}
+	app.PrepareTemplates()
 	if page := app.templates.Lookup(name); page == nil {
 		log.Fatalf("Template %s not found", name)
 	}
@@ -88,8 +85,12 @@ func WithController(name string, ctrl Controller) ApplicationOpt {
 }
 
 func (app *Application) WithController(name string, controller Controller) error {
-	app.controllers[name] = controller
-	controller.Setup(app)
+	if _, ok := app.controllers[name]; !ok {
+		app.controllers[name] = controller
+		controller.Setup(app)
+	} else {
+		log.Println(name, "already registered controller")
+	}
 	return nil
 }
 
@@ -146,24 +147,31 @@ func WithHostPrefix(prefix string) ApplicationOpt {
 
 func WithHtmlTheme(theme string) ApplicationOpt {
 	return func(app *Application) error {
-		app.theme = theme
+		if app.templates == nil {
+			app.templates = template.New("")
+		}
+		app.templates = app.templates.Funcs(template.FuncMap{
+			"theme": func() string { return theme },
+		})
 		return nil
 	}
 }
 
 func (app *Application) PrepareTemplates() {
 	funcs := template.FuncMap{
-		"db":    func() *Database { return app.DB },
-		"req":   func() *http.Request { return nil },
-		"host":  func() string { return app.hostPrefix },
-		"theme": func() string { return app.theme },
+		"db":   func() *Database { return app.DB },
+		"req":  func() *http.Request { return nil },
+		"host": func() string { return app.hostPrefix },
 	}
 
 	for name, ctrl := range app.controllers {
 		funcs[name] = func() Controller { return ctrl }
 	}
 
-	app.templates = template.New("").Funcs(funcs)
+	if app.templates == nil {
+		app.templates = template.New("")
+	}
+	app.templates = app.templates.Funcs(funcs)
 
 	for _, source := range app.sources {
 		if tmpl, err := app.templates.ParseFS(source, "templates/*.html"); err == nil {

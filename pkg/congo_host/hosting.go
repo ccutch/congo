@@ -77,7 +77,7 @@ func WithApiToken(apiKey string) CongoHostOpt {
 }
 
 func (host *CongoHost) WithApiToken(token string) {
-	if token != "" {
+	if token == "" {
 		host.platform = nil
 	} else {
 		host.platform = godo.NewClient(oauth2.NewClient(
@@ -85,26 +85,4 @@ func (host *CongoHost) WithApiToken(token string) {
 			oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token}),
 		))
 	}
-}
-
-func (host *CongoHost) ListServers() ([]*Server, error) {
-	var servers []*Server
-	if _, err := os.Stat(host.path); os.IsNotExist(err) {
-		return []*Server{}, nil
-	}
-	entries, err := os.ReadDir(host.path)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read directory: %w", err)
-	}
-	for _, entry := range entries {
-		if entry.IsDir() {
-			server := Server{
-				CongoHost: host,
-				Name:      entry.Name(),
-				ctx:       context.Background(),
-			}
-			servers = append(servers, &server)
-		}
-	}
-	return servers, nil
 }

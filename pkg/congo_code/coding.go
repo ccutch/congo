@@ -2,8 +2,11 @@ package congo_code
 
 import (
 	"bytes"
+	"fmt"
 	"log"
 	"os/exec"
+	"slices"
+	"strings"
 
 	"github.com/ccutch/congo/pkg/congo"
 	"github.com/ccutch/congo/pkg/congo_auth"
@@ -45,30 +48,41 @@ type CongoCodeOpt func(*CongoCode) error
 
 func WithGitServer(auth *congo_auth.CongoAuth) CongoCodeOpt {
 	return func(code *CongoCode) error {
-		code.git = gitkit.New(gitkit.Config{
-			Dir:        code.app.DB.Root,
-			AutoCreate: true,
-			Auth:       auth != nil,
-		})
-		// If auth is provided then we will authenticate with basic auth
-		if auth != nil {
-			code.git.AuthFunc =
-				func(cred gitkit.Credential, req *gitkit.Request) (bool, error) {
-					if cred.Username == "" || cred.Password == "" {
-						return false, nil
-					}
-					i, err := auth.Lookup(cred.Username)
-					if err != nil {
-						return false, err
-					}
-					pass := []byte(cred.Password)
-					err = bcrypt.CompareHashAndPassword(i.PassHash, pass)
-					if err != nil {
-						return false, err
-					}
-					return true, nil
-				}
-		}
-		return code.git.Setup()
+		return code.WithGitServer(auth)
 	}
+}
+
+func (code *CongoCode) WithGitServer(auth *congo_auth.CongoAuth, roles ...string) error {
+	if len(roles) == 0 {
+		roles = []string{auth.DefaultRole}
+	}
+	code.git = gitkit.New(gitkit.Config{
+		Dir:        code.app.DB.Root,
+		AutoCreate: true,
+		Auth:       auth != nil,
+	})
+	// If auth is provided then we will authenticate with basic auth
+	if auth != nil {
+		code.git.AuthFunc =
+			func(cred gitkit.Credential, req *gitkit.Request) (bool, error) {
+				if cred.Username == "" || cred.Password == "" {
+					return false, nil
+				}
+				i, err := auth.Lookup(cred.Username)
+				if err != nil {
+					return false, err
+				}
+				pass := []byte(cred.Password)
+				err = bcrypt.CompareHashAndPassword(i.PassHash, pass)
+				if err != nil {
+					return false, err
+				}
+				if !slices.Contains(roles, i.Role) {
+					role_list := strings.Join(roles, " or ")
+					return false, fmt.Errorf("%s is not a %s", i.Username, role_list)
+				}
+				return true, nil
+			}
+	}
+	return code.git.Setup()
 }

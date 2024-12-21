@@ -4,8 +4,6 @@ import (
 	"cmp"
 	"embed"
 	"fmt"
-	"log"
-	"net/http"
 	"os"
 
 	"github.com/ccutch/congo/example/controllers"
@@ -13,7 +11,6 @@ import (
 	"github.com/ccutch/congo/pkg/congo"
 	"github.com/ccutch/congo/pkg/congo_auth"
 	"github.com/ccutch/congo/pkg/congo_boot"
-	"github.com/ccutch/congo/pkg/congo_code"
 	"github.com/ccutch/congo/pkg/congo_stat"
 )
 
@@ -34,35 +31,14 @@ var (
 		congo.WithTemplates(templates))
 
 	auth = congo_auth.InitCongoAuth(app)
-
-	code = congo_code.InitCongoCode(app,
-		congo_code.WithGitServer(auth))
-
-	repo, _ = code.Repository("code",
-		congo_code.WithName("Code"))
-
-	workspace, err = code.Workspace("workspace-2",
-		congo_code.WithPort(5001),
-		congo_code.WithRepo(repo))
 )
 
 func main() {
-	if err != nil {
-		log.Println("Failed to setup workspace", err)
-	}
-
-	if err = workspace.Start(); err != nil {
-		log.Println("Failed to start workspace", err)
-	}
-
-	app.Handle("/code/", repo)
-	app.Handle("/coder/", http.StripPrefix("/coder/", workspace))
-
 	app.Handle("GET /{$}", app.Serve("homepage.html"))
-	app.Handle("GET /admin", auth.Secure(app.Serve("admin.html"), "admin"))
+	app.Handle("GET /admin", auth.Protect(app.Serve("admin.html"), "admin"))
 
 	app.Handle("GET /blog", app.Serve("blog-posts.html"))
-	app.Handle("GET /blog/write", auth.Secure(app.Serve("write-post.html")))
+	app.Handle("GET /blog/write", auth.Protect(app.Serve("write-post.html")))
 	app.Handle("GET /blog/{post}", app.Serve("read-post.html"))
 	app.Handle("GET /blog/{post}/edit", app.Serve("edit-post.html"))
 

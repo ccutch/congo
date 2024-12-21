@@ -14,11 +14,11 @@ type Usage struct {
 	Allowed  bool
 }
 
-func (auth *CongoAuth) Secure(h http.Handler, roles ...string) http.HandlerFunc {
-	return auth.SecureFunc(h.ServeHTTP, roles...)
+func (auth *CongoAuth) Protect(h http.Handler, roles ...string) http.HandlerFunc {
+	return auth.ProtectFunc(h.ServeHTTP, roles...)
 }
 
-func (auth *CongoAuth) SecureFunc(fn http.HandlerFunc, roles ...string) http.HandlerFunc {
+func (auth *CongoAuth) ProtectFunc(fn http.HandlerFunc, roles ...string) http.HandlerFunc {
 	if len(roles) == 0 {
 		roles = []string{auth.DefaultRole}
 	}

@@ -48,6 +48,27 @@ func (client *CongoHost) LoadServer(name, region string) (*Server, error) {
 	return &server, server.Err
 }
 
+func (host *CongoHost) ListServers() ([]*Server, error) {
+	var servers []*Server
+	if _, err := os.Stat(host.path); os.IsNotExist(err) {
+		return []*Server{}, nil
+	}
+	entries, err := os.ReadDir(host.path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read directory: %w", err)
+	}
+	for _, entry := range entries {
+		if entry.IsDir() {
+			server := Server{
+				CongoHost: host,
+				Name:      entry.Name(),
+				ctx:       context.Background()}
+			servers = append(servers, &server)
+		}
+	}
+	return servers, nil
+}
+
 func (server *Server) Refresh() {
 	var (
 		droplets []godo.Droplet
@@ -117,10 +138,16 @@ func (server *Server) Copy(source, dest string) error {
 }
 
 func (server *Server) Start() {
+	if server.Err != nil {
+		return
+	}
 	server.Err = server.Run(fmt.Sprintf(startServer, 8080))
 }
 
 func (server *Server) GenerateCerts(domain string) {
+	if server.Err != nil {
+		return
+	}
 	server.Err = server.Run(fmt.Sprintf(generateCerts, domain))
 }
 
