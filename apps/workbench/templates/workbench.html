@@ -6,21 +6,21 @@
 </head>
 
 <body>
-  <div class="space-y-8 py-8 px-4 max-w-screen-xl w-full mx-auto">
+  <div class="space-y-10 py-10 px-4 max-w-screen-xl w-full mx-auto">
     <div class="flex justify-between items-end">
       {{with auth.Current "developer"}}
-      <h1 class="text-4xl font-semibold">
+      <h1 class="text-3xl font-semibold">
         Welcome back {{.Username}}!
       </h1>
       {{end}}
 
-      <div class="flex items-center gap-4">
+      <div class="flex items-center gap-2">
         <a target="_blank" href="/coder/?folder=/home/coder/project" class="btn btn-sm btn-primary">
           <img class="w-4" src="https://coder.com/favicon-light.png">
           Start Coding
         </a>
-        {{template "theme-selector" "garden"}}
-        <a class="btn btn-sm btn-outline btn-accent w-max"
+        {{template "theme-selector" "light"}}
+        <a class="btn btn-sm btn-outline w-max"
            hx-post="/_auth/logout/developer" hx-confirm="Are you sure you want to logout?">
           <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 24 24" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
             <path fill="none" d="M0 0h24v24H0z"></path>
@@ -31,24 +31,13 @@
       </div>
     </div>
 
-    <div class="flex gap-12 ">
+    <div class="flex gap-12 px-4">
       <div class="flex flex-col w-full">
-        <!-- TODO: Code explorer -->
+        {{template "file-explorer"}}
       </div>
       <div class="flex flex-col w-full">
 
-        {{if not (settings.Has "token")}}
-        <div class="alert alert-error">
-          <span class="font-medium">
-            Missing Digital Ocean Creds
-          </span>
-          <button class="ml-auto btn btn-sm btn-outline" onclick="set_api_token_modal.showModal()">
-            Add API Key
-          </button>
-        </div>
-        {{else}}
-        <button hx-post="/_settings/token" class="btn btn-primary">Unset API Key</button>
-        {{end}}
+        {{template "host-launcher"}}
 
         <div class="flex gap-4">
           {{range hosting.Servers}}

@@ -15,9 +15,8 @@ type CodingController struct {
 }
 
 func (code *CodingController) Setup(app *congo.Application) {
-	code.CongoCode = congo_code.InitCongoCode(app)
-
 	code.BaseController.Setup(app)
+	code.CongoCode = congo_code.InitCongoCode(app)
 }
 
 func (code CodingController) Handle(req *http.Request) congo.Controller {

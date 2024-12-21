@@ -1,0 +1,22 @@
+{{define "modals/launch-host"}}
+<dialog id="launch_host_modal" class="modal">
+  <div class="modal-box">
+    <h2 class="text-2xl font-medium">
+      Launch a new Host
+    </h2>
+    <p class="text-base font-medium opacity-80 mt-2 mb-8">
+      This will be a new Droplet in your Digital Ocean account.
+    </p>
+
+    <form hx-post="/_settings/token" class="flex flex-col gap-4 mb-0">
+
+
+
+      <button class="btn btn-primary">Launch Server</button>
+    </form>
+  </div>
+  <form method="dialog" class="modal-backdrop">
+    <button>close</button>
+  </form>
+</dialog>
+{{end}}

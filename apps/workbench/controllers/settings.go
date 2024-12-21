@@ -4,12 +4,10 @@ import (
 	"net/http"
 
 	"github.com/ccutch/congo/pkg/congo"
-	"github.com/ccutch/congo/pkg/congo_host"
 )
 
 type SettingsController struct {
 	congo.BaseController
-	hosting *congo_host.CongoHost
 }
 
 func (settings *SettingsController) Setup(app *congo.Application) {
@@ -17,9 +15,8 @@ func (settings *SettingsController) Setup(app *congo.Application) {
 	app.HandleFunc("POST /_settings/theme", settings.updateTheme)
 	app.HandleFunc("POST /_settings/token", settings.updateToken)
 
-	if host, ok := app.Use("hosting").(*congo_host.Controller); ok {
-		settings.hosting = host.CongoHost
-		host.WithApiToken(settings.Get("token"))
+	if hosting, ok := app.Use("hosting").(*HostingController); ok {
+		hosting.host.WithApiToken(settings.Get("token"))
 	}
 }
 
@@ -63,7 +60,7 @@ func (settings SettingsController) updateToken(w http.ResponseWriter, r *http.Re
 	settings.set("token", token)
 	settings.Refresh(w, r)
 
-	if settings.hosting != nil {
-		settings.hosting.WithApiToken(token)
+	if hosting, ok := settings.Use("hosting").(*HostingController); ok {
+		hosting.host.WithApiToken(settings.Get("token"))
 	}
 }

@@ -3,15 +3,14 @@ package main
 import (
 	"cmp"
 	"embed"
+	"log"
 	"net/http"
 	"os"
-	"path/filepath"
 
 	"github.com/ccutch/congo/pkg/congo"
 	"github.com/ccutch/congo/pkg/congo_auth"
 	"github.com/ccutch/congo/pkg/congo_boot"
 	"github.com/ccutch/congo/pkg/congo_code"
-	"github.com/ccutch/congo/pkg/congo_host"
 	"github.com/ccutch/congo/pkg/congo_stat"
 
 	"github.com/ccutch/congo/apps/workbench/controllers"
@@ -25,15 +24,14 @@ var (
 	migrations embed.FS
 
 	path = cmp.Or(os.Getenv("DATA_PATH"), os.TempDir()+"/congo-workbench")
-	host = congo_host.InitCongoHost(filepath.Join(path, "servers"))
 
 	app = congo.NewApplication(
 		congo.WithDatabase(congo.SetupDatabase(path, "app.db", migrations)),
-		congo.WithController("hosting", host.Controller()),
 		congo.WithController("coding", new(controllers.CodingController)),
+		congo.WithController("hosting", new(controllers.HostingController)),
 		congo.WithController("settings", new(controllers.SettingsController)),
-		congo.WithTemplates(templates),
-		congo.WithHtmlTheme("business"))
+		congo.WithHtmlTheme("business"),
+		congo.WithTemplates(templates))
 
 	auth = congo_auth.InitCongoAuth(app,
 		congo_auth.WithDefaultRole("developer"),
@@ -42,16 +40,24 @@ var (
 )
 
 func main() {
-
 	coding := app.Use("coding").(*controllers.CodingController)
-	coding.Repo, _ = coding.Repository("code", congo_code.WithName("Code"))
-	coding.Work, _ = coding.Workspace("coder", congo_code.WithRepo(coding.Repo))
+	log.Println("coding", coding)
+	coding.Repo = __(coding.Repository("code", congo_code.WithName("Code")))
+	coding.Work = __(coding.Workspace("coder", congo_code.WithRepo(coding.Repo)))
 
-	app.Handle("/", auth.Secure(app.Serve("workbench.html")))
-	app.Handle("/code/", coding.Repo)
-	app.Handle("/coder/", auth.Secure(http.StripPrefix("/coder/", coding.Work)))
+	app.Handle("/", auth.Protect(app.Serve("workbench.html")))
+	app.Handle("/code/", coding.Repo.Serve(auth, "developer"))
+	app.Handle("/coder/", auth.Protect(http.StripPrefix("/coder/", coding.Work)))
 
 	congo_boot.StartFromEnv(app,
 		congo_boot.IgnoreErr(coding.Work),
 		congo_stat.NewMonitor(app, auth))
+}
+
+func __[T any](val T, err error) T {
+	if err != nil {
+		log.Fatal("Ran into an error:", err)
+	}
+	log.Println(val)
+	return val
 }
