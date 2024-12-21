@@ -15,8 +15,8 @@ import (
 )
 
 func (repo *Repository) NewClient(branch string) *GitClient {
-	root := filepath.Join(repo.code.root, "repos")
-	return &GitClient{repo, root, cmp.Or(branch, "HEAD")}
+	// root := filepath.Join(repo.code.root, "repos", repo.ID)
+	return &GitClient{repo, repo.code.root, cmp.Or(branch, "HEAD")}
 }
 
 type GitClient struct {
@@ -26,7 +26,7 @@ type GitClient struct {
 }
 
 func (git *GitClient) path() string {
-	return filepath.Join(git.root, "repos", git.repo.ID+".git")
+	return filepath.Join(git.root, "repos", git.repo.ID) //+".git")
 }
 
 func (git *GitClient) run(args ...string) (string, error) {
@@ -89,6 +89,7 @@ func (git *GitClient) IsDir(path string) (bool, error) {
 }
 
 func (git *GitClient) LsTree(path string) (blobs []*Blob) {
+	log.Println("path", path)
 	stdout, err := git.run("ls-tree", git.branch, filepath.Join(".", path)+"/")
 	if err != nil {
 		log.Println("failed to run git command", err)
@@ -135,22 +136,29 @@ func (blob *Blob) Read(p []byte) (int, error) {
 	}
 	return strings.NewReader(content).Read(p)
 }
+
 func (blob *Blob) Close() error {
 	return nil
 }
+
 func (blob *Blob) Stat() (fs.FileInfo, error) {
 	return blob, nil
 }
+
 func (blob *Blob) Content() (string, error) {
+	log.Println("show", blob.branch+":"+blob.Path)
 	return blob.run("show", blob.branch+":"+blob.Path)
 }
+
 func (blob *Blob) Lines() ([]string, error) {
 	content, err := blob.Content()
 	return strings.Split(content, "\n"), err
 }
+
 func (blob *Blob) Files() []*Blob {
 	return blob.GitClient.LsTree(blob.Path)
 }
+
 func (blob *Blob) Dir() string {
 	dir := filepath.Dir(blob.Path)
 	if dir == "." {
@@ -158,9 +166,11 @@ func (blob *Blob) Dir() string {
 	}
 	return dir
 }
+
 func (blob *Blob) Name() string {
 	return filepath.Base(blob.Path)
 }
+
 func (blob *Blob) Size() int64 {
 	sizeStr, err := blob.run("cat-file", "-s", blob.branch+":"+blob.Path)
 	if err != nil {
@@ -169,12 +179,14 @@ func (blob *Blob) Size() int64 {
 	size, _ := strconv.ParseInt(strings.TrimSpace(sizeStr), 10, 64)
 	return size
 }
+
 func (blob *Blob) Mode() fs.FileMode {
 	if blob.isDir {
 		return fs.ModeDir
 	}
 	return 0
 }
+
 func (blob *Blob) ModTime() time.Time { return time.Now() }
 func (blob *Blob) IsDir() bool        { return blob.isDir }
 func (*Blob) Sys() interface{}        { return nil }

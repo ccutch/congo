@@ -162,6 +162,7 @@ func (app *Application) PrepareTemplates() {
 		"db":   func() *Database { return app.DB },
 		"req":  func() *http.Request { return nil },
 		"host": func() string { return app.hostPrefix },
+		"raw":  func(val string) template.HTML { return template.HTML(val) },
 	}
 
 	for name, ctrl := range app.controllers {

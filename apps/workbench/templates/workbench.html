@@ -27,15 +27,17 @@
 
     </div>
 
-    <div class="flex gap-12 px-4">
+    <div class='grid {{if eq req.URL.Path "/"}}grid-cols-2{{end}} gap-12 px-4'>
 
       <div class="flex flex-col w-full">
-        {{template "repo-explorer"}}
+        {{template "file-explorer"}}
       </div>
 
+      {{if eq req.URL.Path "/"}}
       <div class="flex flex-col w-full">
         {{template "hosts-manager"}}
       </div>
+      {{end}}
 
     </div>
   </div>
