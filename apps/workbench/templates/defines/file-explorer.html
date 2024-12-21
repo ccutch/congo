@@ -14,38 +14,30 @@
     {{range coding.Files}}
 
     {{if .IsDir}}
-
     <li>
       <a href='/{{.Path}}'>
         {{template "dir-icon" .}}
         {{.Name}}
       </a>
     </li>
-
     {{else}}
-
     <li>
-      <a href='{{.Path}}' {{if eq .Path (req.URL.Path)}}class="active" {{end}}>
+      <a href='/{{.Path}}' {{if eq .Path (req.URL.Path)}}class="active" {{end}}>
         {{template "file-icon" .}}
         {{.Name}}
       </a>
     </li>
-
     {{end}}
 
     {{else}}
 
     {{with coding.CurrentFile }}
-
     <div id="file-content" class="rounded-none py-2 bg-transparent text-base-content mockup-code w-full overflow-x-auto">
       {{range $i, $line := .Lines}}
       <pre data-prefix="{{$i}}"><code>{{$line}}</code></pre>
       {{end}}
     </div>
-
-
     {{else}}
-
     <div class="p-8 opacity-80 text-center text-xl font-semibold">
       No Files
     </div>

@@ -52,7 +52,9 @@
     </svg>
   </div>
   <ul tabindex="0" class="dropdown-content menu bg-base-300 rounded-box z-[1] w-52 p-2 shadow">
-    <li><a hx-post="/_settings/token">Unset API Key</a></li>
+    <li><a hx-post="/_settings/token" hx-confirm="Are you sure? This action cannot be undone.">
+        Unset API Key
+      </a></li>
   </ul>
 </div>
 {{end}}
