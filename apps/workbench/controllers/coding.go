@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/ccutch/congo/pkg/congo"
@@ -31,6 +30,8 @@ func (code *CodingController) Files() []*congo_code.Blob {
 
 func (code *CodingController) CurrentFile() *congo_code.Blob {
 	blob, err := code.Repo.NewClient("master").Open(code.URL.Path[1:])
-	log.Println("Error", err)
+	if err != nil {
+		return nil
+	}
 	return blob
 }

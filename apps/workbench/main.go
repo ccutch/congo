@@ -36,7 +36,7 @@ var (
 		congo.WithController("coding", new(controllers.CodingController)),
 		congo.WithController("hosting", new(controllers.HostingController)),
 		congo.WithController("settings", new(controllers.SettingsController)),
-		congo.WithHtmlTheme("business"),
+		congo.WithHtmlTheme("dark"),
 		congo.WithTemplates(templates))
 )
 

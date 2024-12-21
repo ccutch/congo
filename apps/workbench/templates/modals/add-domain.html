@@ -1,0 +1,22 @@
+{{define "modals/add-domain"}}
+<dialog id="add_domain_modal" class="modal">
+  <div class="modal-box">
+    <h2 class="text-2xl font-medium">
+      Register Domain Name
+    </h2>
+    <p class="text-base font-medium opacity-80 mt-2 mb-8">
+      All hosts can have one domain name registered, first
+      you have to setup an A record with your registrar.
+    </p>
+
+    <form hx-post="/_hosting/domain" class="flex items-center gap-2 mb-0">
+      <input id="host-input" name="server" type="hidden">
+      <input name="domain" type="text" class="input input-bordered w-full" placeholder="Domain Name">
+      <button class="btn btn-primary">Register Domain</button>
+    </form>
+  </div>
+  <form method="dialog" class="modal-backdrop">
+    <button>close</button>
+  </form>
+</dialog>
+{{end}}

@@ -8,11 +8,32 @@
       This will be a new Droplet in your Digital Ocean account.
     </p>
 
-    <form hx-post="/_settings/token" class="flex flex-col gap-4 mb-0">
+    <div class="error"></div>
 
+    <form class="flex flex-col gap-4 mb-0"
+          hx-post="/_hosting/launch" hx-target="previous .error">
 
+      <input name="name" type="text" class="input input-bordered"
+             placeholder="Server Name">
 
-      <button class="btn btn-primary">Launch Server</button>
+      <select name="region" class="select select-bordered">
+        <option value="sfo2">San Francisco</option>
+        <option value="nyc1">New York</option>
+      </select>
+
+      <select name="size" class="select select-bordered">
+        <option value="s-1vcpu-2gb">Small</option>
+      </select>
+
+      <select name="storage" class="select select-bordered">
+        <option value="5">Small (5gb)</option>
+      </select>
+
+      <button class="btn btn-primary">
+        <div class="loading loading-bars loading-sm htmx-indicator"></div>
+        Launch Server
+      </button>
+
     </form>
   </div>
   <form method="dialog" class="modal-backdrop">
