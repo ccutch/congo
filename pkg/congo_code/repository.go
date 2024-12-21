@@ -32,5 +32,5 @@ func WithName(name string) RepoOpt {
 }
 
 func (repo *Repository) Serve(auth *congo_auth.Controller, roles ...string) http.Handler {
-	return repo.code.GitServer(auth, roles...)
+	return repo.code.Server(auth, roles...)
 }

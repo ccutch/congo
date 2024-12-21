@@ -44,16 +44,7 @@ func (code *CongoCode) docker(args ...string) (bytes.Buffer, bytes.Buffer, error
 	return code.run(append([]string{"docker"}, args...)...)
 }
 
-type CongoCodeOpt func(*CongoCode) error
-
-func WithGitServer(auth *congo_auth.Controller) CongoCodeOpt {
-	return func(code *CongoCode) error {
-		code.GitServer(auth)
-		return nil
-	}
-}
-
-func (code *CongoCode) GitServer(auth *congo_auth.Controller, roles ...string) http.Handler {
+func (code *CongoCode) Server(auth *congo_auth.Controller, roles ...string) http.Handler {
 	if len(roles) == 0 {
 		roles = []string{auth.DefaultRole}
 	}
@@ -95,3 +86,5 @@ func (code *CongoCode) GitServer(auth *congo_auth.Controller, roles ...string) h
 
 	return git
 }
+
+type CongoCodeOpt func(*CongoCode) error
