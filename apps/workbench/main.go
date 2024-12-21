@@ -23,24 +23,27 @@ var (
 	//go:embed all:migrations
 	migrations embed.FS
 
-	path = cmp.Or(os.Getenv("DATA_PATH"), os.TempDir()+"/congo-workbench")
+	data = cmp.Or(os.Getenv("DATA_PATH"), os.TempDir()+"/congo-workbench")
+
+	auth = congo_auth.InitCongoAuth(data,
+		congo_auth.WithDefaultRole("developer"),
+		congo_auth.WithSetupView("setup.html"),
+		congo_auth.WithLoginView("login.html"))
 
 	app = congo.NewApplication(
-		congo.WithDatabase(congo.SetupDatabase(path, "app.db", migrations)),
+		congo.WithDatabase(congo.SetupDatabase(data, "app.db", migrations)),
+		congo.WithController("auth", auth.Controller()),
 		congo.WithController("coding", new(controllers.CodingController)),
 		congo.WithController("hosting", new(controllers.HostingController)),
 		congo.WithController("settings", new(controllers.SettingsController)),
 		congo.WithHtmlTheme("business"),
 		congo.WithTemplates(templates))
-
-	auth = congo_auth.InitCongoAuth(app,
-		congo_auth.WithDefaultRole("developer"),
-		congo_auth.WithSetupView("setup.html"),
-		congo_auth.WithLoginView("login.html"))
 )
 
 func main() {
+	auth := app.Use("auth").(*congo_auth.Controller)
 	coding := app.Use("coding").(*controllers.CodingController)
+
 	log.Println("coding", coding)
 	coding.Repo = __(coding.Repository("code", congo_code.WithName("Code")))
 	coding.Work = __(coding.Workspace("coder", congo_code.WithRepo(coding.Repo)))

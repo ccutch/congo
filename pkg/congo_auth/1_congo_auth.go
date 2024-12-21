@@ -9,7 +9,6 @@ import (
 )
 
 type CongoAuth struct {
-	app            *congo.Application
 	DB             *congo.Database
 	CookieName     string
 	DefaultRole    string
@@ -21,10 +20,9 @@ type CongoAuth struct {
 //go:embed all:migrations
 var migrations embed.FS
 
-func InitCongoAuth(app *congo.Application, opts ...DirectoryOpt) *CongoAuth {
+func InitCongoAuth(root string, opts ...DirectoryOpt) *CongoAuth {
 	dir := &CongoAuth{
-		app:            app,
-		DB:             congo.SetupDatabase(app.DB.Root, "auth.db", migrations),
+		DB:             congo.SetupDatabase(root, "auth.db", migrations),
 		CookieName:     "congo-app",
 		DefaultRole:    "user",
 		LogoutRedirect: "/",
@@ -35,11 +33,9 @@ func InitCongoAuth(app *congo.Application, opts ...DirectoryOpt) *CongoAuth {
 	}
 	for _, opt := range opts {
 		if err := opt(dir); err != nil {
-			log.Fatalf("Failed to open Directory @ %s: %s", app.DB.Root, err)
+			log.Fatalf("Failed to open Directory @ %s: %s", root, err)
 		}
 	}
-	app.WithController("auth", dir.Controller())
-	app.WithTemplates(Templates)
 	return dir
 }
 

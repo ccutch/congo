@@ -32,7 +32,7 @@ func WithName(name string) RepoOpt {
 	}
 }
 
-func (repo *Repository) Serve(auth *congo_auth.CongoAuth, roles ...string) http.Handler {
+func (repo *Repository) Serve(auth *congo_auth.Controller, roles ...string) http.Handler {
 	repo.code.WithGitServer(auth, roles...)
 	mux := http.NewServeMux()
 	mux.Handle(fmt.Sprintf("/%s/", repo.ID), repo.code.git)

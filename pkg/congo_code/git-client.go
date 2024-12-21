@@ -5,6 +5,7 @@ import (
 	"cmp"
 	"errors"
 	"io/fs"
+	"log"
 	"os/exec"
 	"path/filepath"
 	"sort"
@@ -13,7 +14,8 @@ import (
 	"time"
 )
 
-func (repo *Repository) NewClient(root string, branch string) *GitClient {
+func (repo *Repository) NewClient(branch string) *GitClient {
+	root := filepath.Join(repo.code.root, "repos")
 	return &GitClient{repo, root, cmp.Or(branch, "HEAD")}
 }
 
@@ -89,6 +91,7 @@ func (git *GitClient) IsDir(path string) (bool, error) {
 func (git *GitClient) LsTree(path string) (blobs []*Blob) {
 	stdout, err := git.run("ls-tree", git.branch, filepath.Join(".", path)+"/")
 	if err != nil {
+		log.Println("failed to run git command", err)
 		return nil
 	}
 	for _, line := range strings.Split(strings.TrimSpace(stdout), "\n") {

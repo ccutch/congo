@@ -18,7 +18,8 @@ type HostingController struct {
 func (hosting *HostingController) Setup(app *congo.Application) {
 	hosting.BaseController.Setup(app)
 	hosting.host = congo_host.InitCongoHost(filepath.Join(app.DB.Root, "hosts"))
-	auth := congo_auth.InitCongoAuth(app, congo_auth.WithDefaultRole("developer"))
+
+	auth := app.Use("auth").(*congo_auth.Controller)
 	app.HandleFunc("POST /_hosting/launch", auth.ProtectFunc(hosting.handleLaunch))
 }
 

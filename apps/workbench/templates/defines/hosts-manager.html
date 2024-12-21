@@ -1,4 +1,4 @@
-{{define "host-launcher"}}
+{{define "hosts-manager"}}
 {{if not (settings.Has "token")}}
 
 {{template "missing-api-token" .}}
@@ -20,9 +20,15 @@
     {{template "host-launcher-menu" .}}
   </div>
 </div>
-
-{{template "modals/launch-host"}}
 {{end}}
+
+<div class="flex gap-4">
+  {{range hosting.Servers}}
+  <div class="card bg-base-100 shadow p-8">
+    {{.}}
+  </div>
+  {{end}}
+</div>
 {{end}}
 
 

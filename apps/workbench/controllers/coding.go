@@ -16,10 +16,14 @@ type CodingController struct {
 
 func (code *CodingController) Setup(app *congo.Application) {
 	code.BaseController.Setup(app)
-	code.CongoCode = congo_code.InitCongoCode(app)
+	code.CongoCode = congo_code.InitCongoCode(app.DB.Root)
 }
 
 func (code CodingController) Handle(req *http.Request) congo.Controller {
 	code.Request = req
 	return &code
+}
+
+func (code *CodingController) Files() []*congo_code.Blob {
+	return code.Repo.NewClient("master").LsTree(code.URL.Path)
 }

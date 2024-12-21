@@ -56,12 +56,12 @@ func (w *Workspace) Start() error {
 		log.Printf("Workspace %s already running", w.Name)
 		return nil
 	}
-	_, output, err := w.code.bash(fmt.Sprintf(setupWorkspace, w.Name, w.code.app.DB.Root))
+	_, output, err := w.code.bash(fmt.Sprintf(setupWorkspace, w.Name, w.code.root))
 	if err != nil {
 		return fmt.Errorf("failed to setup workspace: %s", output.String())
 	}
 	time.Sleep(time.Second)
-	_, output, err = w.code.bash(fmt.Sprintf(startWorkspace, w.Name, w.code.app.DB.Root, w.Port))
+	_, output, err = w.code.bash(fmt.Sprintf(startWorkspace, w.Name, w.code.root, w.Port))
 	if err != nil {
 		return errors.Join(errors.New("failed to start workspace"), err)
 	}

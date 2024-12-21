@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"net/http"
+	"os"
 
 	"github.com/ccutch/congo/pkg/congo"
 )
@@ -14,6 +15,10 @@ func (settings *SettingsController) Setup(app *congo.Application) {
 	settings.BaseController.Setup(app)
 	app.HandleFunc("POST /_settings/theme", settings.updateTheme)
 	app.HandleFunc("POST /_settings/token", settings.updateToken)
+
+	if settings.Get("token") == "" {
+		settings.set("token", os.Getenv("DIGITAL_OCEAN_API_KEY"))
+	}
 
 	if hosting, ok := app.Use("hosting").(*HostingController); ok {
 		hosting.host.WithApiToken(settings.Get("token"))

@@ -5,22 +5,22 @@ import (
 	"fmt"
 	"log"
 	"os/exec"
+	"path/filepath"
 	"slices"
 	"strings"
 
-	"github.com/ccutch/congo/pkg/congo"
 	"github.com/ccutch/congo/pkg/congo_auth"
 	"github.com/sosedoff/gitkit"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type CongoCode struct {
-	app *congo.Application
-	git *gitkit.Server
+	root string
+	git  *gitkit.Server
 }
 
-func InitCongoCode(app *congo.Application, opts ...CongoCodeOpt) *CongoCode {
-	code := CongoCode{app: app}
+func InitCongoCode(root string, opts ...CongoCodeOpt) *CongoCode {
+	code := CongoCode{root: root}
 	for _, opt := range opts {
 		if err := opt(&code); err != nil {
 			log.Fatal("Failed to setup Congo Code: ", err)
@@ -46,18 +46,18 @@ func (code *CongoCode) docker(args ...string) (bytes.Buffer, bytes.Buffer, error
 
 type CongoCodeOpt func(*CongoCode) error
 
-func WithGitServer(auth *congo_auth.CongoAuth) CongoCodeOpt {
+func WithGitServer(auth *congo_auth.Controller) CongoCodeOpt {
 	return func(code *CongoCode) error {
 		return code.WithGitServer(auth)
 	}
 }
 
-func (code *CongoCode) WithGitServer(auth *congo_auth.CongoAuth, roles ...string) error {
+func (code *CongoCode) WithGitServer(auth *congo_auth.Controller, roles ...string) error {
 	if len(roles) == 0 {
 		roles = []string{auth.DefaultRole}
 	}
 	code.git = gitkit.New(gitkit.Config{
-		Dir:        code.app.DB.Root,
+		Dir:        filepath.Join(code.root, "repos"),
 		AutoCreate: true,
 		Auth:       auth != nil,
 	})

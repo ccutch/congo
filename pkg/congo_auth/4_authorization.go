@@ -14,30 +14,30 @@ type Usage struct {
 	Allowed  bool
 }
 
-func (auth *CongoAuth) Protect(h http.Handler, roles ...string) http.HandlerFunc {
+func (auth *Controller) Protect(h http.Handler, roles ...string) http.HandlerFunc {
 	return auth.ProtectFunc(h.ServeHTTP, roles...)
 }
 
-func (auth *CongoAuth) ProtectFunc(fn http.HandlerFunc, roles ...string) http.HandlerFunc {
+func (app *Controller) ProtectFunc(fn http.HandlerFunc, roles ...string) http.HandlerFunc {
 	if len(roles) == 0 {
-		roles = []string{auth.DefaultRole}
+		roles = []string{app.CongoAuth.DefaultRole}
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		if auth.SetupView != "" && auth.count() == 0 {
-			auth.app.Render(w, r, auth.SetupView, nil)
+		if app.CongoAuth.SetupView != "" && app.CongoAuth.count() == 0 {
+			app.Render(w, r, app.CongoAuth.SetupView, nil)
 			return
 		}
 		for _, role := range roles {
-			if i, _ := auth.Authenticate(role, r); i != nil {
-				auth.TrackUsage(i, r.URL.String(), true)
+			if i, _ := app.CongoAuth.Authenticate(role, r); i != nil {
+				app.CongoAuth.TrackUsage(i, r.URL.String(), true)
 				fn(w, r)
 				return
 			}
 		}
 		if len(roles) == 1 {
-			auth.app.Render(w, r, auth.LoginView, roles[0])
+			app.Render(w, r, app.CongoAuth.LoginView, roles[0])
 		} else {
-			auth.app.Render(w, r, "congo-role-select.html", roles)
+			app.Render(w, r, "congo-role-select.html", roles)
 		}
 	}
 }
