@@ -1,7 +1,6 @@
 package congo_code
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/ccutch/congo/pkg/congo_auth"
@@ -33,8 +32,5 @@ func WithName(name string) RepoOpt {
 }
 
 func (repo *Repository) Serve(auth *congo_auth.Controller, roles ...string) http.Handler {
-	repo.code.WithGitServer(auth, roles...)
-	mux := http.NewServeMux()
-	mux.Handle(fmt.Sprintf("/%s/", repo.ID), repo.code.git)
-	return mux
+	return repo.code.GitServer(auth, roles...)
 }

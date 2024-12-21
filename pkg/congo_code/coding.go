@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"log"
+	"net/http"
 	"os/exec"
 	"path/filepath"
 	"slices"
@@ -16,7 +17,6 @@ import (
 
 type CongoCode struct {
 	root string
-	git  *gitkit.Server
 }
 
 func InitCongoCode(root string, opts ...CongoCodeOpt) *CongoCode {
@@ -48,22 +48,25 @@ type CongoCodeOpt func(*CongoCode) error
 
 func WithGitServer(auth *congo_auth.Controller) CongoCodeOpt {
 	return func(code *CongoCode) error {
-		return code.WithGitServer(auth)
+		code.GitServer(auth)
+		return nil
 	}
 }
 
-func (code *CongoCode) WithGitServer(auth *congo_auth.Controller, roles ...string) error {
+func (code *CongoCode) GitServer(auth *congo_auth.Controller, roles ...string) http.Handler {
 	if len(roles) == 0 {
 		roles = []string{auth.DefaultRole}
 	}
-	code.git = gitkit.New(gitkit.Config{
+
+	git := gitkit.New(gitkit.Config{
 		Dir:        filepath.Join(code.root, "repos"),
 		AutoCreate: true,
 		Auth:       auth != nil,
 	})
+
 	// If auth is provided then we will authenticate with basic auth
 	if auth != nil {
-		code.git.AuthFunc =
+		git.AuthFunc =
 			func(cred gitkit.Credential, req *gitkit.Request) (bool, error) {
 				if cred.Username == "" || cred.Password == "" {
 					return false, nil
@@ -84,5 +87,11 @@ func (code *CongoCode) WithGitServer(auth *congo_auth.Controller, roles ...strin
 				return true, nil
 			}
 	}
-	return code.git.Setup()
+
+	if err := git.Setup(); err != nil {
+		log.Fatalf("Failed to set repository server: %s", err)
+		return nil
+	}
+
+	return git
 }
