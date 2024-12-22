@@ -244,7 +244,7 @@ func (server *Server) Destroy() error {
 		return err
 	}
 
-	time.Sleep(5 * time.Second)
+	time.Sleep(15 * time.Second)
 	if err := server.deleteVolume(); err != nil {
 		return err
 	}

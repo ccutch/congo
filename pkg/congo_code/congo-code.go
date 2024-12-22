@@ -2,6 +2,7 @@ package congo_code
 
 import (
 	"bytes"
+	"embed"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,22 +11,31 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/ccutch/congo/pkg/congo"
 	"github.com/ccutch/congo/pkg/congo_auth"
 	"github.com/sosedoff/gitkit"
 	"golang.org/x/crypto/bcrypt"
 )
 
+//go:embed all:migrations
+var migrations embed.FS
+
 type CongoCode struct {
-	root string
+	DB *congo.Database
 }
 
 func InitCongoCode(root string, opts ...CongoCodeOpt) *CongoCode {
-	code := CongoCode{root: root}
+	code := CongoCode{DB: congo.SetupDatabase(root, "code.db", migrations)}
+	if err := code.DB.MigrateUp(); err != nil {
+		log.Fatal("Failed to setup code db:", err)
+	}
+
 	for _, opt := range opts {
 		if err := opt(&code); err != nil {
 			log.Fatal("Failed to setup Congo Code: ", err)
 		}
 	}
+
 	return &code
 }
 
@@ -50,7 +60,7 @@ func (code *CongoCode) Server(auth *congo_auth.Controller, roles ...string) http
 	}
 
 	git := gitkit.New(gitkit.Config{
-		Dir:        filepath.Join(code.root, "repos"),
+		Dir:        filepath.Join(code.DB.Root, "repos"),
 		AutoCreate: true,
 		Auth:       auth != nil,
 	})
@@ -62,6 +72,11 @@ func (code *CongoCode) Server(auth *congo_auth.Controller, roles ...string) http
 				if cred.Username == "" || cred.Password == "" {
 					return false, nil
 				}
+
+				if _, err := code.GetAccessToken(cred.Username, cred.Password); err == nil {
+					return true, nil
+				}
+
 				i, err := auth.Lookup(cred.Username)
 				if err != nil {
 					return false, err

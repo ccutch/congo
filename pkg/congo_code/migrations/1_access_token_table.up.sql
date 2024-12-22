@@ -1,0 +1,7 @@
+CREATE TABLE access_tokens (
+  id          TEXT PRIMARY KEY,
+  secret      TEXT NOT NULL,
+  expires_at  TIMESTAMP NOT NULL,
+  created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

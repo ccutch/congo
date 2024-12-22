@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"cmp"
 	"net/http"
 
 	"github.com/ccutch/congo/pkg/congo"
@@ -25,11 +26,14 @@ func (code CodingController) Handle(req *http.Request) congo.Controller {
 }
 
 func (code *CodingController) Files() []*congo_code.Blob {
-	return code.Repo.NewClient("master").LsTree(code.URL.Path)
+	branch := cmp.Or(code.URL.Query().Get("branch"), "master")
+	blobs, _ := code.Repo.Blobs(branch, code.URL.Path)
+	return blobs
 }
 
 func (code *CodingController) CurrentFile() *congo_code.Blob {
-	blob, err := code.Repo.NewClient("master").Open(code.URL.Path[1:])
+	branch := cmp.Or(code.URL.Query().Get("branch"), "master")
+	blob, err := code.Repo.Open(branch, code.URL.Path[1:])
 	if err != nil {
 		return nil
 	}

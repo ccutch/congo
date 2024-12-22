@@ -38,10 +38,12 @@ func (code *CongoCode) Workspace(name string, opts ...WorkspaceOpt) (*Workspace,
 			return nil, err
 		}
 	}
+
 	url, err := url.Parse(fmt.Sprintf("http://localhost:%d", w.Port))
 	if err != nil {
 		return nil, err
 	}
+
 	w.ReverseProxy = httputil.NewSingleHostReverseProxy(url)
 	return &w, nil
 }
@@ -56,21 +58,29 @@ func (w *Workspace) Start() error {
 		log.Printf("Workspace %s already running", w.Name)
 		return nil
 	}
-	_, output, err := w.code.bash(fmt.Sprintf(setupWorkspace, w.Name, w.code.root))
+
+	_, output, err := w.code.bash(fmt.Sprintf(setupWorkspace, w.Name, w.code.DB.Root))
 	if err != nil {
 		return fmt.Errorf("failed to setup workspace: %s", output.String())
 	}
+
 	time.Sleep(time.Second)
-	_, output, err = w.code.bash(fmt.Sprintf(startWorkspace, w.Name, w.code.root, w.Port))
+	_, output, err = w.code.bash(fmt.Sprintf(startWorkspace, w.Name, w.code.DB.Root, w.Port))
 	if err != nil {
 		return errors.Join(errors.New("failed to start workspace"), err)
 	}
+
 	if w.repo != nil {
-		output, errput, _ := w.Run(cloneRepository)
-		log.Println("cloning", output.String(), errput.String())
+		if token, err := w.code.NewAccessToken(time.Now().Add(100_000 * time.Hour)); err == nil {
+			output, errput, _ := w.Run(fmt.Sprintf(cloneRepository, token.ID, token.Secret))
+			log.Println("cloning", output.String(), errput.String())
+		} else {
+			log.Println("Failed to create access token: ", err)
+		}
 	} else {
 		log.Println("No repo detected")
 	}
+
 	return nil
 }
 
@@ -83,12 +93,15 @@ func (w *Workspace) Stop() error {
 		log.Printf("Workspace %s is not running", w.Name)
 		return nil
 	}
+
 	if _, _, err := w.code.docker("stop", w.Name); err != nil {
 		return fmt.Errorf("failed to stop workspace %s: %w", w.Name, err)
 	}
+
 	if _, _, err := w.code.docker("rm", w.Name); err != nil {
 		return fmt.Errorf("failed to remove workspace %s: %w", w.Name, err)
 	}
+
 	return nil
 }
 
