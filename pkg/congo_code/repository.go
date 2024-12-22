@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"sort"
@@ -143,4 +144,24 @@ func (repo *Repository) isDir(branch, path string) (bool, error) {
 func (repo *Repository) Open(branch, path string) (*Blob, error) {
 	isDir, err := repo.isDir(branch, path)
 	return &Blob{repo, isDir, err == nil, branch, path}, err
+}
+
+func (repo *Repository) Build(branch, path string) (string, error) {
+	dir, err := os.MkdirTemp("", "congo-build-*")
+	if err != nil {
+		return "", err
+	}
+
+	log.Println("dir", dir)
+	if err = repo.Copy(dir); err != nil {
+		return "", err
+	}
+
+	cmd := exec.Command("/usr/local/go/bin/go", "build", "-o", filepath.Join(dir, "congo"), path)
+	cmd.Dir = dir
+	if output, err := cmd.CombinedOutput(); err != nil {
+		return "", errors.New("Build Failed: " + err.Error() + " " + string(output))
+	}
+
+	return filepath.Join(dir, "congo"), nil
 }

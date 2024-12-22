@@ -3,11 +3,12 @@ package main
 import (
 	"flag"
 	"os"
+	"os/exec"
 
 	"github.com/ccutch/congo/pkg/congo_host"
 )
 
-func launch(args ...string) (server *congo_host.Server, err error) {
+func launch(args ...string) (*congo_host.Server, error) {
 	var (
 		cmd     = flag.NewFlagSet("launch", flag.ExitOnError)
 		apiKey  = cmd.String("api-key", "$DIGITAL_OCEAN_API_KEY", "Digital Ocean API Key")
@@ -27,5 +28,18 @@ func launch(args ...string) (server *congo_host.Server, err error) {
 	}
 
 	host := congo_host.InitCongoHost(*path, congo_host.WithApiToken(*apiKey))
-	return host.NewServer(*name, *region, *size, *storage)
+	server, err := host.NewServer(*name, *region, *size, *storage)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = exec.Command("go", "build", "-o", "congo", ".").Run(); err != nil {
+		return nil, err
+	}
+
+	if err = server.Deploy("congo"); err != nil {
+		return nil, err
+	}
+
+	return server, err
 }

@@ -137,6 +137,18 @@ func (server *Server) Copy(source, dest string) error {
 	return cmd.Run()
 }
 
+func (server *Server) Deploy(source string) error {
+	if server.Err == nil {
+		server.Err = server.Copy(source, "/root/congo")
+	}
+
+	if server.Err == nil {
+		server.Start()
+	}
+
+	return server.Err
+}
+
 func (server *Server) Start() {
 	if server.Err != nil {
 		return
@@ -229,12 +241,8 @@ func (server *Server) setupService() {
 		return
 	}
 	server.Err = server.Run(fmt.Sprintf(setupServer, server.Name+"-data"))
-	exec.Command("go", "build", "-o", "congo", ".").Run()
-	if server.Err = server.Copy("./congo", "/root/congo"); server.Err != nil {
-		log.Fatal("Failed to load congo binary", server.Err)
-	}
-	server.Start()
 }
+
 func (server *Server) Destroy() error {
 	if server.Err != nil {
 		return server.Err

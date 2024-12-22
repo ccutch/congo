@@ -64,19 +64,21 @@
 
       </div>
 
-      {{if .Domain}}
 
-      <a target="_blank" href="https://{{.Domain}}" class="btn btn-sm btn-outline">
-        Visit Host
-      </a>
+      <div class="flex items-center gap-2">
+        {{if .Domain}}
+        <a target="_blank" href="https://{{.Domain}}" class="btn btn-sm btn-outline">
+          Visit Host
+        </a>
+        {{else if .IpAddress}}
+        <button class="btn btn-sm btn-outline"
+                onclick="document.querySelector('#host-input').value='{{.ID}}'; add_domain_modal.showModal()">
+          Add Domain Name
+        </button>
 
-      {{else if .IpAddress}}
-      <button class="btn btn-sm btn-outline"
-              onclick="document.querySelector('#host-input').value='{{.ID}}'; add_domain_modal.showModal()">
-        Add Domain Name
-      </button>
-
-      {{end}}
+        {{end}}
+        {{template "server-menu" .}}
+      </div>
 
     </div>
 
@@ -117,8 +119,30 @@
   </div>
   <ul tabindex="0"
       class="dropdown-content menu menu-sm bg-neutral text-neutral-content rounded-box z-[1] min-w-52 shadow">
+    <!-- <li><a hx-post="/_hosting/restart">
+        Redeploy
+      </a></li> -->
     <li><a hx-post="/_settings/token" hx-confirm="Are you sure? This action cannot be undone.">
         Unset API Key
+      </a></li>
+  </ul>
+</div>
+{{end}}
+
+{{define "server-menu"}}
+<div class="dropdown dropdown-end">
+  <div tabindex="0" role="button" class="btn btn-ghost">
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 16 16" height="1em" width="1em"
+         xmlns="http://www.w3.org/2000/svg">
+      <path
+            d="M3 9.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3m5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3m5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3">
+      </path>
+    </svg>
+  </div>
+  <ul tabindex="0"
+      class="dropdown-content menu menu-sm bg-neutral text-neutral-content rounded-box z-[1] min-w-52 shadow">
+    <li><a hx-post="/_hosting/restart/{{.ID}}">
+        Redeploy
       </a></li>
   </ul>
 </div>
