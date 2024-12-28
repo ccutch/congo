@@ -20,7 +20,7 @@ func (auth *Controller) Protect(h http.Handler, roles ...string) http.HandlerFun
 
 func (app *Controller) ProtectFunc(fn http.HandlerFunc, roles ...string) http.HandlerFunc {
 	if len(roles) == 0 {
-		roles = []string{app.CongoAuth.DefaultRole}
+		roles = app.defaultRoles
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		if app.CongoAuth.SetupView != "" && app.CongoAuth.count() == 0 {
@@ -39,6 +39,29 @@ func (app *Controller) ProtectFunc(fn http.HandlerFunc, roles ...string) http.Ha
 		} else {
 			app.Render(w, r, "congo-role-select.html", roles)
 		}
+	}
+}
+
+func (auth *Controller) Track(h http.Handler, roles ...string) http.HandlerFunc {
+	return auth.TrackFunc(h.ServeHTTP, roles...)
+}
+
+func (app *Controller) TrackFunc(fn http.HandlerFunc, roles ...string) http.HandlerFunc {
+	if len(roles) == 0 {
+		roles = app.defaultRoles
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		if app.CongoAuth.SetupView != "" && app.CongoAuth.count() == 0 {
+			app.Render(w, r, app.CongoAuth.SetupView, nil)
+			return
+		}
+		for _, role := range roles {
+			if i, _ := app.CongoAuth.Authenticate(role, r); i != nil {
+				app.CongoAuth.TrackUsage(i, r.URL.String(), true)
+				break
+			}
+		}
+		fn(w, r)
 	}
 }
 

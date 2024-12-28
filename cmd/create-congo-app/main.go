@@ -37,6 +37,7 @@ func main() {
 	}
 
 	// Install dependencies
+	run("cd", *dest, "&&", "go", "mod", "init", *name)
 	run("cd", *dest, "&&", "go", "mod", "tidy")
 	run("cd", *dest, "&&", "go", "get", "-u", "github.com/ccutch/congo@latest")
 
@@ -47,19 +48,17 @@ func main() {
 	fmt.Print(" $ go run .\n\n")
 }
 
-func run(args ...string) (stdout bytes.Buffer, stderr bytes.Buffer) {
+func run(args ...string) {
 	if len(args) == 0 {
 		log.Fatal("missing arguments")
 	}
 
 	cmd := exec.Command("bash", "-c", strings.Join(args, " "))
 
-	cmd.Stdout = &stdout
+	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
-		log.Fatal("failed to run cmd: ", err)
+		log.Fatal("failed to run cmd: ", err, stderr.String())
 	}
-
-	return
 }

@@ -17,14 +17,20 @@ import (
 )
 
 type CongoHost struct {
-	path     string
+	root     string
 	platform *godo.Client
+
+	*apiCreds
 }
 
-type CongoHostOpt func(*CongoHost) error
+type apiCreds struct {
+	ClientID string
+	Secret   string
+	Redirect string
+}
 
-func InitCongoHost(path string, opts ...CongoHostOpt) *CongoHost {
-	host := CongoHost{path: path}
+func InitCongoHost(root string, opts ...CongoHostOpt) *CongoHost {
+	host := CongoHost{root: root}
 	for _, opt := range opts {
 		if err := opt(&host); err != nil {
 			log.Fatal("Failed to setup CongoHost:", err)
@@ -33,8 +39,8 @@ func InitCongoHost(path string, opts ...CongoHostOpt) *CongoHost {
 	return &host
 }
 
-func (host *CongoHost) GenerateSSHKey(name string) (string, string, error) {
-	serverData := filepath.Join(host.path, name)
+func (host *CongoHost) GenerateSSHKey(path string) (string, string, error) {
+	serverData := filepath.Join(host.root, path)
 	os.MkdirAll(serverData, 0700)
 	publicKeyPath := fmt.Sprintf("%s/id_rsa.pub", serverData)
 	privateKeyPath := fmt.Sprintf("%s/id_rsa", serverData)
@@ -69,6 +75,8 @@ func (host *CongoHost) GenerateSSHKey(name string) (string, string, error) {
 	return publicKeyPath, privateKeyPath, err
 }
 
+type CongoHostOpt func(*CongoHost) error
+
 func WithApiToken(apiKey string) CongoHostOpt {
 	return func(host *CongoHost) error {
 		host.WithApiToken(apiKey)
@@ -84,5 +92,20 @@ func (host *CongoHost) WithApiToken(token string) {
 			context.Background(),
 			oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token}),
 		))
+	}
+}
+
+func WithApiClient(clientID, secret, redirectURI string) CongoHostOpt {
+	return func(host *CongoHost) error {
+		host.WithApiClient(clientID, secret, redirectURI)
+		return nil
+	}
+}
+
+func (host *CongoHost) WithApiClient(clientID, secret, redirectURI string) {
+	if clientID == "" || secret == "" || redirectURI == "" {
+		host.apiCreds = nil
+	} else {
+		host.apiCreds = &apiCreds{clientID, secret, redirectURI}
 	}
 }

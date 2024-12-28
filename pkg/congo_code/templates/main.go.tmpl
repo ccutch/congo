@@ -11,6 +11,7 @@ import (
 	"github.com/ccutch/congo/pkg/congo"
 	"github.com/ccutch/congo/pkg/congo_auth"
 	"github.com/ccutch/congo/pkg/congo_boot"
+	"github.com/ccutch/congo/pkg/congo_code"
 	"github.com/ccutch/congo/pkg/congo_stat"
 )
 
@@ -21,20 +22,20 @@ var (
 	//go:embed all:templates
 	templates embed.FS
 
-	port = cmp.Or(os.Getenv("PORT"), "5000")
-	path = cmp.Or(os.Getenv("DATA_PATH"), os.TempDir()+"/{{.}}")
+	data = cmp.Or(os.Getenv("DATA_PATH"), os.TempDir()+"/launchpad")
+
+	auth = congo_auth.InitCongoAuth(data)
 
 	app = congo.NewApplication(
-	  // TODO: Uncomment if you are using Coder server
-		// congo.WithHostPrefix(fmt.Sprintf("/proxy/%s", port)),
-		congo.WithDatabase(congo.SetupDatabase(path, "app.db", migrations)),
+		congo.WithDatabase(congo.SetupDatabase(data, "app.db", migrations)),
+		congo.WithController("auth", auth.Controller()),
 		congo.WithController("posts", new(controllers.PostController)),
 		congo.WithTemplates(templates))
-	
-	dir = congo_auth.OpenDirectory(app)
 )
 
 func main() {
+	auth := app.Use("auth").(*congo_auth.Controller)
+
 	http.Handle("/{$}", app.Serve("homepage.html"))
 
 	http.Handle("GET /blog", app.Serve("blog-posts.html"))
@@ -42,5 +43,5 @@ func main() {
 	http.Handle("GET /blog/{post}", app.Serve("read-post.html"))
 	http.Handle("GET /blog/{post}/edit", app.Serve("edit-post.html"))
 
-	congo_boot.StartFromEnv(app, congo_stat.NewMonitor(app, dir))
+	congo_boot.StartFromEnv(app, congo_stat.NewMonitor(app, auth))
 }

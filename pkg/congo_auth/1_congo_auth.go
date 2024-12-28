@@ -11,10 +11,11 @@ import (
 type CongoAuth struct {
 	DB             *congo.Database
 	CookieName     string
-	DefaultRole    string
 	LogoutRedirect string
 	SetupView      string
 	LoginView      string
+	DefaultRole    string
+	defaultRoles   []string
 }
 
 //go:embed all:migrations
@@ -27,6 +28,7 @@ func InitCongoAuth(root string, opts ...DirectoryOpt) *CongoAuth {
 		DefaultRole:    "user",
 		LogoutRedirect: "/",
 		LoginView:      "congo-signin.html",
+		defaultRoles:   []string{"user"},
 	}
 	if err := dir.DB.MigrateUp(); err != nil {
 		log.Fatal("Failed to setup auth database:", err)
@@ -56,7 +58,20 @@ func WithDefaultRole(role string) DirectoryOpt {
 		if role == "" {
 			return errors.New("cannot have empty default role")
 		}
+		if len(d.defaultRoles) == 1 && d.defaultRoles[0] == d.DefaultRole {
+			d.defaultRoles = []string{role}
+		}
 		d.DefaultRole = role
+		return nil
+	}
+}
+
+func WithDefaultRoles(roles ...string) DirectoryOpt {
+	return func(d *CongoAuth) error {
+		if len(roles) == 0 {
+			roles = append(roles, d.DefaultRole)
+		}
+		d.defaultRoles = roles
 		return nil
 	}
 }

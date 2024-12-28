@@ -41,8 +41,8 @@ func (client *CongoHost) NewServer(name, region, size string, storage int64) (*S
 
 func (client *CongoHost) LoadServer(name, region string) (*Server, error) {
 	server := Server{CongoHost: client, Name: name, Region: region, ctx: context.Background()}
-	server.pubKey = fmt.Sprintf("%s/id_rsa.pub", filepath.Join(client.path, name))
-	server.priKey = fmt.Sprintf("%s/id_rsa", filepath.Join(client.path, name))
+	server.pubKey = fmt.Sprintf("%s/id_rsa.pub", filepath.Join(client.root, name))
+	server.priKey = fmt.Sprintf("%s/id_rsa", filepath.Join(client.root, name))
 	server.checkAccessKeys()
 	server.Refresh()
 	return &server, server.Err
@@ -50,10 +50,10 @@ func (client *CongoHost) LoadServer(name, region string) (*Server, error) {
 
 func (host *CongoHost) ListServers() ([]*Server, error) {
 	var servers []*Server
-	if _, err := os.Stat(host.path); os.IsNotExist(err) {
+	if _, err := os.Stat(host.root); os.IsNotExist(err) {
 		return []*Server{}, nil
 	}
-	entries, err := os.ReadDir(host.path)
+	entries, err := os.ReadDir(host.root)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read directory: %w", err)
 	}

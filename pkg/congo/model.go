@@ -11,9 +11,10 @@ type Model struct {
 	UpdatedAt time.Time
 }
 
+func (db *Database) Model() Model {
+	return Model{DB: db}
+}
+
 func (db *Database) NewModel(id string) Model {
-	return Model{
-		DB: db,
-		ID: id,
-	}
+	return Model{DB: db, ID: id}
 }
