@@ -1,0 +1,25 @@
+{{define "navbar"}}
+<div class="navbar bg-base-100 shadow-lg" hx-boost="true">
+  <div class="flex-1">
+    <a href="{{host}}/" class="flex items-center">
+      <span class="ml-3 text-xl font-semibold tracking-tight text-gray-900">Congo Launchpad</span>
+    </a>
+  </div>
+  <div class="flex-none">
+    <div class="flex items-center">
+      <div class="flex-shrink-0">
+        <a href="{{host}}/hosts" class="btn btn-ghost btn-sm">
+          Hosts
+        </a>
+      </div>
+      {{if auth.Current "admin"}}
+      <div class="flex-shrink-0">
+        <a href="{{host}}/apps" class="btn btn-ghost btn-sm">
+          Apps
+        </a>
+      </div>
+      {{end}}
+    </div>
+  </div>
+</div>
+{{end}}

@@ -1,0 +1,15 @@
+<html data-theme="{{theme}}">
+
+<head>
+  <title>Congo Launchpad</title>
+  {{template "includes"}}
+</head>
+
+<body class="bg-base-300">
+  {{template "navbar"}}
+  <div class="flex items-center justify-center mx-auto w-full max-w-screen-xl p-8 gap-4 min-h-screen">
+    <div class="flex flex-col gap-3 w-full max-w-xl">
+      {{template "congo-auth/signin-form" "admin"}}
+    </div>
+  </div>
+</body>

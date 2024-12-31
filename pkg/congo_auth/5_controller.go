@@ -19,11 +19,16 @@ type Controller struct {
 }
 
 func (auth *CongoAuth) Controller() *Controller {
+	for _, role := range auth.defaultRoles {
+		if auth.LoginViews[role] == "" {
+			auth.LoginViews[role] = "congo-signin.html"
+		}
+	}
 	return &Controller{CongoAuth: auth}
 }
 
 func (auth *Controller) Setup(app *congo.Application) {
-	auth.Application = app
+	auth.BaseController.Setup(app)
 	app.WithTemplates(Templates)
 	app.HandleFunc("POST /_auth/signup/{role}", auth.handleSignup)
 	app.HandleFunc("POST /_auth/signin/{role}", auth.handleSignin)
@@ -70,6 +75,10 @@ func (auth Controller) handleSignup(w http.ResponseWriter, r *http.Request) {
 		Expires:  time.Now().Add(24 * time.Hour),
 		HttpOnly: true,
 	})
+	if auth.CongoAuth.SetupRedirect != "" {
+		http.Redirect(w, r, auth.CongoAuth.SetupRedirect, http.StatusFound)
+		return
+	}
 	auth.Refresh(w, r)
 }
 
@@ -95,6 +104,10 @@ func (auth Controller) handleSignin(w http.ResponseWriter, r *http.Request) {
 		Expires:  time.Now().Add(24 * time.Hour),
 		HttpOnly: true,
 	})
+	if auth.CongoAuth.LoginRedirect != "" {
+		http.Redirect(w, r, auth.CongoAuth.LoginRedirect, http.StatusFound)
+		return
+	}
 	auth.Refresh(w, r)
 }
 

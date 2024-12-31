@@ -28,7 +28,7 @@ var (
 	auth = congo_auth.InitCongoAuth(data,
 		congo_auth.WithDefaultRole("developer"),
 		congo_auth.WithSetupView("setup.html"),
-		congo_auth.WithLoginView("login.html"))
+		congo_auth.WithLoginView("developer", "login.html"))
 
 	app = congo.NewApplication(
 		congo.WithDatabase(congo.SetupDatabase(data, "app.db", migrations)),
@@ -44,7 +44,6 @@ func main() {
 	auth := app.Use("auth").(*congo_auth.Controller)
 	coding := app.Use("coding").(*controllers.CodingController)
 
-	log.Println("coding", coding)
 	coding.Repo = __(coding.Repository("code", congo_code.WithName("Code")))
 	coding.Work = __(coding.Workspace("coder", congo_code.WithRepo(coding.Repo)))
 

@@ -35,7 +35,8 @@ func (app *Controller) ProtectFunc(fn http.HandlerFunc, roles ...string) http.Ha
 			}
 		}
 		if len(roles) == 1 {
-			app.Render(w, r, app.CongoAuth.LoginView, roles[0])
+			role := roles[0]
+			app.Render(w, r, app.CongoAuth.LoginViews[role], role)
 		} else {
 			app.Render(w, r, "congo-role-select.html", roles)
 		}

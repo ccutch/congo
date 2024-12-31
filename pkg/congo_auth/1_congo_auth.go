@@ -13,7 +13,9 @@ type CongoAuth struct {
 	CookieName     string
 	LogoutRedirect string
 	SetupView      string
-	LoginView      string
+	SetupRedirect  string
+	LoginViews     map[string]string
+	LoginRedirect  string
 	DefaultRole    string
 	defaultRoles   []string
 }
@@ -27,7 +29,7 @@ func InitCongoAuth(root string, opts ...DirectoryOpt) *CongoAuth {
 		CookieName:     "congo-app",
 		DefaultRole:    "user",
 		LogoutRedirect: "/",
-		LoginView:      "congo-signin.html",
+		LoginViews:     map[string]string{"user": "congo-signin.html"},
 		defaultRoles:   []string{"user"},
 	}
 	if err := dir.DB.MigrateUp(); err != nil {
@@ -62,6 +64,7 @@ func WithDefaultRole(role string) DirectoryOpt {
 			d.defaultRoles = []string{role}
 		}
 		d.DefaultRole = role
+		d.LoginViews[role] = "congo-signin.html"
 		return nil
 	}
 }
@@ -86,6 +89,12 @@ func WithLogoutRedirect(url string) DirectoryOpt {
 	}
 }
 
+func WithLoginRedirect(url string) DirectoryOpt {
+	return func(auth *CongoAuth) error {
+		auth.LoginRedirect = url
+		return nil
+	}
+}
 func WithSetupView(view string) DirectoryOpt {
 	return func(auth *CongoAuth) error {
 		auth.SetupView = view
@@ -93,9 +102,16 @@ func WithSetupView(view string) DirectoryOpt {
 	}
 }
 
-func WithLoginView(view string) DirectoryOpt {
+func WithLoginView(role, view string) DirectoryOpt {
 	return func(auth *CongoAuth) error {
-		auth.LoginView = view
+		auth.LoginViews[role] = view
+		return nil
+	}
+}
+
+func WithSetupRedirect(url string) DirectoryOpt {
+	return func(auth *CongoAuth) error {
+		auth.SetupRedirect = url
 		return nil
 	}
 }

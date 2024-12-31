@@ -24,9 +24,13 @@ var (
 	data = cmp.Or(os.Getenv("DATA_PATH"), os.TempDir()+"/launchpad")
 
 	auth = congo_auth.InitCongoAuth(data,
-		congo_auth.WithLoginView("login.html"),
+		congo_auth.WithCookieName("launchpad"),
+		congo_auth.WithLoginRedirect("/hosts"),
 		congo_auth.WithSetupView("setup.html"),
+		congo_auth.WithSetupRedirect("/apps"),
 		congo_auth.WithDefaultRoles("admin", "user"),
+		congo_auth.WithLoginView("user", "login-user.html"),
+		congo_auth.WithLoginView("admin", "login-admin.html"),
 		congo_auth.WithDefaultRole("user"))
 
 	app = congo.NewApplication(
@@ -46,7 +50,7 @@ func main() {
 	http.Handle("/pricing", auth.Track(app.Serve("pricing.html"), "user"))
 	http.Handle("/register", auth.Track(app.Serve("register.html"), "user"))
 
-	http.Handle("/hosts", auth.Protect(app.Serve("my-hosts.html")))
+	http.Handle("/hosts", auth.Protect(app.Serve("hosts-dashboard.html")))
 	http.Handle("/hosts/{host}", auth.Protect(app.Serve("host-details.html")))
 	http.Handle("/create/host", auth.Protect(app.Serve("create-host.html")))
 

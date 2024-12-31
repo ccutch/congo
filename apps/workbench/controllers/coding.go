@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"cmp"
+	"log"
 	"net/http"
 
 	"github.com/ccutch/congo/pkg/congo"
@@ -18,6 +19,7 @@ type CodingController struct {
 func (code *CodingController) Setup(app *congo.Application) {
 	code.BaseController.Setup(app)
 	code.CongoCode = congo_code.InitCongoCode(app.DB.Root)
+	app.HandleFunc("/_coding/download", code.handleDownload)
 }
 
 func (code CodingController) Handle(req *http.Request) congo.Controller {
@@ -38,4 +40,16 @@ func (code *CodingController) CurrentFile() *congo_code.Blob {
 		return nil
 	}
 	return blob
+}
+
+func (code *CodingController) handleDownload(w http.ResponseWriter, r *http.Request) {
+	path, err := code.Repo.Build("master", ".")
+	if err != nil {
+		log.Println("Failed to build binary: ", err)
+	}
+
+	w.Header().Set("Content-Disposition", "attachment; filename=congo")
+	w.Header().Set("Content-Type", "application/octet-stream")
+
+	http.ServeFile(w, r, path)
 }
