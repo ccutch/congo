@@ -33,7 +33,7 @@ func LoadEnv(app *congo.Application) (string, string) {
 	return cert, key
 }
 
-func Start(app *congo.Application, services ...Service) {
+func Start(main Service, services ...Service) {
 	for i, s := range services {
 		go func() {
 			if err := s.Start(); err != nil {
@@ -42,7 +42,7 @@ func Start(app *congo.Application, services ...Service) {
 		}()
 	}
 
-	if err := app.Start(); err != nil {
+	if err := main.Start(); err != nil {
 		log.Fatalf("Failed to start main service: %s", err)
 	}
 

@@ -2,12 +2,17 @@ package congo
 
 import (
 	"cmp"
+	"embed"
+	_ "embed"
 	"html/template"
 	"io/fs"
 	"log"
 	"net/http"
 	"os"
 )
+
+//go:embed all:templates
+var templates embed.FS
 
 type Application struct {
 	router      *http.ServeMux
@@ -30,7 +35,7 @@ func NewApplication(opts ...ApplicationOpt) *Application {
 	app := Application{
 		router:      http.NewServeMux(),
 		controllers: map[string]Controller{},
-		sources:     []fs.FS{},
+		sources:     []fs.FS{templates},
 	}
 	for _, opt := range opts {
 		if err := opt(&app); err != nil {

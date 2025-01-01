@@ -54,17 +54,17 @@ func (auth Controller) handleSignup(w http.ResponseWriter, r *http.Request) {
 	role := cmp.Or(r.FormValue("role"), auth.CongoAuth.DefaultRole)
 	email, username, password := r.FormValue("email"), r.FormValue("username"), r.FormValue("password")
 	if email == "" || username == "" || password == "" {
-		auth.Render(w, r, "congo-auth/error-message", fmt.Errorf("missing required fields"))
+		auth.Render(w, r, "error-message", fmt.Errorf("missing required fields"))
 		return
 	}
 	identity, err := auth.CongoAuth.Create(role, email, username, password)
 	if err != nil {
-		auth.Render(w, r, "congo-auth/error-message", fmt.Errorf("failed to create identity: %s", err))
+		auth.Render(w, r, "error-message", fmt.Errorf("failed to create identity: %s", err))
 		return
 	}
 	session, err := identity.NewSession()
 	if err != nil {
-		auth.Render(w, r, "congo-auth/error-message", fmt.Errorf("failed to start session: %s", err))
+		auth.Render(w, r, "error-message", fmt.Errorf("failed to start session: %s", err))
 		return
 	}
 	token := session.Token()
@@ -85,16 +85,16 @@ func (auth Controller) handleSignup(w http.ResponseWriter, r *http.Request) {
 func (auth Controller) handleSignin(w http.ResponseWriter, r *http.Request) {
 	identity, err := auth.CongoAuth.Lookup(r.FormValue("username"))
 	if err != nil {
-		auth.Render(w, r, "congo-auth/error-message", fmt.Errorf("failed to find identity"))
+		auth.Render(w, r, "error-message", fmt.Errorf("failed to find identity"))
 		return
 	}
 	if !identity.Verify(r.FormValue("password")) {
-		auth.Render(w, r, "congo-auth/error-message", fmt.Errorf("failed to find identity"))
+		auth.Render(w, r, "error-message", fmt.Errorf("failed to find identity"))
 		return
 	}
 	session, err := identity.NewSession()
 	if err != nil {
-		auth.Render(w, r, "congo-auth/error-message", fmt.Errorf("failed to start session: %s", err))
+		auth.Render(w, r, "error-message", fmt.Errorf("failed to start session: %s", err))
 		return
 	}
 	http.SetCookie(w, &http.Cookie{

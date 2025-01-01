@@ -6,7 +6,7 @@
 </head>
 
 <body>
-  {{block "congo-auth/signin-form" .}}
+  {{block "congo-auth/signin-form" (req.PathValue "role")}}
   <div id="congo-auth--signin-form" class="space-y-3">
     <div class="error"></div>
 
