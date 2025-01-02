@@ -3,7 +3,7 @@ package controllers
 import (
 	"net/http"
 
-	"github.com/ccutch/congo/example/models"
+	"github.com/ccutch/congo/apps/blogfront/models"
 	"github.com/ccutch/congo/pkg/congo"
 )
 

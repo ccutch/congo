@@ -18,11 +18,11 @@ congo-hosting # For help deploying your app
 To get started running the project locally use the following command:
 
 ```bash
-go run ./example
+go run ./apps/blogfront
 ```
 
 #### Models
-You can find a full example of a model in `example/models/post.go`.
+You can find a full example of a model in `apps/blogfront/models/post.go`.
 
 ```go
 
@@ -55,7 +55,7 @@ func SearchPosts(db *congo.Database, query string) (posts []*Post, err error) {
 ```
 
 #### Controller
-You can find an example of a controller in `example/controllers/posts.go`.
+You can find an example of a controller in `apps/blogfront/controllers/posts.go`.
 
 ```go
 
@@ -83,7 +83,7 @@ func (posts *PostController) SearchPosts() ([]*models.Post, error) {
 ```
 
 #### Views
-You can find an example of a view in `example/templates/blog-posts.html`.
+You can find an example of a view in `apps/blogfront/templates/blog-posts.html`.
 
 ```html
 
@@ -102,35 +102,8 @@ You can find an example of a view in `example/templates/blog-posts.html`.
 ```
 
 #### Runner
-To run the app setup the app like shown in ./examples/main.go:
-```go
+To run the app setup the app like shown in ./apps/blogfront/main.go:
 
-//...
-
-var (
-	//go:embed all:migrations
-	migrations embed.FS
-
-	//go:embed all:templates
-	templates embed.FS
-
-	path = cmp.Or(os.Getenv("DATA_PATH"), os.TempDir()+"/congo-data")
-
-	app = congo.NewApplication(
-		congo.WithDatabase(congo.SetupDatabase(path, "app.db", migrations)),
-		congo.WithController("posts", new(controllers.PostController)),
-		congo.WithTemplates(templates))
-)
-
-func main() {
-	//...
-
-	http.Handle("GET /blog", app.Serve("blog-posts.html"))
-
-	congo_boot.StartFromEnv(app)
-}
-
-```
 
 ## Deploying to Digital Ocean
 You can use the command line tool found in `cmd/congo-hosting` to quickly get setup hosting you own congo instance. Run the following commands:

@@ -78,6 +78,9 @@ func (host *CongoHost) GenerateSSHKey(path string) (string, string, error) {
 type CongoHostOpt func(*CongoHost) error
 
 func WithApiToken(apiKey string) CongoHostOpt {
+	if apiKey == "" {
+		log.Fatal("Missing Digital Ocean API Key")
+	}
 	return func(host *CongoHost) error {
 		host.WithApiToken(apiKey)
 		return nil

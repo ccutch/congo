@@ -15,6 +15,7 @@ func destroy(args ...string) error {
 		path   = cmd.String("data-path", "/tmp/congo", "Local storage for SSH Keys")
 		name   = cmd.String("name", "congo-server", "Name of Digital Ocean droplet")
 		region = cmd.String("region", "sfo2", "Region of Digital Ocean droplet")
+		force  = cmd.Bool("force", false, "Force destroy even if there are errors")
 	)
 
 	if err := cmd.Parse(args[1:]); err != nil {
@@ -31,7 +32,7 @@ func destroy(args ...string) error {
 		return fmt.Errorf("failed to load server: %w", err)
 	}
 
-	if err := server.Destroy(); err != nil {
+	if err := server.Destroy(*force); err != nil {
 		return fmt.Errorf("failed to destroy server: %w", err)
 	}
 

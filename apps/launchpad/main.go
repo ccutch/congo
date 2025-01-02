@@ -25,13 +25,11 @@ var (
 
 	auth = congo_auth.InitCongoAuth(data,
 		congo_auth.WithCookieName("launchpad"),
-		congo_auth.WithLoginRedirect("/hosts"),
 		congo_auth.WithSetupView("setup.html"),
-		congo_auth.WithSetupRedirect("/apps"),
-		congo_auth.WithDefaultRoles("admin", "user"),
-		congo_auth.WithLoginView("user", "login-user.html"),
-		congo_auth.WithLoginView("admin", "login-admin.html"),
-		congo_auth.WithDefaultRole("user"))
+		congo_auth.WithSetupDest("/apps"),
+		congo_auth.WithSigninView("user", "login-user.html"),
+		congo_auth.WithSigninView("admin", "login-admin.html"),
+		congo_auth.WithSigninDest("/hosts"))
 
 	app = congo.NewApplication(
 		congo.WithDatabase(congo.SetupDatabase(data, "app.db", migrations)),
@@ -39,7 +37,7 @@ var (
 		congo.WithController("auth", auth.Controller()),
 		congo.WithController("apps", new(controllers.AppsController)),
 		congo.WithController("hosts", new(controllers.HostsController)),
-		congo.WithHtmlTheme("wireframe"),
+		congo.WithHtmlTheme(cmp.Or(os.Getenv("CONGO_THEME"), "wireframe")),
 		congo.WithTemplates(templates))
 )
 

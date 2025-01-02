@@ -27,8 +27,8 @@ var (
 
 	auth = congo_auth.InitCongoAuth(data,
 		congo_auth.WithDefaultRole("developer"),
-		congo_auth.WithSetupView("setup.html"),
-		congo_auth.WithLoginView("developer", "login.html"))
+		// congo_auth.WithSetupView("setup.html"),
+		congo_auth.WithSigninView("developer", "login.html"))
 
 	app = congo.NewApplication(
 		congo.WithDatabase(congo.SetupDatabase(data, "app.db", migrations)),
@@ -36,7 +36,7 @@ var (
 		congo.WithController("coding", new(controllers.CodingController)),
 		congo.WithController("hosting", new(controllers.HostingController)),
 		congo.WithController("settings", new(controllers.SettingsController)),
-		congo.WithHtmlTheme("dark"),
+		congo.WithHtmlTheme(cmp.Or(os.Getenv("CONGO_THEME"), "dark")),
 		congo.WithTemplates(templates))
 )
 

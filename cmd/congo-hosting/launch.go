@@ -2,10 +2,12 @@ package main
 
 import (
 	"flag"
+	"log"
 	"os"
 	"os/exec"
 
 	"github.com/ccutch/congo/pkg/congo_host"
+	"github.com/pkg/errors"
 )
 
 func launch(args ...string) (*congo_host.Server, error) {
@@ -30,15 +32,16 @@ func launch(args ...string) (*congo_host.Server, error) {
 	host := congo_host.InitCongoHost(*path, congo_host.WithApiToken(*apiKey))
 	server, err := host.NewServer(*name, *region, *size, *storage)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to create server")
 	}
 
 	if err = exec.Command("go", "build", "-o", "congo", ".").Run(); err != nil {
-		return nil, err
+		log.Println("Failed to build binary: ", err)
+		return nil, errors.Wrap(err, "failed to build binary")
 	}
 
 	if err = server.Deploy("congo"); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to deploy binary")
 	}
 
 	return server, err

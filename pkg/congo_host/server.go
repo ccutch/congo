@@ -1,9 +1,12 @@
 package congo_host
 
 import (
+	"bytes"
+	"cmp"
 	"context"
 	_ "embed"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/exec"
@@ -12,6 +15,7 @@ import (
 	"time"
 
 	"github.com/digitalocean/godo"
+	"github.com/pkg/errors"
 )
 
 type Server struct {
@@ -28,10 +32,13 @@ type Server struct {
 	ctx    context.Context
 	pubKey string
 	priKey string
+
+	Stdin  io.Reader
+	Stdout io.Writer
 }
 
 func (client *CongoHost) NewServer(name, region, size string, storage int64) (*Server, error) {
-	server := Server{CongoHost: client, Name: name, Region: region, ctx: context.Background()}
+	server := Server{CongoHost: client, Name: name, Region: region, ctx: context.Background(), Stdin: os.Stdin, Stdout: os.Stdout}
 	server.setupAccessKey()
 	server.setupVolumne(storage)
 	server.startDroplet(size)
@@ -40,7 +47,7 @@ func (client *CongoHost) NewServer(name, region, size string, storage int64) (*S
 }
 
 func (client *CongoHost) LoadServer(name, region string) (*Server, error) {
-	server := Server{CongoHost: client, Name: name, Region: region, ctx: context.Background()}
+	server := Server{CongoHost: client, Name: name, Region: region, ctx: context.Background(), Stdin: os.Stdin, Stdout: os.Stdout}
 	server.pubKey = fmt.Sprintf("%s/id_rsa.pub", filepath.Join(client.root, name))
 	server.priKey = fmt.Sprintf("%s/id_rsa", filepath.Join(client.root, name))
 	server.checkAccessKeys()
@@ -114,10 +121,11 @@ func (server *Server) Run(args ...string) error {
 		fmt.Sprintf("root@%s", server.IP),
 		strings.Join(args, " "),
 	)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
+	var buf bytes.Buffer
+	cmd.Stdin = server.Stdin
+	cmd.Stdout = server.Stdout
+	cmd.Stderr = &buf
+	return errors.Wrap(cmd.Run(), buf.String())
 }
 
 func (server *Server) Copy(source, dest string) error {
@@ -131,10 +139,11 @@ func (server *Server) Copy(source, dest string) error {
 		source,
 		fmt.Sprintf("root@%s:%s", server.IP, dest),
 	)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
+	var buf bytes.Buffer
+	cmd.Stdin = cmp.Or[io.Reader](server.Stdin, os.Stdin)
+	cmd.Stdout = cmp.Or[io.Writer](server.Stdout, os.Stdout)
+	cmd.Stderr = &buf
+	return errors.Wrap(cmd.Run(), buf.String())
 }
 
 func (server *Server) Deploy(source string) error {
@@ -149,59 +158,14 @@ func (server *Server) Deploy(source string) error {
 	return server.Err
 }
 
+//go:embed resources/start-server.sh
+var startServer string
+
 func (server *Server) Start() {
 	if server.Err != nil {
 		return
 	}
 	server.Err = server.Run(fmt.Sprintf(startServer, 8080))
-}
-
-func (server *Server) GenerateCerts(domain string) {
-	if server.Err != nil {
-		return
-	}
-	server.Err = server.Run(fmt.Sprintf(generateCerts, domain))
-}
-
-func (server *Server) checkAccessKeys() {
-	if server.Err != nil {
-		return
-	}
-	if _, server.Err = os.Stat(server.pubKey); server.Err != nil {
-		return
-	}
-	_, server.Err = os.Stat(server.priKey)
-}
-
-func (server *Server) setupAccessKey() {
-	if server.Err != nil {
-		return
-	}
-	server.pubKey, server.priKey, server.Err = server.GenerateSSHKey(server.Name)
-	if server.Err != nil {
-		return
-	}
-	var data []byte
-	data, server.Err = os.ReadFile(server.pubKey)
-	if server.Err != nil {
-		return
-	}
-	server.sshKey, _, server.Err = server.CongoHost.platform.Keys.Create(server.ctx, &godo.KeyCreateRequest{
-		Name:      server.Name + "-admin-key",
-		PublicKey: string(data),
-	})
-}
-
-func (server *Server) setupVolumne(size int64) {
-	if server.Err != nil {
-		return
-	}
-	server.volume, _, server.Err = server.platform.Storage.CreateVolume(server.ctx, &godo.VolumeCreateRequest{
-		Name:          server.Name + "-data",
-		Region:        server.Region,
-		SizeGigaBytes: size,
-		Description:   "volume for congo server",
-	})
 }
 
 func (server *Server) startDroplet(size string) {
@@ -236,6 +200,9 @@ func (server *Server) startDroplet(size string) {
 	time.Sleep(30 * time.Second)
 }
 
+//go:embed resources/setup-server.sh
+var setupServer string
+
 func (server *Server) setupService() {
 	if server.Err != nil {
 		return
@@ -243,25 +210,26 @@ func (server *Server) setupService() {
 	server.Err = server.Run(fmt.Sprintf(setupServer, server.Name+"-data"))
 }
 
-func (server *Server) Destroy() error {
+func (server *Server) Destroy(force bool) error {
 	if server.Err != nil {
 		return server.Err
 	}
 
-	if err := server.deleteDroplet(); err != nil {
+	if err := server.deleteDroplet(); !force && err != nil {
+		return err
+	} else {
+		time.Sleep(15 * time.Second)
+	}
+
+	if err := server.deleteVolume(); !force && err != nil {
 		return err
 	}
 
-	time.Sleep(15 * time.Second)
-	if err := server.deleteVolume(); err != nil {
+	if err := server.deleteSSHKey(); !force && err != nil {
 		return err
 	}
 
-	if err := server.deleteSSHKey(); err != nil {
-		return err
-	}
-
-	if err := server.deleteLocalKeys(); err != nil {
+	if err := server.deleteLocalKeys(); !force && err != nil {
 		return err
 	}
 
@@ -282,52 +250,5 @@ func (server *Server) deleteDroplet() error {
 	}
 
 	server.droplet = nil
-	return nil
-}
-
-func (server *Server) deleteVolume() error {
-	if server.volume == nil {
-		return nil
-	}
-
-	fmt.Printf("Deleting volume %s...\n", server.volume.Name)
-	_, err := server.platform.Storage.DeleteVolume(server.ctx, server.volume.ID)
-	if err != nil {
-		return fmt.Errorf("failed to delete volume: %w", err)
-	}
-
-	server.volume = nil
-	return nil
-}
-
-func (server *Server) deleteSSHKey() error {
-	if server.sshKey == nil {
-		return nil
-	}
-
-	fmt.Printf("Deleting SSH key %s...\n", server.sshKey.Name)
-	_, err := server.platform.Keys.DeleteByID(server.ctx, server.sshKey.ID)
-	if err != nil {
-		return fmt.Errorf("failed to delete SSH key: %w", err)
-	}
-
-	server.sshKey = nil
-	return nil
-}
-
-func (server *Server) deleteLocalKeys() error {
-
-	if server.priKey != "" {
-		if err := os.Remove(server.priKey); err != nil && !os.IsNotExist(err) {
-			return fmt.Errorf("failed to delete private key file: %w", err)
-		}
-	}
-
-	if server.pubKey != "" {
-		if err := os.Remove(server.pubKey); err != nil && !os.IsNotExist(err) {
-			return fmt.Errorf("failed to delete public key file: %w", err)
-		}
-	}
-
 	return nil
 }

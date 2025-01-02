@@ -1,0 +1,27 @@
+{{define "congo-auth/identities"}}
+<div class="flex flex-col py-4 gap-4">
+
+  {{range auth.Identities .}}
+  <div class="card bg-base-100 shadow p-3">
+    <div class="flex flex-col">
+
+      {{/* User's Name */}}
+      <span class="text-lg font-semibold">
+        {{.Username}}
+
+        {{/* User's Role */}}
+        <div class="ml-2 badge badge-sm badge-neutral">
+          {{.Role}}
+        </div>
+      </span>
+
+      {{/* User's Email */}}
+      <span class="underline text-sm font-medium opacity-80">
+        {{.Email}}
+      </span>
+    </div>
+  </div>
+  {{end}}
+
+</div>
+{{end}}

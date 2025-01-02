@@ -19,11 +19,6 @@ type Controller struct {
 }
 
 func (auth *CongoAuth) Controller() *Controller {
-	for _, role := range auth.defaultRoles {
-		if auth.LoginViews[role] == "" {
-			auth.LoginViews[role] = "congo-signin.html"
-		}
-	}
 	return &Controller{CongoAuth: auth}
 }
 
@@ -48,6 +43,19 @@ func (auth *Controller) Current(role string) *Identity {
 func (auth *Controller) Usage() ([]*Usage, error) {
 	identity := auth.Current(auth.PathValue("role"))
 	return identity.Usages()
+}
+
+func (auth *Controller) Identities() ([]*Identity, error) {
+	role := auth.PathValue("role")
+	if role != "" {
+		return auth.SearchByRole(role, auth.URL.Query().Get("query"))
+	}
+	var identities []*Identity
+	imap, err := auth.Search(auth.URL.Query().Get("query"))
+	for _, idents := range imap {
+		identities = append(identities, idents...)
+	}
+	return identities, err
 }
 
 func (auth Controller) handleSignup(w http.ResponseWriter, r *http.Request) {
@@ -104,8 +112,8 @@ func (auth Controller) handleSignin(w http.ResponseWriter, r *http.Request) {
 		Expires:  time.Now().Add(24 * time.Hour),
 		HttpOnly: true,
 	})
-	if auth.CongoAuth.LoginRedirect != "" {
-		http.Redirect(w, r, auth.CongoAuth.LoginRedirect, http.StatusFound)
+	if auth.CongoAuth.SigninRedirect != "" {
+		http.Redirect(w, r, auth.CongoAuth.SigninRedirect, http.StatusFound)
 		return
 	}
 	auth.Refresh(w, r)

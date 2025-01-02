@@ -1,6 +1,7 @@
 package congo_auth
 
 import (
+	"cmp"
 	"embed"
 	"errors"
 	"log"
@@ -11,13 +12,12 @@ import (
 type CongoAuth struct {
 	DB             *congo.Database
 	CookieName     string
-	LogoutRedirect string
+	DefaultRole    string
 	SetupView      string
 	SetupRedirect  string
-	LoginViews     map[string]string
-	LoginRedirect  string
-	DefaultRole    string
-	defaultRoles   []string
+	SigninViews    map[string]string
+	SigninRedirect string
+	LogoutRedirect string
 }
 
 //go:embed all:migrations
@@ -28,9 +28,9 @@ func InitCongoAuth(root string, opts ...DirectoryOpt) *CongoAuth {
 		DB:             congo.SetupDatabase(root, "auth.db", migrations),
 		CookieName:     "congo-app",
 		DefaultRole:    "user",
+		SetupView:      "congo-signup.html",
+		SigninViews:    map[string]string{"user": "congo-signin.html"},
 		LogoutRedirect: "/",
-		LoginViews:     map[string]string{"user": "congo-signin.html"},
-		defaultRoles:   []string{"user"},
 	}
 	if err := dir.DB.MigrateUp(); err != nil {
 		log.Fatal("Failed to setup auth database:", err)
@@ -60,21 +60,8 @@ func WithDefaultRole(role string) DirectoryOpt {
 		if role == "" {
 			return errors.New("cannot have empty default role")
 		}
-		if len(d.defaultRoles) == 1 && d.defaultRoles[0] == d.DefaultRole {
-			d.defaultRoles = []string{role}
-		}
 		d.DefaultRole = role
-		d.LoginViews[role] = "congo-signin.html"
-		return nil
-	}
-}
-
-func WithDefaultRoles(roles ...string) DirectoryOpt {
-	return func(d *CongoAuth) error {
-		if len(roles) == 0 {
-			roles = append(roles, d.DefaultRole)
-		}
-		d.defaultRoles = roles
+		d.SigninViews[role] = cmp.Or(d.SigninViews[role], "congo-signin.html")
 		return nil
 	}
 }
@@ -89,9 +76,9 @@ func WithLogoutRedirect(url string) DirectoryOpt {
 	}
 }
 
-func WithLoginRedirect(url string) DirectoryOpt {
+func WithSigninDest(url string) DirectoryOpt {
 	return func(auth *CongoAuth) error {
-		auth.LoginRedirect = url
+		auth.SigninRedirect = url
 		return nil
 	}
 }
@@ -102,14 +89,14 @@ func WithSetupView(view string) DirectoryOpt {
 	}
 }
 
-func WithLoginView(role, view string) DirectoryOpt {
+func WithSigninView(role, view string) DirectoryOpt {
 	return func(auth *CongoAuth) error {
-		auth.LoginViews[role] = view
+		auth.SigninViews[role] = view
 		return nil
 	}
 }
 
-func WithSetupRedirect(url string) DirectoryOpt {
+func WithSetupDest(url string) DirectoryOpt {
 	return func(auth *CongoAuth) error {
 		auth.SetupRedirect = url
 		return nil

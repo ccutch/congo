@@ -5,7 +5,7 @@ import (
 	"embed"
 	"os"
 
-	"github.com/ccutch/congo/example/controllers"
+	"github.com/ccutch/congo/apps/blogfront/controllers"
 
 	"github.com/ccutch/congo/pkg/congo"
 	"github.com/ccutch/congo/pkg/congo_auth"

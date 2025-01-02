@@ -1,0 +1,50 @@
+<html>
+
+<head>
+  <title>Signin</title>
+  {{template "includes"}}
+</head>
+
+<body>
+  <div class="flex flex-col items-center gap-12 py-12">
+
+    <h1 class="text-4xl font-semibold">
+      Welcome Back {{.}}!
+    </h1>
+
+    <div class="card bg-base-300 shadow w-full max-w-sm">
+      <div class="card-body">
+        <h2 class="card-title capitalize text-center">
+          {{.}} Signin
+        </h2>
+
+        {{block "congo-auth/signin-form" .}}
+        <div id="congo-auth--signin-form" class="space-y-3">
+          <div class="error"></div>
+
+          <form class="flex flex-col gap-y-4 mb-0"
+                hx-post="{{host}}/_auth/signin/{{.}}"
+                hx-target="previous .error">
+
+            <input class="input input-bordered"
+                   required name="username" type="text"
+                   placeholder="Username or email">
+
+            <input class="input input-bordered"
+                   required name="password" type="password"
+                   placeholder="A unique password">
+
+            <button class="btn btn-primary">
+              Signin
+            </button>
+
+          </form>
+        </div>
+        {{end}}
+      </div>
+    </div>
+  </div>
+
+</body>
+
+</html>
