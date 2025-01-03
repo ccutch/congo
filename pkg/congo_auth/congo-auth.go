@@ -1,9 +1,7 @@
 package congo_auth
 
 import (
-	"cmp"
 	"embed"
-	"errors"
 	"log"
 
 	"github.com/ccutch/congo/pkg/congo"
@@ -29,76 +27,67 @@ func InitCongoAuth(root string, opts ...DirectoryOpt) *CongoAuth {
 		CookieName:     "congo-app",
 		DefaultRole:    "user",
 		SetupView:      "congo-signup.html",
-		SigninViews:    map[string]string{"user": "congo-signin.html"},
+		SigninViews:    map[string]string{},
 		LogoutRedirect: "/",
 	}
 	if err := dir.DB.MigrateUp(); err != nil {
 		log.Fatal("Failed to setup auth database:", err)
 	}
 	for _, opt := range opts {
-		if err := opt(dir); err != nil {
-			log.Fatalf("Failed to open Directory @ %s: %s", root, err)
-		}
+		opt(dir)
 	}
 	return dir
 }
 
-type DirectoryOpt func(*CongoAuth) error
+type DirectoryOpt func(*CongoAuth)
 
 func WithCookieName(name string) DirectoryOpt {
-	return func(d *CongoAuth) error {
+	return func(d *CongoAuth) {
 		if name == "" {
-			return errors.New("cannot have empty cookie name")
+			log.Fatal("cannot have empty cookie name")
 		}
 		d.CookieName = name
-		return nil
 	}
 }
 
 func WithDefaultRole(role string) DirectoryOpt {
-	return func(d *CongoAuth) error {
+	return func(d *CongoAuth) {
 		if role == "" {
-			return errors.New("cannot have empty default role")
+			log.Fatal("cannot have empty default role")
 		}
 		d.DefaultRole = role
-		d.SigninViews[role] = cmp.Or(d.SigninViews[role], "congo-signin.html")
-		return nil
 	}
 }
 
-func WithLogoutRedirect(url string) DirectoryOpt {
-	return func(d *CongoAuth) error {
-		if url == "" {
-			return errors.New("cannot have empty logout redirect url")
-		}
-		d.LogoutRedirect = url
-		return nil
-	}
-}
-
-func WithSigninDest(url string) DirectoryOpt {
-	return func(auth *CongoAuth) error {
-		auth.SigninRedirect = url
-		return nil
-	}
-}
 func WithSetupView(view string) DirectoryOpt {
-	return func(auth *CongoAuth) error {
+	return func(auth *CongoAuth) {
 		auth.SetupView = view
-		return nil
-	}
-}
-
-func WithSigninView(role, view string) DirectoryOpt {
-	return func(auth *CongoAuth) error {
-		auth.SigninViews[role] = view
-		return nil
 	}
 }
 
 func WithSetupDest(url string) DirectoryOpt {
-	return func(auth *CongoAuth) error {
+	return func(auth *CongoAuth) {
 		auth.SetupRedirect = url
-		return nil
+	}
+}
+
+func WithSigninView(role, view string) DirectoryOpt {
+	return func(auth *CongoAuth) {
+		auth.SigninViews[role] = view
+	}
+}
+
+func WithSigninDest(url string) DirectoryOpt {
+	return func(auth *CongoAuth) {
+		auth.SigninRedirect = url
+	}
+}
+
+func WithLogoutRedirect(url string) DirectoryOpt {
+	return func(d *CongoAuth) {
+		if url == "" {
+			log.Fatal("cannot have empty logout redirect url")
+		}
+		d.LogoutRedirect = url
 	}
 }

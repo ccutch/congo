@@ -5,25 +5,33 @@ import (
 	_ "embed"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 	"time"
 )
-
-//go:embed resources/setup-workspace.sh
-var setupWorkspace string
-
-//go:embed resources/clone-repository.sh
-var cloneRepository string
 
 type Workspace struct {
 	*Service
 	repo *Repository
 }
 
-func (code *CongoCode) Workspace(name string, repo *Repository, opts ...ServiceOpt) *Workspace {
-	service := code.Service(name, opts...)
+func (code *CongoCode) Workspace(name string, port int, repo *Repository) *Workspace {
+	service := code.Service("workspace/"+name,
+		WithImage("codercom/code-server"),
+		WithTag("latest"),
+		WithPort(port),
+		WithEnv("PORT", strconv.Itoa(port)),
+		WithVolume(fmt.Sprintf("%s/workspace/%s/.config:/home/coder/.config", code.DB.Root, name)),
+		WithVolume(fmt.Sprintf("%s/workspace/%s/project:/home/coder/project", code.DB.Root, name)),
+		WithArgs("--auth", "none"))
 	return &Workspace{service, repo}
 }
+
+//go:embed resources/setup-workspace.sh
+var setupWorkspace string
+
+//go:embed resources/clone-repository.sh
+var cloneRepository string
 
 func (w *Workspace) Start() error {
 	if w.Running() {

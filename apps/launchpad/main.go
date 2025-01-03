@@ -10,7 +10,6 @@ import (
 
 	"github.com/ccutch/congo/pkg/congo"
 	"github.com/ccutch/congo/pkg/congo_auth"
-	"github.com/ccutch/congo/pkg/congo_boot"
 	"github.com/ccutch/congo/pkg/congo_stat"
 )
 
@@ -32,7 +31,7 @@ var (
 		congo_auth.WithSigninDest("/hosts"))
 
 	app = congo.NewApplication(
-		congo.WithDatabase(congo.SetupDatabase(data, "app.db", migrations)),
+		congo.WithDatabase(congo.SetupDatabase(data, "launcher.db", migrations)),
 		congo.WithHostPrefix("/coder/proxy/8000"),
 		congo.WithController("auth", auth.Controller()),
 		congo.WithController("apps", new(controllers.AppsController)),
@@ -56,5 +55,5 @@ func main() {
 	http.Handle("/users", auth.Protect(app.Serve("users-dashboard.html"), "admin"))
 	http.Handle("/create/app", auth.Protect(app.Serve("create-app.html"), "admin"))
 
-	congo_boot.StartFromEnv(app, congo_stat.NewMonitor(app, auth))
+	app.StartFromEnv(congo_stat.NewMonitor(app, auth))
 }

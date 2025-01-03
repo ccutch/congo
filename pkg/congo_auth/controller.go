@@ -28,6 +28,7 @@ func (auth *Controller) Setup(app *congo.Application) {
 	app.HandleFunc("POST /_auth/signup/{role}", auth.handleSignup)
 	app.HandleFunc("POST /_auth/signin/{role}", auth.handleSignin)
 	app.HandleFunc("POST /_auth/logout/{role}", auth.handleLogout)
+	app.HandleFunc("DELETE /_auth/session/{id}", auth.endSession)
 }
 
 func (auth Controller) Handle(r *http.Request) congo.Controller {
@@ -122,7 +123,7 @@ func (auth Controller) handleSignin(w http.ResponseWriter, r *http.Request) {
 func (auth Controller) handleLogout(w http.ResponseWriter, r *http.Request) {
 	role := r.PathValue("role")
 	if _, s := auth.CongoAuth.Authenticate(role, r); s != nil {
-		s.End()
+		s.Delete()
 		http.SetCookie(w, &http.Cookie{
 			Name:     auth.CongoAuth.CookieName + "-" + role,
 			Path:     "/",
@@ -132,4 +133,17 @@ func (auth Controller) handleLogout(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 	auth.Redirect(w, r, auth.CongoAuth.LogoutRedirect)
+}
+
+func (auth Controller) endSession(w http.ResponseWriter, r *http.Request) {
+	session, err := auth.CongoAuth.GetSession(r.PathValue("id"))
+	if err != nil {
+		auth.Render(w, r, "error-message", err)
+		return
+	}
+	if err = session.Delete(); err != nil {
+		auth.Render(w, r, "error-message", err)
+		return
+	}
+	auth.Redirect(w, r, "/")
 }

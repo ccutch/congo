@@ -1,0 +1,26 @@
+{{define "congo-auth/usages"}}
+<div class="flex flex-col py-4 gap-4">
+
+  {{range .Usage}}
+  <div class="card bg-base-100 shadow p-3">
+    <div class="flex flex-col">
+      {{/* Resource URL */}}
+      <span class="text-lg font-semibold">
+        {{.Resource}}
+      </span>
+
+      {{/* Allowed or Denied */}}
+      <span class="underline text-sm font-medium opacity-80">
+        {{if .Allowed}}Allowed{{else}}Denied{{end}}
+      </span>
+    </div>
+
+    {{/* Usage Created At */}}
+    <span class="underline text-sm font-medium opacity-80">
+      {{.CreatedAt.Format "2006-01-02 15:04:05"}}
+    </span>
+  </div>
+  {{end}}
+
+</div>
+{{end}}

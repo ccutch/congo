@@ -8,9 +8,9 @@ import (
 //go:embed resources/generate-certs.sh
 var generateCerts string
 
-func (server *Server) GenerateCerts(domain string) {
-	if server.Err != nil {
+func (server *Server) RegisterDomain(domain string) {
+	if server.Error != nil {
 		return
 	}
-	server.Err = server.Run(fmt.Sprintf(generateCerts, domain))
+	server.Error = server.Run(fmt.Sprintf(generateCerts, domain))
 }

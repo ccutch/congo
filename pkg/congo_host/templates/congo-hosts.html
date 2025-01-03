@@ -1,0 +1,71 @@
+{{define "congo-host/hosts"}}
+<div class="flex flex-col py-4 gap-4">
+
+  {{range host.Servers}}
+  <div class=" card bg-base-100 shadow p-3">
+    <div class="flex justify-between p-3">
+      <div class="flex flex-col">
+
+        <span class="text-lg font-semibold">
+          {{.Name}}
+        </span>
+
+        {{if .IP}}
+
+        <a target="_blank" href="http://{{.IP}}:8080" class="underline text-sm font-medium opacity-80">
+          {{.IP}}
+        </a>
+
+        {{else if .Error}}
+
+        <span class="text-sm font-medium opacity-80">
+          Failed to start.
+        </span>
+
+        {{else}}
+
+        <span class="text-sm font-medium opacity-80 animate-pulse">
+          Starting...
+        </span>
+
+        {{end}}
+
+      </div>
+
+      <div class="flex items-center gap-2">
+
+
+        {{if .IP}}
+
+        <button class="btn btn-sm btn-outline" onclick="document.querySelector('#host-input').value='{{.Name}}'; add_domain_modal.showModal()">
+          Add Domain Name
+        </button>
+
+        {{end}}
+
+
+        <div class="dropdown dropdown-end">
+          <div tabindex="0" role="button" class="btn btn-ghost">
+            <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 16 16" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 9.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3m5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3m5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3"></path>
+            </svg>
+          </div>
+          <ul tabindex="0" class="dropdown-content menu menu-sm bg-neutral text-neutral-content rounded-box z-[1] min-w-52 shadow">
+            <li><a hx-post="/_hosting/restart/{{.Name}}">Redeploy</a></li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+
+    {{if .Error}}
+    <div class="rounded-box p-4 border-2 font-medium border-error bg-error/10">
+      {{.Error}}
+    </div>
+    {{end}}
+
+  </div>
+  {{end}}
+
+</div>
+{{end}}

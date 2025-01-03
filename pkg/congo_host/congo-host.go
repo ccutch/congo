@@ -23,12 +23,6 @@ type CongoHost struct {
 	*apiCreds
 }
 
-type apiCreds struct {
-	ClientID string
-	Secret   string
-	Redirect string
-}
-
 func InitCongoHost(root string, opts ...CongoHostOpt) *CongoHost {
 	host := CongoHost{root: root}
 	for _, opt := range opts {
@@ -37,42 +31,6 @@ func InitCongoHost(root string, opts ...CongoHostOpt) *CongoHost {
 		}
 	}
 	return &host
-}
-
-func (host *CongoHost) GenerateSSHKey(path string) (string, string, error) {
-	serverData := filepath.Join(host.root, path)
-	os.MkdirAll(serverData, 0700)
-	publicKeyPath := fmt.Sprintf("%s/id_rsa.pub", serverData)
-	privateKeyPath := fmt.Sprintf("%s/id_rsa", serverData)
-	// private key exists no need to proceed
-	if _, err := os.Stat(privateKeyPath); err == nil {
-		return publicKeyPath, privateKeyPath, nil
-	}
-	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		return publicKeyPath, privateKeyPath, err
-	}
-	privateKeyFile, err := os.Create(privateKeyPath)
-	if err != nil {
-		return publicKeyPath, privateKeyPath, err
-	}
-	defer privateKeyFile.Close()
-	privateKeyPEM := &pem.Block{
-		Type:  "RSA PRIVATE KEY",
-		Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
-	}
-	if err = pem.Encode(privateKeyFile, privateKeyPEM); err != nil {
-		return publicKeyPath, privateKeyPath, err
-	}
-	if err = os.Chmod(privateKeyPath, 0600); err != nil {
-		return publicKeyPath, privateKeyPath, err
-	}
-	publicKey, err := ssh.NewPublicKey(&privateKey.PublicKey)
-	if err != nil {
-		return publicKeyPath, privateKeyPath, err
-	}
-	err = os.WriteFile(publicKeyPath, ssh.MarshalAuthorizedKey(publicKey), 0644)
-	return publicKeyPath, privateKeyPath, err
 }
 
 type CongoHostOpt func(*CongoHost) error
@@ -111,4 +69,40 @@ func (host *CongoHost) WithApiClient(clientID, secret, redirectURI string) {
 	} else {
 		host.apiCreds = &apiCreds{clientID, secret, redirectURI}
 	}
+}
+
+func (host *CongoHost) generateSSHKey(path string) (string, string, error) {
+	serverData := filepath.Join(host.root, "hosts", path)
+	os.MkdirAll(serverData, 0700)
+	publicKeyPath := fmt.Sprintf("%s/id_rsa.pub", serverData)
+	privateKeyPath := fmt.Sprintf("%s/id_rsa", serverData)
+	// private key exists no need to proceed
+	if _, err := os.Stat(privateKeyPath); err == nil {
+		return publicKeyPath, privateKeyPath, nil
+	}
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return publicKeyPath, privateKeyPath, err
+	}
+	privateKeyFile, err := os.Create(privateKeyPath)
+	if err != nil {
+		return publicKeyPath, privateKeyPath, err
+	}
+	defer privateKeyFile.Close()
+	privateKeyPEM := &pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
+	}
+	if err = pem.Encode(privateKeyFile, privateKeyPEM); err != nil {
+		return publicKeyPath, privateKeyPath, err
+	}
+	if err = os.Chmod(privateKeyPath, 0600); err != nil {
+		return publicKeyPath, privateKeyPath, err
+	}
+	publicKey, err := ssh.NewPublicKey(&privateKey.PublicKey)
+	if err != nil {
+		return publicKeyPath, privateKeyPath, err
+	}
+	err = os.WriteFile(publicKeyPath, ssh.MarshalAuthorizedKey(publicKey), 0644)
+	return publicKeyPath, privateKeyPath, err
 }

@@ -3,7 +3,6 @@ package congo
 import (
 	"cmp"
 	"embed"
-	_ "embed"
 	"html/template"
 	"io/fs"
 	"log"

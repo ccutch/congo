@@ -8,35 +8,35 @@ import (
 )
 
 func (server *Server) checkAccessKeys() {
-	if server.Err != nil {
+	if server.Error != nil {
 		return
 	}
-	if _, server.Err = os.Stat(server.pubKey); server.Err != nil {
+	if _, server.Error = os.Stat(server.pubKey); server.Error != nil {
 		return
 	}
-	_, server.Err = os.Stat(server.priKey)
+	_, server.Error = os.Stat(server.priKey)
 }
 
 func (server *Server) setupAccessKey() {
-	if server.Err != nil {
+	if server.Error != nil {
 		return
 	}
-	server.pubKey, server.priKey, server.Err = server.GenerateSSHKey(server.Name)
-	if server.Err != nil {
+	server.pubKey, server.priKey, server.Error = server.generateSSHKey(server.Name)
+	if server.Error != nil {
 		return
 	}
 	var data []byte
-	data, server.Err = os.ReadFile(server.pubKey)
-	if server.Err != nil {
+	data, server.Error = os.ReadFile(server.pubKey)
+	if server.Error != nil {
 		return
 	}
-	server.sshKey, _, server.Err = server.CongoHost.platform.Keys.Create(server.ctx, &godo.KeyCreateRequest{
+	server.sshKey, _, server.Error = server.CongoHost.platform.Keys.Create(server.ctx, &godo.KeyCreateRequest{
 		Name:      server.Name + "-admin-key",
 		PublicKey: string(data),
 	})
 }
 
-func (server *Server) deleteSSHKey() error {
+func (server *Server) deleteRemoteKeys() error {
 	if server.sshKey == nil {
 		return nil
 	}

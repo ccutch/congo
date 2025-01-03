@@ -36,7 +36,7 @@ func genCerts(args ...string) error {
 		return err
 	}
 
-	server.GenerateCerts(*domain)
+	server.RegisterDomain(*domain)
 	server.Start()
-	return server.Err
+	return server.Error
 }

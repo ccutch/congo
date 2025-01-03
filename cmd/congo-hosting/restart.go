@@ -40,10 +40,10 @@ func restart(args ...string) error {
 	}
 
 	if *binary != "" {
-		*binary, server.Err = filepath.Abs(*binary)
-		server.Err = server.Copy(*binary, "/root/congo")
+		*binary, server.Error = filepath.Abs(*binary)
+		server.Error = server.Copy(*binary, "/root/congo")
 	}
 
 	server.Start()
-	return server.Err
+	return server.Error
 }

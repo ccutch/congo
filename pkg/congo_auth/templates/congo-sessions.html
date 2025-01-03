@@ -1,0 +1,19 @@
+{{define "congo-auth/sessions"}}
+<div class="flex flex-col py-4 gap-4">
+
+  {{range .Sessions}}
+  <div class="card bg-base-100 shadow p-3">
+    {{/* Session ID */}}
+    <span class="text-lg font-semibold">
+      {{.ID}}
+    </span>
+
+    {{/* Session Created At */}}
+    <span class="underline text-sm font-medium opacity-80">
+      {{.CreatedAt.Format "2006-01-02 15:04:05"}}
+    </span>
+  </div>
+  {{end}}
+
+</div>
+{{end}}

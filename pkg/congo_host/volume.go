@@ -7,10 +7,10 @@ import (
 )
 
 func (server *Server) setupVolumne(size int64) {
-	if server.Err != nil {
+	if server.Error != nil {
 		return
 	}
-	server.volume, _, server.Err = server.platform.Storage.CreateVolume(server.ctx, &godo.VolumeCreateRequest{
+	server.volume, _, server.Error = server.platform.Storage.CreateVolume(server.ctx, &godo.VolumeCreateRequest{
 		Name:          server.Name + "-data",
 		Region:        server.Region,
 		SizeGigaBytes: size,

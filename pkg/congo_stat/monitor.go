@@ -40,7 +40,7 @@ func (m *Monitor) Start() error {
 	m.app.WithController("status", m.Controller())
 
 	for {
-		time.Sleep(5 * time.Second)
+		time.Sleep(5 * time.Minute)
 		if status, err := GetSystemStatus(db); err != nil {
 			log.Println("[MONITOR] Failed to get system status:", err)
 		} else if err := status.Save(); err != nil {

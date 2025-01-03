@@ -3,7 +3,6 @@ package controllers
 import (
 	"log"
 	"net/http"
-	"path/filepath"
 	"strconv"
 
 	"github.com/ccutch/congo/apps/workbench/models"
@@ -14,14 +13,15 @@ import (
 
 type HostingController struct {
 	congo.BaseController
-	host *congo_host.CongoHost
+	host *congo_host.Controller
 }
 
 func (hosting *HostingController) Setup(app *congo.Application) {
 	hosting.BaseController.Setup(app)
-	hosting.host = congo_host.InitCongoHost(filepath.Join(app.DB.Root, "hosts"))
 
 	auth := app.Use("auth").(*congo_auth.Controller)
+	hosting.host = app.Use("host").(*congo_host.Controller)
+
 	app.HandleFunc("POST /_hosting/launch", auth.ProtectFunc(hosting.handleLaunch))
 	app.HandleFunc("POST /_hosting/domain", auth.ProtectFunc(hosting.handleDomain))
 	app.HandleFunc("POST /_hosting/restart/{server}", auth.ProtectFunc(hosting.handleRestart))
@@ -87,8 +87,8 @@ func (hosting HostingController) handleDomain(w http.ResponseWriter, r *http.Req
 	}
 
 	domain := r.FormValue("domain")
-	if host.GenerateCerts(domain); host.Err != nil {
-		server.Error = host.Err.Error()
+	if host.RegisterDomain(domain); host.Error != nil {
+		server.Error = host.Error.Error()
 	} else {
 		server.Domain = domain
 	}

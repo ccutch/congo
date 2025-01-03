@@ -1,23 +1,21 @@
-package congo_boot
+package congo
 
 import (
 	"cmp"
 	"log"
 	"os"
-
-	"github.com/ccutch/congo/pkg/congo"
 )
 
 type Service interface {
 	Start() error
 }
 
-func StartFromEnv(app *congo.Application, services ...Service) {
-	app.WithCredentials(LoadEnv(app))
+func (app *Application) StartFromEnv(services ...Service) {
+	app.WithCredentials(envCredentials())
 	Start(app, services...)
 }
 
-func LoadEnv(app *congo.Application) (string, string) {
+func envCredentials() (string, string) {
 	cert := os.Getenv("CONGO_SSL_FULLCHAIN")
 	cert = cmp.Or(cert, "/root/fullchain.pem")
 	if _, err := os.Stat(cert); err != nil {
@@ -47,4 +45,21 @@ func Start(main Service, services ...Service) {
 	}
 
 	log.Fatal("Main service stopped without error")
+}
+
+type Ignorer struct {
+	service Service
+}
+
+func IgnoreError(service Service) *Ignorer {
+	return &Ignorer{service}
+}
+
+func (i *Ignorer) Start() error {
+	err := i.service.Start()
+	if err != nil {
+		log.Printf("Failed to run service: %s", err)
+	}
+
+	return nil
 }

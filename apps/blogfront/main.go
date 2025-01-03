@@ -9,7 +9,6 @@ import (
 
 	"github.com/ccutch/congo/pkg/congo"
 	"github.com/ccutch/congo/pkg/congo_auth"
-	"github.com/ccutch/congo/pkg/congo_boot"
 	"github.com/ccutch/congo/pkg/congo_stat"
 )
 
@@ -42,6 +41,5 @@ func main() {
 	app.Handle("GET /blog/write", auth.Protect(app.Serve("write-post.html"), "writer", "admin"))
 	app.Handle("GET /blog/{post}/edit", auth.Protect(app.Serve("edit-post.html"), "writer", "admin"))
 
-	congo_boot.StartFromEnv(app,
-		congo_stat.NewMonitor(app, auth))
+	app.StartFromEnv(congo_stat.NewMonitor(app, auth))
 }

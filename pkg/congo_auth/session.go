@@ -26,6 +26,29 @@ func (i *Identity) NewSession() (*Session, error) {
 	`, s.ID, s.IdentID).Scan(&s.CreatedAt, &s.UpdatedAt)
 }
 
+func (i *Identity) Sessions() ([]*Session, error) {
+	sessions := []*Session{}
+	return sessions, i.DB.Query(`
+		SELECT id, identity_id, created_at, updated_at
+		FROM sessions
+		WHERE identity_id = ?
+		ORDER BY created_at DESC
+	`, i.ID).All(func(scan congo.Scanner) error {
+		s := Session{Model: congo.Model{DB: i.DB}}
+		sessions = append(sessions, &s)
+		return scan(&s.ID, &s.IdentID, &s.CreatedAt, &s.UpdatedAt)
+	})
+}
+
+func (auth *CongoAuth) GetSession(id string) (*Session, error) {
+	s := &Session{Model: congo.Model{DB: auth.DB}}
+	return s, s.DB.Query(`
+		SELECT id, identity_id, created_at, updated_at
+		FROM sessions
+		WHERE id = ?
+	`, id).Scan(&s.ID, &s.IdentID, &s.CreatedAt, &s.UpdatedAt)
+}
+
 func (s *Session) Token() string {
 	now := time.Now()
 	claims := jwt.MapClaims{
@@ -42,7 +65,7 @@ func (s *Session) Token() string {
 	return signedToken
 }
 
-func (s *Session) End() error {
+func (s *Session) Delete() error {
 	return s.DB.Query(`
 		DELETE FROM sessions
 		WHERE id = ?
@@ -84,13 +107,4 @@ func (auth *CongoAuth) Authenticate(role string, r *http.Request) (*Identity, *S
 		return nil, nil
 	}
 	return identity, session
-}
-
-func (auth *CongoAuth) GetSession(id string) (*Session, error) {
-	s := &Session{Model: congo.Model{DB: auth.DB}}
-	return s, s.DB.Query(`
-		SELECT id, identity_id, created_at, updated_at
-		FROM sessions
-		WHERE id = ?
-	`, id).Scan(&s.ID, &s.IdentID, &s.CreatedAt, &s.UpdatedAt)
 }
