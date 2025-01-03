@@ -44,12 +44,14 @@ func main() {
 	auth := app.Use("auth").(*congo_auth.Controller)
 	coding := app.Use("coding").(*controllers.CodingController)
 
-	coding.Repo, _ = coding.Repository("code", congo_code.WithName("Code"))
-	coding.Work = coding.Workspace("coder", 7000, coding.Repo)
+	coding.Repository, _ = coding.Repo("code", congo_code.WithName("Code"))
+	coding.Workspace = coding.RunWorkspace("coder", 7000, coding.Repository,
+		congo_code.WithEnv("PASSWORD", "foobar"),
+		congo_code.WithArgs("--auth", "password"))
 
 	app.Handle("/", auth.Protect(app.Serve("workbench.html")))
-	app.Handle("/code/", coding.Repo.Serve(auth, "developer"))
-	app.Handle("/coder/", auth.Protect(coding.Work.Proxy("/coder/")))
+	app.Handle("/code/", coding.Repository.Serve(auth, "developer"))
+	app.Handle("/coder/", auth.Protect(coding.Workspace.Proxy("/coder/")))
 
-	app.StartFromEnv(congo.Ignore("workspace", coding.Work))
+	app.StartFromEnv(congo.Ignore("workspace", coding.Workspace))
 }

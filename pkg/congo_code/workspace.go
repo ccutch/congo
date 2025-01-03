@@ -15,22 +15,27 @@ type Workspace struct {
 	repo *Repository
 }
 
-func (code *CongoCode) Workspace(name string, port int, repo *Repository) *Workspace {
-	service := code.Service("workspace-"+name,
+func (code *CongoCode) RunWorkspace(name string, port int, repo *Repository, opts ...ServiceOpt) *Workspace {
+	opts = append([]ServiceOpt{
 		WithImage("codercom/code-server"),
 		WithTag("latest"),
 		WithPort(port),
 		WithEnv("PORT", strconv.Itoa(port)),
 		WithVolume(fmt.Sprintf("%s/services/workspace-%s/.config:/home/coder/.config", code.DB.Root, name)),
 		WithVolume(fmt.Sprintf("%s/services/workspace-%s/project:/home/coder/project", code.DB.Root, name)),
-		WithArgs("--auth", "none"))
+		WithArgs("--auth", "none"),
+	}, opts...)
+	service := code.Service("workspace-"+name, opts...)
 	return &Workspace{service, repo}
 }
 
-//go:embed resources/setup-workspace.sh
+//go:embed resources/workspace/prepare-workspace.sh
+var prepareWorkspace string
+
+//go:embed resources/workspace/setup-workspace.sh
 var setupWorkspace string
 
-//go:embed resources/clone-repository.sh
+//go:embed resources/workspace/clone-repository.sh
 var cloneRepository string
 
 func (w *Workspace) Start() error {
@@ -39,13 +44,17 @@ func (w *Workspace) Start() error {
 		return nil
 	}
 
-	_, output, err := w.code.bash(fmt.Sprintf(setupWorkspace, w.Name, w.code.DB.Root))
+	_, output, err := w.code.bash(fmt.Sprintf(prepareWorkspace, w.Name, w.code.DB.Root))
 	if err != nil {
-		return fmt.Errorf("failed to setup workspace: %s", output.String())
+		return fmt.Errorf("failed to prepare workspace: %s", output.String())
 	}
 
 	if err := w.Service.Start(); err != nil {
 		return err
+	}
+
+	if _, output, err = w.code.bash(setupWorkspace); err != nil {
+		return fmt.Errorf("failed to setup workspace: %s", output.String())
 	}
 
 	if w.repo != nil {

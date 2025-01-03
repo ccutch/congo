@@ -10,7 +10,7 @@ import (
 )
 
 type Blob struct {
-	*Repository
+	repo   *Repository
 	isDir  bool
 	Exists bool
 	Branch string
@@ -43,11 +43,11 @@ func (blob *Blob) Dir() string {
 }
 
 func (blob *Blob) Files() ([]*Blob, error) {
-	return blob.Repository.Blobs(blob.Branch, blob.Path)
+	return blob.repo.Blobs(blob.Branch, blob.Path)
 }
 
 func (blob *Blob) Content() (string, error) {
-	stdout, stderr, err := blob.Run("show", blob.Branch+":"+blob.Path)
+	stdout, stderr, err := blob.repo.Run("show", blob.Branch+":"+blob.Path)
 	if err != nil {
 		return "", errors.New(stderr.String())
 	}
@@ -65,7 +65,7 @@ func (blob *Blob) Name() string {
 }
 
 func (blob *Blob) Size() int64 {
-	stdout, _, err := blob.Run("cat-file", "-s", blob.Branch+":"+blob.Path)
+	stdout, _, err := blob.repo.Run("cat-file", "-s", blob.Branch+":"+blob.Path)
 	if err != nil {
 		return 0 // Handle error appropriately
 	}

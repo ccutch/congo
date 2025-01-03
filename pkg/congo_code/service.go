@@ -63,7 +63,7 @@ func (s *Service) Running() bool {
 	return err == nil && strings.TrimSpace(stdout.String()) == "running"
 }
 
-//go:embed resources/start-service.sh
+//go:embed resources/service/start-service.sh
 var startService string
 
 func (s *Service) Start() error {
@@ -94,7 +94,7 @@ func (s *Service) Start() error {
 	return errors.Wrap(err, output.String())
 }
 
-//go:embed resources/setup-service.sh
+//go:embed resources/service/setup-service.sh
 var setupService string
 
 func (s *Service) setupService() error {
