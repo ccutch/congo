@@ -3,7 +3,6 @@ package main
 import (
 	"cmp"
 	"embed"
-	"net/http"
 	"os"
 
 	"github.com/ccutch/congo/pkg/congo"
@@ -48,11 +47,9 @@ func main() {
 	coding.Repo, _ = coding.Repository("code", congo_code.WithName("Code"))
 	coding.Work = coding.Workspace("coder", 7000, coding.Repo)
 
-	go coding.Work.Start()
-
 	app.Handle("/", auth.Protect(app.Serve("workbench.html")))
 	app.Handle("/code/", coding.Repo.Serve(auth, "developer"))
-	app.Handle("/coder/", auth.Protect(http.StripPrefix("/coder/", coding.Work.Proxy())))
+	app.Handle("/coder/", auth.Protect(coding.Work.Proxy()))
 
-	app.StartFromEnv()
+	app.StartFromEnv(congo.Ignore("workspace", coding.Work))
 }

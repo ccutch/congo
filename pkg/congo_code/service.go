@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"fmt"
 	"log"
+	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"strings"
@@ -125,11 +126,12 @@ func (s *Service) Stop() error {
 	return nil
 }
 
-func (s *Service) Proxy() *httputil.ReverseProxy {
+func (s *Service) Proxy() http.Handler {
 	url, err := url.Parse(fmt.Sprintf("http://localhost:%d", s.Port))
 	if err != nil {
 		log.Fatal("Failed to create reverse proxy: ", err)
 	}
 
-	return httputil.NewSingleHostReverseProxy(url)
+	h := httputil.NewSingleHostReverseProxy(url)
+	return http.StripPrefix(fmt.Sprintf("/%s/", s.Name), h)
 }

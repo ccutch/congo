@@ -48,18 +48,18 @@ func Start(main Service, services ...Service) {
 }
 
 type Ignorer struct {
+	name    string
 	service Service
 }
 
-func IgnoreError(service Service) *Ignorer {
-	return &Ignorer{service}
+func Ignore(name string, service Service) *Ignorer {
+	return &Ignorer{name, service}
 }
 
 func (i *Ignorer) Start() error {
 	err := i.service.Start()
 	if err != nil {
-		log.Printf("Failed to run service: %s", err)
+		log.Printf("Failed to run %s service: %s", i.name, err)
 	}
-
 	return nil
 }
