@@ -32,9 +32,9 @@ var (
 	app = congo.NewApplication(
 		congo.WithDatabase(congo.SetupDatabase(data, "app.db", migrations)),
 		congo.WithController("auth", auth.Controller()),
-		congo.WithController("host", host.Controller()),
+		congo.WithController(host.Controller()),
 		congo.WithController("coding", new(controllers.CodingController)),
-		congo.WithController("hosting", new(controllers.HostingController)),
+		congo.WithController("servers", new(controllers.ServersController)),
 		congo.WithController("settings", new(controllers.SettingsController)),
 		congo.WithHtmlTheme(cmp.Or(os.Getenv("CONGO_THEME"), "dark")),
 		congo.WithTemplates(templates))
@@ -49,7 +49,7 @@ func main() {
 
 	app.Handle("/", auth.Protect(app.Serve("workbench.html")))
 	app.Handle("/code/", coding.Repo.Serve(auth, "developer"))
-	app.Handle("/coder/", auth.Protect(coding.Work.Proxy()))
+	app.Handle("/coder/", auth.Protect(coding.Work.Proxy("/coder/")))
 
 	app.StartFromEnv(congo.Ignore("workspace", coding.Work))
 }

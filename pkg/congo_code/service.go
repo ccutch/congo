@@ -126,12 +126,12 @@ func (s *Service) Stop() error {
 	return nil
 }
 
-func (s *Service) Proxy() http.Handler {
+func (s *Service) Proxy(prefix string) http.Handler {
 	url, err := url.Parse(fmt.Sprintf("http://localhost:%d", s.Port))
 	if err != nil {
 		log.Fatal("Failed to create reverse proxy: ", err)
 	}
 
 	h := httputil.NewSingleHostReverseProxy(url)
-	return http.StripPrefix(fmt.Sprintf("/%s/", s.Name), h)
+	return http.StripPrefix(prefix, h)
 }

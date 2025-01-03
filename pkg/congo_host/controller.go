@@ -18,8 +18,8 @@ type Controller struct {
 	*CongoHost
 }
 
-func (host *CongoHost) Controller(roles ...string) *Controller {
-	return &Controller{CongoHost: host, roles: roles}
+func (host *CongoHost) Controller(roles ...string) (string, *Controller) {
+	return "hosting", &Controller{CongoHost: host, roles: roles}
 }
 
 func (host *Controller) Setup(app *congo.Application) {

@@ -20,8 +20,8 @@ func (settings *SettingsController) Setup(app *congo.Application) {
 		settings.set("token", os.Getenv("DIGITAL_OCEAN_API_KEY"))
 	}
 
-	if hosting, ok := app.Use("hosting").(*HostingController); ok {
-		hosting.host.WithApiToken(settings.Get("token"))
+	if hosting, ok := app.Use("hosting").(*ServersController); ok {
+		hosting.hosting.WithApiToken(settings.Get("token"))
 	}
 }
 
@@ -65,7 +65,7 @@ func (settings SettingsController) updateToken(w http.ResponseWriter, r *http.Re
 	settings.set("token", token)
 	settings.Refresh(w, r)
 
-	if hosting, ok := settings.Use("hosting").(*HostingController); ok {
-		hosting.host.WithApiToken(settings.Get("token"))
+	if hosting, ok := settings.Use("hosting").(*ServersController); ok {
+		hosting.hosting.WithApiToken(settings.Get("token"))
 	}
 }

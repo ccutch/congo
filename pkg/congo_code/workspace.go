@@ -16,13 +16,13 @@ type Workspace struct {
 }
 
 func (code *CongoCode) Workspace(name string, port int, repo *Repository) *Workspace {
-	service := code.Service("workspace/"+name,
+	service := code.Service("workspace-"+name,
 		WithImage("codercom/code-server"),
 		WithTag("latest"),
 		WithPort(port),
 		WithEnv("PORT", strconv.Itoa(port)),
-		WithVolume(fmt.Sprintf("%s/workspace/%s/.config:/home/coder/.config", code.DB.Root, name)),
-		WithVolume(fmt.Sprintf("%s/workspace/%s/project:/home/coder/project", code.DB.Root, name)),
+		WithVolume(fmt.Sprintf("%s/services/workspace-%s/.config:/home/coder/.config", code.DB.Root, name)),
+		WithVolume(fmt.Sprintf("%s/services/workspace-%s/project:/home/coder/project", code.DB.Root, name)),
 		WithArgs("--auth", "none"))
 	return &Workspace{service, repo}
 }
