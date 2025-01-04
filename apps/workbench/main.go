@@ -7,7 +7,6 @@ import (
 
 	"github.com/ccutch/congo/pkg/congo"
 	"github.com/ccutch/congo/pkg/congo_auth"
-	"github.com/ccutch/congo/pkg/congo_code"
 	"github.com/ccutch/congo/pkg/congo_host"
 
 	"github.com/ccutch/congo/apps/workbench/controllers"
@@ -31,7 +30,7 @@ var (
 
 	app = congo.NewApplication(
 		congo.WithDatabase(congo.SetupDatabase(data, "app.db", migrations)),
-		congo.WithController("auth", auth.Controller()),
+		congo.WithController(auth.Controller()),
 		congo.WithController(host.Controller()),
 		congo.WithController("coding", new(controllers.CodingController)),
 		congo.WithController("servers", new(controllers.ServersController)),
@@ -44,13 +43,8 @@ func main() {
 	auth := app.Use("auth").(*congo_auth.Controller)
 	coding := app.Use("coding").(*controllers.CodingController)
 
-	coding.Repository, _ = coding.Repo("code", congo_code.WithName("Code"))
-	coding.Workspace = coding.RunWorkspace("coder", 7000, coding.Repository,
-		congo_code.WithEnv("PASSWORD", "foobar"),
-		congo_code.WithArgs("--auth", "password"))
-
 	app.Handle("/", auth.Protect(app.Serve("workbench.html")))
-	app.Handle("/code/", coding.Repository.Serve(auth, "developer"))
+	app.Handle("/code/", coding.Repo.Serve(auth, "developer"))
 	app.Handle("/coder/", auth.Protect(coding.Workspace.Proxy("/coder/")))
 
 	app.StartFromEnv(congo.Ignore("workspace", coding.Workspace))

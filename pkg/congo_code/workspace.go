@@ -25,8 +25,7 @@ func (code *CongoCode) RunWorkspace(name string, port int, repo *Repository, opt
 		WithVolume(fmt.Sprintf("%s/services/workspace-%s/project:/home/coder/project", code.DB.Root, name)),
 		WithArgs("--auth", "none"),
 	}, opts...)
-	service := code.Service("workspace-"+name, opts...)
-	return &Workspace{service, repo}
+	return &Workspace{code.Service("workspace-"+name, opts...), repo}
 }
 
 //go:embed resources/workspace/prepare-workspace.sh
@@ -53,7 +52,7 @@ func (w *Workspace) Start() error {
 		return err
 	}
 
-	if _, output, err = w.code.bash(setupWorkspace); err != nil {
+	if _, output, err = w.Run(setupWorkspace); err != nil {
 		return fmt.Errorf("failed to setup workspace: %s", output.String())
 	}
 

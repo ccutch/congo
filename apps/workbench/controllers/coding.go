@@ -6,50 +6,54 @@ import (
 	"net/http"
 
 	"github.com/ccutch/congo/pkg/congo"
+	"github.com/ccutch/congo/pkg/congo_auth"
 	"github.com/ccutch/congo/pkg/congo_code"
 )
 
 type CodingController struct {
 	congo.BaseController
-	*congo_code.CongoCode
-	Repository *congo_code.Repository
-	Workspace  *congo_code.Workspace
+	code      *congo_code.CongoCode
+	Repo      *congo_code.Repository
+	Workspace *congo_code.Workspace
 }
 
-func (code *CodingController) Setup(app *congo.Application) {
-	code.BaseController.Setup(app)
-	code.CongoCode = congo_code.InitCongoCode(app.DB.Root)
-	app.HandleFunc("/_coding/download", code.handleDownload)
+func (coding *CodingController) Setup(app *congo.Application) {
+	coding.BaseController.Setup(app)
+	coding.code = congo_code.InitCongoCode(app.DB.Root)
+	coding.Repo, _ = coding.code.NewRepo("code", congo_code.WithName("Code"))
+	coding.Workspace = coding.code.RunWorkspace("coder", 7000, coding.Repo)
+
+	if auth, ok := app.Use("auth").(*congo_auth.Controller); ok {
+		app.HandleFunc("/_coding/download", auth.ProtectFunc(coding.handleDownload))
+	}
 }
 
-func (code CodingController) Handle(req *http.Request) congo.Controller {
-	code.Request = req
-	return &code
+func (coding CodingController) Handle(req *http.Request) congo.Controller {
+	coding.Request = req
+	return &coding
 }
 
-func (code *CodingController) Files() []*congo_code.Blob {
-	branch := cmp.Or(code.URL.Query().Get("branch"), "master")
-	blobs, _ := code.Repository.Blobs(branch, code.URL.Path)
+func (coding *CodingController) Files() []*congo_code.Blob {
+	branch := cmp.Or(coding.URL.Query().Get("branch"), "master")
+	blobs, _ := coding.Repo.Blobs(branch, coding.URL.Path)
 	return blobs
 }
 
-func (code *CodingController) CurrentFile() *congo_code.Blob {
-	branch := cmp.Or(code.URL.Query().Get("branch"), "master")
-	blob, err := code.Repository.Open(branch, code.URL.Path[1:])
+func (coding *CodingController) CurrentFile() *congo_code.Blob {
+	branch := cmp.Or(coding.URL.Query().Get("branch"), "master")
+	blob, err := coding.Repo.Open(branch, coding.URL.Path[1:])
 	if err != nil {
 		return nil
 	}
 	return blob
 }
 
-func (code *CodingController) handleDownload(w http.ResponseWriter, r *http.Request) {
-	path, err := code.Repository.Build("master", ".")
+func (coding *CodingController) handleDownload(w http.ResponseWriter, r *http.Request) {
+	path, err := coding.Repo.Build("master", ".")
 	if err != nil {
 		log.Println("Failed to build binary: ", err)
 	}
-
 	w.Header().Set("Content-Disposition", "attachment; filename=congo")
 	w.Header().Set("Content-Type", "application/octet-stream")
-
 	http.ServeFile(w, r, path)
 }

@@ -18,8 +18,8 @@ type Controller struct {
 	*CongoAuth
 }
 
-func (auth *CongoAuth) Controller() *Controller {
-	return &Controller{CongoAuth: auth}
+func (auth *CongoAuth) Controller() (string, *Controller) {
+	return "auth", &Controller{CongoAuth: auth}
 }
 
 func (auth *Controller) Setup(app *congo.Application) {

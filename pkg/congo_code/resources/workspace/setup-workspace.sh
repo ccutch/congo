@@ -11,4 +11,3 @@ rm go1.23.2.linux-amd64.tar.gz
 echo Updating Bash environment
 echo 'export PATH=$PATH:/usr/local/go/bin' >> $HOME/.bashrc
 echo 'export PATH=$PATH:$HOME/go/bin'      >> $HOME/.bashrc
-source $HOME/.bashrc

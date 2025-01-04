@@ -14,7 +14,7 @@ type Repository struct {
 	Name string
 }
 
-func (code *CongoCode) Repo(id string, opts ...RepoOpt) (*Repository, error) {
+func (code *CongoCode) NewRepo(id string, opts ...RepoOpt) (*Repository, error) {
 	repo := Repository{code, id, id}
 	for _, opt := range opts {
 		if err := opt(&repo); err != nil {

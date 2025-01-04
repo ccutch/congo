@@ -26,7 +26,7 @@ var (
 
 	app = congo.NewApplication(
 		congo.WithDatabase(congo.SetupDatabase(path, "app.db", migrations)),
-		congo.WithController("auth", auth.Controller()),
+		congo.WithController(auth.Controller()),
 		congo.WithController("posts", new(controllers.PostController)),
 		congo.WithTemplates(templates))
 )

@@ -33,7 +33,7 @@ var (
 	app = congo.NewApplication(
 		congo.WithDatabase(congo.SetupDatabase(data, "launcher.db", migrations)),
 		congo.WithHostPrefix("/coder/proxy/8000"),
-		congo.WithController("auth", auth.Controller()),
+		congo.WithController(auth.Controller()),
 		congo.WithController("apps", new(controllers.AppsController)),
 		congo.WithController("hosts", new(controllers.HostsController)),
 		congo.WithHtmlTheme(cmp.Or(os.Getenv("CONGO_THEME"), "wireframe")),

@@ -62,7 +62,7 @@ func (servers ServersController) handleLaunch(w http.ResponseWriter, r *http.Req
 		}
 
 		if coding, ok := servers.Use("coding").(*CodingController); ok {
-			if source, err := coding.Repository.Build("master", "."); err != nil {
+			if source, err := coding.Repo.Build("master", "."); err != nil {
 				log.Println("Failed to build binary: ", err)
 			} else if err = host.Deploy(source); err != nil {
 				log.Println("Failed to deploy server: ", err)
@@ -117,7 +117,7 @@ func (servers ServersController) handleRestart(w http.ResponseWriter, r *http.Re
 
 	go func() {
 		if coding, ok := servers.Use("coding").(*CodingController); ok {
-			if source, err := coding.Repository.Build("master", "."); err != nil {
+			if source, err := coding.Repo.Build("master", "."); err != nil {
 				log.Println("Failed to build binary: ", err)
 			} else if err = host.Deploy(source); err != nil {
 				log.Println("Failed to deploy server: ", err)
