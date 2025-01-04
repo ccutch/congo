@@ -14,8 +14,9 @@ import (
 
 func main() {
 	var (
-		dest = flag.String("dest", "", "The destination directory where files will be generated.")
-		name = flag.String("name", "", "The namespace to interpolate into the templates.")
+		dest     = flag.String("dest", "", "The destination directory where files will be generated.")
+		name     = flag.String("name", "", "The namespace to interpolate into the templates.")
+		template = flag.String("template", "blogfront", "The template directory to use.")
 	)
 
 	flag.Parse()
@@ -31,7 +32,7 @@ func main() {
 
 	// Run the generator
 	log.Printf("Generating files in '%s' with namespace '%s'...", *dest, *name)
-	err := congo_code.GenerateExample(*dest, *name)
+	err := congo_code.GenerateExample(*dest, *name, *template)
 	if err != nil {
 		log.Fatalf("Error: %v", err)
 	}

@@ -16,6 +16,7 @@ func destroy(args ...string) error {
 		name   = cmd.String("name", "congo-server", "Name of Digital Ocean droplet")
 		region = cmd.String("region", "sfo2", "Region of Digital Ocean droplet")
 		force  = cmd.Bool("force", false, "Force destroy even if there are errors")
+		purge  = cmd.Bool("purge", false, "Destroy droplet and purge data volumes")
 	)
 
 	if err := cmd.Parse(args[1:]); err != nil {
@@ -34,6 +35,12 @@ func destroy(args ...string) error {
 
 	if err := server.Destroy(*force); err != nil {
 		return fmt.Errorf("failed to destroy server: %w", err)
+	}
+
+	if *purge {
+		if err := server.Purge(*force); err != nil {
+			return fmt.Errorf("failed to purge server: %w", err)
+		}
 	}
 
 	fmt.Printf("Server %s destroyed successfully.\n", *name)

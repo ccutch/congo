@@ -21,7 +21,12 @@ func (coding *CodingController) Setup(app *congo.Application) {
 	coding.BaseController.Setup(app)
 	coding.code = congo_code.InitCongoCode(app.DB.Root)
 	coding.Repo, _ = coding.code.NewRepo("code", congo_code.WithName("Code"))
-	coding.Workspace = coding.code.RunWorkspace("coder", 7000, coding.Repo)
+
+	var err error
+	coding.Workspace, err = coding.code.RunWorkspace("coder", 7000, coding.Repo)
+	if err != nil {
+		log.Println("Workspace start failed: ", err)
+	}
 
 	if auth, ok := app.Use("auth").(*congo_auth.Controller); ok {
 		app.HandleFunc("/_coding/download", auth.ProtectFunc(coding.handleDownload))

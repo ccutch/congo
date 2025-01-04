@@ -140,16 +140,20 @@ func (server *Server) Destroy(force bool) error {
 		time.Sleep(15 * time.Second)
 	}
 
-	if err := server.deleteVolume(); !force && err != nil {
-		return errors.Wrap(err, "failed to delete volume")
-	}
-
 	if err := server.deleteRemoteKeys(); !force && err != nil {
 		return errors.Wrap(err, "failed to delete remote keys")
 	}
 
 	if err := server.deleteLocalKeys(); !force && err != nil {
 		return errors.Wrap(err, "failed to delete local keys")
+	}
+
+	return nil
+}
+
+func (server *Server) Purge(force bool) error {
+	if err := server.deleteVolume(); !force && err != nil {
+		return errors.Wrap(err, "failed to delete volume")
 	}
 
 	return nil

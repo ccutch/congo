@@ -16,11 +16,11 @@ type Service struct {
 	code  *CongoCode
 	Name  string
 	Port  int
-	image string
-	tag   string
+	Image string
+	Tag   string
+	args  []string
 	envs  []string
 	vols  []string
-	args  []string
 }
 
 func (code *CongoCode) Service(name string, opts ...ServiceOpt) *Service {
@@ -33,16 +33,20 @@ func (code *CongoCode) Service(name string, opts ...ServiceOpt) *Service {
 
 type ServiceOpt func(*Service)
 
+func WithPort(port int) ServiceOpt {
+	return func(s *Service) { s.Port = port }
+}
+
 func WithImage(image string) ServiceOpt {
-	return func(s *Service) { s.image = image }
+	return func(s *Service) { s.Image = image }
 }
 
 func WithTag(tag string) ServiceOpt {
-	return func(s *Service) { s.tag = tag }
+	return func(s *Service) { s.Tag = tag }
 }
 
-func WithPort(port int) ServiceOpt {
-	return func(s *Service) { s.Port = port }
+func WithArgs(args ...string) ServiceOpt {
+	return func(s *Service) { s.args = args }
 }
 
 func WithEnv(name string, value any) ServiceOpt {
@@ -52,10 +56,6 @@ func WithEnv(name string, value any) ServiceOpt {
 
 func WithVolume(volume string) ServiceOpt {
 	return func(s *Service) { s.vols = append(s.vols, volume) }
-}
-
-func WithArgs(args ...string) ServiceOpt {
-	return func(s *Service) { s.args = args }
 }
 
 func (s *Service) Running() bool {
@@ -71,7 +71,7 @@ func (s *Service) Start() error {
 		return nil
 	}
 
-	if s.image == "" {
+	if s.Image == "" {
 		return errors.New("missing image")
 	}
 
@@ -90,7 +90,7 @@ func (s *Service) Start() error {
 	}
 
 	args := strings.Join(s.args, " ")
-	_, output, err := s.code.bash(fmt.Sprintf(startService, s.Name, s.Port, envs, volumes, s.image, s.tag, args))
+	_, output, err := s.code.bash(fmt.Sprintf(startService, s.Name, s.Port, envs, volumes, s.Image, s.Tag, args))
 	return errors.Wrap(err, output.String())
 }
 

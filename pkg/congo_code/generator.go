@@ -1,7 +1,6 @@
 package congo_code
 
 import (
-	"embed"
 	"fmt"
 	"io"
 	"io/fs"
@@ -9,27 +8,23 @@ import (
 	"path/filepath"
 	"strings"
 	"text/template"
+
+	"github.com/ccutch/congo/apps"
 )
 
-//go:embed all:templates/*.tmpl all:templates/**/*.tmpl
-var templateFiles embed.FS
-
-//go:embed all:templates/**/*.html all:templates/**/**/*.html all:templates/**/*.sql
-var nonTemplateFiles embed.FS
-
-func GenerateExample(dest, name string) error {
+func GenerateExample(dest, name, tmpl string) error {
 	// Step 1: Ensure the destination directory exists
 	if err := createDirectory(dest); err != nil {
 		return err
 	}
 
 	// Step 2: Process template files
-	if err := processTemplateFiles(dest, name); err != nil {
+	if err := processTemplateFiles(dest, name, tmpl); err != nil {
 		return err
 	}
 
 	// Step 3: Copy non-template files
-	if err := copyNonTemplateFiles(dest); err != nil {
+	if err := copyNonTemplateFiles(dest, tmpl); err != nil {
 		return err
 	}
 
@@ -45,8 +40,9 @@ func createDirectory(dest string) error {
 }
 
 // processTemplateFiles processes template files and interpolates variables into them
-func processTemplateFiles(dest, name string) error {
-	return fs.WalkDir(templateFiles, ".", func(path string, d fs.DirEntry, err error) error {
+func processTemplateFiles(dest, name, tmpl string) error {
+
+	return fs.WalkDir(apps.SourceFiles, tmpl, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return fmt.Errorf("error walking template files: %w", err)
 		}
@@ -55,7 +51,7 @@ func processTemplateFiles(dest, name string) error {
 		}
 
 		// Read and parse the template
-		tmplContent, err := templateFiles.ReadFile(path)
+		tmplContent, err := apps.SourceFiles.ReadFile(filepath.Join(tmpl, path))
 		if err != nil {
 			return fmt.Errorf("failed to read template file %s: %w", path, err)
 		}
@@ -77,8 +73,8 @@ func processTemplateFiles(dest, name string) error {
 }
 
 // copyNonTemplateFiles copies non-template files directly into the destination
-func copyNonTemplateFiles(dest string) error {
-	return fs.WalkDir(nonTemplateFiles, ".", func(path string, d fs.DirEntry, err error) error {
+func copyNonTemplateFiles(dest, tmpl string) error {
+	return fs.WalkDir(apps.ResourceFiles, tmpl, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return fmt.Errorf("error walking non-template files: %w", err)
 		}
@@ -93,7 +89,7 @@ func copyNonTemplateFiles(dest string) error {
 		}
 
 		// Copy file content
-		return copyFile(nonTemplateFiles, path, outputPath)
+		return copyFile(apps.ResourceFiles, path, outputPath)
 	})
 }
 
@@ -130,7 +126,7 @@ func writeTemplateToFile(tmpl *template.Template, outputPath string, data interf
 }
 
 // copyFile copies the content of a file from the source embedded FS to the destination path
-func copyFile(sourceFS embed.FS, sourcePath, destPath string) error {
+func copyFile(sourceFS fs.FS, sourcePath, destPath string) error {
 	srcFile, err := sourceFS.Open(sourcePath)
 	if err != nil {
 		return fmt.Errorf("failed to open source file %s: %w", sourcePath, err)

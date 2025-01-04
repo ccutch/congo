@@ -6,22 +6,76 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/ccutch/congo/pkg/congo"
 )
 
 type Repository struct {
 	code *CongoCode
-	ID   string
+	congo.Model
 	Name string
 }
 
+func (code *CongoCode) Repositories() ([]*Repository, error) {
+	repos := []*Repository{}
+	return repos, code.DB.Query(`
+	
+		SELECT id, name, created_at, updated_at
+		FROM repositories
+		ORDER BY created_at DESC
+
+	`).All(func(scan congo.Scanner) error {
+		r := Repository{Model: code.DB.Model()}
+		repos = append(repos, &r)
+		return scan(&r.ID, &r.Name, &r.CreatedAt, &r.UpdatedAt)
+	})
+}
+
 func (code *CongoCode) NewRepo(id string, opts ...RepoOpt) (*Repository, error) {
-	repo := Repository{code, id, id}
+	repo := Repository{code, code.DB.NewModel(id), id}
 	for _, opt := range opts {
 		if err := opt(&repo); err != nil {
 			return nil, err
 		}
 	}
-	return &repo, nil
+	return &repo, code.DB.Query(`
+
+		INSERT INTO repositories (id, name)
+		VALUES (?, ?)
+		RETURNING created_at, updated_at
+
+	`, repo.ID, repo.Name).Scan(&repo.CreatedAt, &repo.UpdatedAt)
+}
+
+func (code *CongoCode) GetRepository(id string) (*Repository, error) {
+	repo := Repository{Model: code.DB.Model()}
+	return &repo, code.DB.Query(`
+	
+		SELECT id, name, created_at, updated_at
+		FROM repositories
+		WHERE id = ?
+
+	`, id).Scan(&repo.ID, &repo.Name, &repo.CreatedAt, &repo.UpdatedAt)
+}
+
+func (repo *Repository) Save() error {
+	return repo.DB.Query(`
+	
+		UPDATE repositories
+		SET name = ?
+		WHERE id = ?
+		RETURNING created_at, updated_at
+
+	`, repo.Name, repo.ID).Scan(&repo.CreatedAt, &repo.UpdatedAt)
+}
+
+func (repo *Repository) Delete() error {
+	return repo.DB.Query(`
+
+		DELETE FROM repositories
+		WHERE id = ?
+
+	`, repo.ID).Exec()
 }
 
 type RepoOpt func(*Repository) error
