@@ -7,27 +7,21 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"text/template"
 
 	"github.com/ccutch/congo/apps"
+	"github.com/pkg/errors"
 )
 
-func GenerateExample(dest, name, tmpl string) error {
-	// Step 1: Ensure the destination directory exists
+func GenerateExample(name, dest, tmpl string) error {
 	if err := createDirectory(dest); err != nil {
-		return err
+		return errors.Wrap(err, "failed to create destination directory")
 	}
-
-	// Step 2: Process template files
-	if err := processTemplateFiles(dest, name, tmpl); err != nil {
-		return err
+	if err := copySourceFiles(name, dest, tmpl); err != nil {
+		return errors.Wrap(err, "failed to copy source files")
 	}
-
-	// Step 3: Copy non-template files
-	if err := copyNonTemplateFiles(dest, tmpl); err != nil {
-		return err
+	if err := copyResourceFiles(dest, tmpl); err != nil {
+		return errors.Wrap(err, "failed to copy resource files")
 	}
-
 	return nil
 }
 
@@ -39,109 +33,72 @@ func createDirectory(dest string) error {
 	return nil
 }
 
-// processTemplateFiles processes template files and interpolates variables into them
-func processTemplateFiles(dest, name, tmpl string) error {
-
-	return fs.WalkDir(apps.SourceFiles, tmpl, func(path string, d fs.DirEntry, err error) error {
+// copySourceFiles processes template files and interpolates variables into them
+func copySourceFiles(name, dest, tmpl string) error {
+	source, err := fs.Sub(apps.SourceFiles, tmpl)
+	if err != nil {
+		return errors.Wrap(err, "failed to create source filesystem")
+	}
+	return fs.WalkDir(source, ".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
-			return fmt.Errorf("error walking template files: %w", err)
+			return errors.Wrap(err, "failed to copy source files")
 		}
 		if d.IsDir() {
-			return nil // Skip directories
+			return nil
 		}
-
-		// Read and parse the template
-		tmplContent, err := apps.SourceFiles.ReadFile(filepath.Join(tmpl, path))
+		file, err := source.Open(path)
 		if err != nil {
-			return fmt.Errorf("failed to read template file %s: %w", path, err)
+			return errors.Wrap(err, "failed to open file")
 		}
-
-		tmpl, err := template.New(path).Parse(string(tmplContent))
+		defer file.Close()
+		content, err := io.ReadAll(file)
 		if err != nil {
-			return fmt.Errorf("failed to parse template file %s: %w", path, err)
+			return errors.Wrap(err, "failed to read file")
 		}
-
-		// Prepare output path and directory
-		outputPath, err := prepareOutputPath(dest, path, true) // Remove .tmpl extension
-		if err != nil {
-			return err
-		}
-
-		// Write the processed template to the destination
-		return writeTemplateToFile(tmpl, outputPath, name)
+		pkg := fmt.Sprintf("github.com/ccutch/congo/apps/%s", tmpl)
+		return copyFile(path, dest, strings.ReplaceAll(string(content), pkg, name))
 	})
 }
 
-// copyNonTemplateFiles copies non-template files directly into the destination
-func copyNonTemplateFiles(dest, tmpl string) error {
-	return fs.WalkDir(apps.ResourceFiles, tmpl, func(path string, d fs.DirEntry, err error) error {
+// copyResourceFiles copies non-template files directly into the destination
+func copyResourceFiles(dest, tmpl string) error {
+	source, err := fs.Sub(apps.ResourceFiles, tmpl)
+	if err != nil {
+		return errors.Wrap(err, "failed to create source filesystem")
+	}
+	return fs.WalkDir(source, ".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
-			return fmt.Errorf("error walking non-template files: %w", err)
+			return errors.Wrap(err, "failed to copy resource files")
 		}
 		if d.IsDir() {
-			return nil // Skip directories
+			return nil
 		}
-
-		// Prepare output path and directory
-		outputPath, err := prepareOutputPath(dest, path, false)
+		file, err := source.Open(path)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "failed to open file")
 		}
-
-		// Copy file content
-		return copyFile(apps.ResourceFiles, path, outputPath)
+		defer file.Close()
+		content, err := io.ReadAll(file)
+		if err != nil {
+			return errors.Wrap(err, "failed to read file")
+		}
+		return copyFile(path, dest, string(content))
 	})
 }
 
-// prepareOutputPath prepares the output file path and ensures its directory exists
-func prepareOutputPath(dest, sourcePath string, removeTmplExtension bool) (string, error) {
-	relPath, _ := filepath.Rel("templates", sourcePath)
-	if removeTmplExtension && strings.HasSuffix(relPath, ".tmpl") {
-		relPath = strings.TrimSuffix(relPath, ".tmpl")
+func copyFile(source, dest, content string) error {
+	//create directory if it doesn't exist
+	dir := filepath.Dir(filepath.Join(dest, source))
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+			return errors.Wrap(err, "failed to create directory")
+		}
 	}
-	outputPath := filepath.Join(dest, relPath)
-	outputDir := filepath.Dir(outputPath)
-
-	// Ensure the output directory exists
-	if err := os.MkdirAll(outputDir, os.ModePerm); err != nil {
-		return "", fmt.Errorf("failed to create output directory for %s: %w", outputPath, err)
-	}
-
-	return outputPath, nil
-}
-
-// writeTemplateToFile writes the parsed template to the specified file
-func writeTemplateToFile(tmpl *template.Template, outputPath string, data interface{}) error {
-	outputFile, err := os.Create(outputPath)
+	file, err := os.Create(filepath.Join(dest, source))
 	if err != nil {
-		return fmt.Errorf("failed to create output file %s: %w", outputPath, err)
+		return errors.Wrap(err, "failed to create destination file")
 	}
-	defer outputFile.Close()
-
-	if err := tmpl.Execute(outputFile, data); err != nil {
-		return fmt.Errorf("failed to execute template for %s: %w", outputPath, err)
-	}
-
-	return nil
-}
-
-// copyFile copies the content of a file from the source embedded FS to the destination path
-func copyFile(sourceFS fs.FS, sourcePath, destPath string) error {
-	srcFile, err := sourceFS.Open(sourcePath)
-	if err != nil {
-		return fmt.Errorf("failed to open source file %s: %w", sourcePath, err)
-	}
-	defer srcFile.Close()
-
-	destFile, err := os.Create(destPath)
-	if err != nil {
-		return fmt.Errorf("failed to create destination file %s: %w", destPath, err)
-	}
-	defer destFile.Close()
-
-	if _, err := io.Copy(destFile, srcFile); err != nil {
-		return fmt.Errorf("failed to copy file from %s to %s: %w", sourcePath, destPath, err)
-	}
-
-	return nil
+	defer file.Close()
+	_, err = file.WriteString(content)
+	return errors.Wrap(err, "failed to write file")
 }

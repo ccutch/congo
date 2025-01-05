@@ -32,7 +32,7 @@ func main() {
 
 	// Run the generator
 	log.Printf("Generating files in '%s' with namespace '%s'...", *dest, *name)
-	err := congo_code.GenerateExample(*dest, *name, *template)
+	err := congo_code.GenerateExample(*name, *dest, *template)
 	if err != nil {
 		log.Fatalf("Error: %v", err)
 	}

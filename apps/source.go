@@ -7,5 +7,5 @@ import (
 //go:embed all:*/*.go all:*/**/*.go
 var SourceFiles embed.FS
 
-//go:embed all:*/**/*.html all:*/**/*.sql
+//go:embed all:*/templates/*.html all:*/templates/**/*.html all:*/migrations/*.sql
 var ResourceFiles embed.FS
