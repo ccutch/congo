@@ -47,5 +47,5 @@ func main() {
 	app.Handle("/code/", coding.Repo.Serve(auth, "developer"))
 	app.Handle("/coder/", auth.Protect(coding.Workspace.Proxy("/coder/")))
 
-	app.StartFromEnv(congo.Ignore("workspace", coding.Workspace))
+	app.StartFromEnv()
 }

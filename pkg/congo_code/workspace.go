@@ -124,6 +124,14 @@ func (w *Workspace) Run(args ...string) (bytes.Buffer, bytes.Buffer, error) {
 	return w.code.docker("exec", w.Name, "sh", "-c", strings.Join(args, " "))
 }
 
+//go:embed resources/workspace/create-congo-app.sh
+var createCongoApp string
+
+func (w *Workspace) CreateCongoApp(name, template string) error {
+	_, output, err := w.code.bash(fmt.Sprintf(createCongoApp, name, template))
+	return errors.Wrap(err, output.String())
+}
+
 func (w *Workspace) Save() error {
 	return w.DB.Query(`
 	
