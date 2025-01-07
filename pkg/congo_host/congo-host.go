@@ -5,30 +5,38 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
+	"embed"
 	"encoding/pem"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 
+	"github.com/ccutch/congo/pkg/congo"
 	"github.com/digitalocean/godo"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/oauth2"
 )
 
-type CongoHost struct {
-	root     string
-	platform *godo.Client
+//go:embed all:migrations
+var migrations embed.FS
 
-	*apiCreds
+type CongoHost struct {
+	platform *godo.Client
+	db       *congo.Database
+
+	creds *apiCreds
 }
 
 func InitCongoHost(root string, opts ...CongoHostOpt) *CongoHost {
-	host := CongoHost{root: root}
+	host := CongoHost{db: congo.SetupDatabase(root, "host.db", migrations)}
 	for _, opt := range opts {
 		if err := opt(&host); err != nil {
 			log.Fatal("Failed to setup CongoHost:", err)
 		}
+	}
+	if err := host.db.MigrateUp(); err != nil {
+		log.Fatal("Failed to setup host db:", err)
 	}
 	return &host
 }
@@ -65,14 +73,14 @@ func WithApiClient(clientID, secret, redirectURI string) CongoHostOpt {
 
 func (host *CongoHost) WithApiClient(clientID, secret, redirectURI string) {
 	if clientID == "" || secret == "" || redirectURI == "" {
-		host.apiCreds = nil
+		host.creds = nil
 	} else {
-		host.apiCreds = &apiCreds{clientID, secret, redirectURI}
+		host.creds = &apiCreds{clientID, secret, redirectURI}
 	}
 }
 
 func (host *CongoHost) generateSSHKey(path string) (string, string, error) {
-	serverData := filepath.Join(host.root, "hosts", path)
+	serverData := filepath.Join(host.db.Root, "hosts", path)
 	os.MkdirAll(serverData, 0700)
 	publicKeyPath := fmt.Sprintf("%s/id_rsa.pub", serverData)
 	privateKeyPath := fmt.Sprintf("%s/id_rsa", serverData)

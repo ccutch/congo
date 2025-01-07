@@ -80,17 +80,18 @@ func (servers ServersController) handleDomain(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	host, err := servers.hosting.LoadServer(server.Name, server.Region)
+	host, err := servers.hosting.LoadServer(server.Name)
 	if err != nil {
 		servers.Render(w, r, "error-message", err)
 		return
 	}
 
 	domain := r.FormValue("domain")
-	if host.RegisterDomain(domain); host.Error != nil {
-		server.Error = host.Error.Error()
-	} else {
-		server.Domain = domain
+	if d, err := host.NewDomain(domain); err != nil {
+		server.Error = err.Error()
+	} else if d.Verify(); host.Error != nil {
+		d.Verified = false
+		d.Save()
 	}
 
 	if err := server.Save(); err != nil {
@@ -99,7 +100,6 @@ func (servers ServersController) handleDomain(w http.ResponseWriter, r *http.Req
 	}
 
 	servers.Refresh(w, r)
-
 }
 
 func (servers ServersController) handleRestart(w http.ResponseWriter, r *http.Request) {
@@ -109,7 +109,7 @@ func (servers ServersController) handleRestart(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	host, err := servers.hosting.LoadServer(server.Name, server.Region)
+	host, err := servers.hosting.LoadServer(server.Name)
 	if err != nil {
 		servers.Render(w, r, "error-message", err)
 		return

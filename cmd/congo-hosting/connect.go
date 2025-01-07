@@ -13,7 +13,6 @@ func connect(args ...string) error {
 		apiKey = cmd.String("api-key", "$DIGITAL_OCEAN_API_KEY", "Digital Ocean API Key")
 		path   = cmd.String("data-path", "/tmp/congo", "Local storage for SSH Keys")
 		name   = cmd.String("name", "congo-server", "Name of Digital Ocean droplet")
-		region = cmd.String("region", "sfo2", "Region of Digital Ocean droplet")
 	)
 
 	if err := cmd.Parse(args[1:]); err != nil {
@@ -25,7 +24,7 @@ func connect(args ...string) error {
 	}
 
 	host := congo_host.InitCongoHost(*path, congo_host.WithApiToken(*apiKey))
-	server, err := host.LoadServer(*name, *region)
+	server, err := host.LoadServer(*name)
 	if err != nil {
 		return err
 	}

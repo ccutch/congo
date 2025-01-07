@@ -8,69 +8,105 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/ccutch/congo/pkg/congo"
 	"github.com/digitalocean/godo"
 	"github.com/pkg/errors"
 )
 
 type Server struct {
-	*CongoHost
-	Name   string
-	Region string
-	IP     string
-	Error  error
+	congo.Model
+	Name       string
+	Region     string
+	Size       string
+	VolumeSize int64
+	IP         string
+	Error      error
 
+	host    *CongoHost
 	sshKey  *godo.Key
 	volume  *godo.Volume
 	droplet *godo.Droplet
-
-	ctx    context.Context
-	pubKey string
-	priKey string
 
 	Stdin  io.Reader
 	Stdout io.Writer
 }
 
 func (host *CongoHost) NewServer(name, region, size string, storage int64) (*Server, error) {
-	server := Server{CongoHost: host, Name: name, Region: region, ctx: context.Background(), Stdin: os.Stdin, Stdout: os.Stdout}
-	server.setupAccessKey()
-	server.setupVolumne(storage)
-	server.startDroplet(size)
-	server.prepareServer()
-	return &server, server.Error
+	s := Server{
+		host:       host,
+		Model:      host.db.NewModel(name),
+		Name:       name,
+		Region:     region,
+		Size:       size,
+		VolumeSize: storage,
+		Stdin:      os.Stdin,
+		Stdout:     os.Stdout,
+	}
+	s.Error = host.db.Query(`
+
+	INSERT INTO servers (id, name, region, size, volume_size)
+	VALUES (?, ?, ?, ?, ?)
+	RETURNING created_at, updated_at
+
+	`, s.ID, s.Name, s.Region, s.Size, s.VolumeSize).Scan(&s.CreatedAt, &s.UpdatedAt)
+	s.setupAccessKey()
+	s.setupVolumne(storage)
+	s.startDroplet(size)
+	s.prepareServer()
+	return &s, errors.Wrap(s.Error, "first error")
 }
 
-func (host *CongoHost) LoadServer(name, region string) (*Server, error) {
-	server := Server{CongoHost: host, Name: name, Region: region, ctx: context.Background(), Stdin: os.Stdin, Stdout: os.Stdout}
-	server.pubKey = fmt.Sprintf("%s/id_rsa.pub", filepath.Join(host.root, "hosts", name))
-	server.priKey = fmt.Sprintf("%s/id_rsa", filepath.Join(host.root, "hosts", name))
+func (host *CongoHost) LoadServer(name string) (*Server, error) {
+	server, err := Server{host: host, Model: host.db.NewModel(name), Name: name, Stdin: os.Stdin, Stdout: os.Stdout}, ""
+	server.Error = host.db.Query(`
+
+		SELECT id, name, region, size, volume_size, ip_address, error, created_at, updated_at
+		FROM servers
+		WHERE name = ?
+
+	`, name).Scan(&server.ID, &server.Name, &server.Region, &server.Size, &server.VolumeSize, &server.IP, &err, &server.CreatedAt, &server.UpdatedAt)
+	if server.Error != nil {
+		return nil, server.Error
+	}
+	if err != "" {
+		server.Error = errors.New(err)
+	}
 	server.checkAccessKeys()
 	server.Refresh()
 	return &server, server.Error
 }
 
-func (host *CongoHost) ListServers() ([]*Server, error) {
-	var servers []*Server
-	if _, err := os.Stat(filepath.Join(host.root, "hosts")); os.IsNotExist(err) {
-		return []*Server{}, nil
-	}
+func (host *CongoHost) ListServers() (servers []*Server, err error) {
+	return servers, host.db.Query(`
 
-	entries, err := os.ReadDir(filepath.Join(host.root, "hosts"))
-	if err != nil {
-		return nil, fmt.Errorf("failed to read directory: %w", err)
-	}
+		SELECT id, name, region, size, volume_size, ip_address, error, created_at, updated_at
+		FROM servers
+		ORDER BY created_at DESC
 
-	for _, entry := range entries {
-		if entry.IsDir() {
-			server := Server{
-				CongoHost: host,
-				Name:      entry.Name(),
-				ctx:       context.Background()}
-			servers = append(servers, &server)
+	`).All(func(scan congo.Scanner) error {
+		s, sErr := Server{Model: host.db.Model()}, ""
+		if err = scan(&s.ID, &s.Name, &s.Region, &s.Size, &s.VolumeSize, &s.IP, &sErr, &s.CreatedAt, &s.UpdatedAt); err != nil {
+			return err
 		}
-	}
 
-	return servers, nil
+		if sErr != "" {
+			s.Error = errors.New(sErr)
+		}
+
+		go func() {
+			s.checkAccessKeys()
+			s.Refresh()
+		}()
+
+		servers = append(servers, &s)
+		return nil
+	})
+}
+
+func (s *Server) Keys() (string, string) {
+	pubKey := fmt.Sprintf("%s/id_rsa.pub", filepath.Join(s.host.db.Root, "hosts", s.Name))
+	priKey := fmt.Sprintf("%s/id_rsa", filepath.Join(s.host.db.Root, "hosts", s.Name))
+	return pubKey, priKey
 }
 
 //go:embed resources/start-server.sh
@@ -91,7 +127,8 @@ func (server *Server) Refresh() {
 		keys     []godo.Key
 	)
 
-	if droplets, _, server.Error = server.platform.Droplets.ListByName(server.ctx, server.Name, nil); server.Error != nil {
+	ctx := context.Background()
+	if droplets, _, server.Error = server.host.platform.Droplets.ListByName(ctx, server.Name, nil); server.Error != nil {
 		server.Error = errors.Wrap(server.Error, "failed to list droplets")
 		return
 	}
@@ -99,6 +136,9 @@ func (server *Server) Refresh() {
 	if len(droplets) == 1 {
 		server.droplet = &droplets[0]
 		server.IP, server.Error = server.droplet.PublicIPv4()
+		if server.Error = server.Save(); server.Error != nil {
+			return
+		}
 	}
 
 	opt := &godo.ListVolumeParams{
@@ -106,7 +146,7 @@ func (server *Server) Refresh() {
 		Region: server.Region,
 	}
 
-	if volumes, _, server.Error = server.platform.Storage.ListVolumes(server.ctx, opt); server.Error != nil {
+	if volumes, _, server.Error = server.host.platform.Storage.ListVolumes(ctx, opt); server.Error != nil {
 		server.Error = errors.Wrap(server.Error, "failed to list volumes")
 		return
 	}
@@ -115,7 +155,7 @@ func (server *Server) Refresh() {
 		server.volume = &volumes[0]
 	}
 
-	if keys, _, server.Error = server.platform.Keys.List(server.ctx, nil); server.Error != nil {
+	if keys, _, server.Error = server.host.platform.Keys.List(ctx, nil); server.Error != nil {
 		server.Error = errors.Wrap(server.Error, "failed to list keys")
 		return
 	}
@@ -145,7 +185,7 @@ func (server *Server) Destroy(force bool) error {
 		return errors.Wrap(err, "failed to delete local keys")
 	}
 
-	return nil
+	return errors.Wrap(server.Delete(), "failed to delete server")
 }
 
 func (server *Server) Purge(force bool) error {
@@ -154,4 +194,34 @@ func (server *Server) Purge(force bool) error {
 	}
 
 	return nil
+}
+
+func (server *Server) Save() error {
+	var err string
+	if server.Error != nil {
+		err = server.Error.Error()
+	}
+	return server.host.db.Query(`
+	
+		UPDATE servers
+		SET name = ?,
+				region = ?,
+				size = ?,
+				volume_size = ?,
+				ip_address = ?,
+				error = ?,
+				updated_at = CURRENT_TIMESTAMP
+		WHERE id = ?
+		RETURNING updated_at
+
+	`, server.Name, server.Region, server.Size, server.VolumeSize, server.IP, err, server.ID).Scan(&server.UpdatedAt)
+}
+
+func (server *Server) Delete() error {
+	return server.host.db.Query(`
+	
+		DELETE FROM servers
+		WHERE id = ?
+
+	`, server.ID).Exec()
 }

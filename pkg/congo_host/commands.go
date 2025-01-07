@@ -26,10 +26,11 @@ func (server *Server) Run(args ...string) error {
 		return server.Error
 	}
 
+	_, priKey := server.Keys()
 	cmd := exec.Command(
 		"ssh",
 		"-o", "StrictHostKeyChecking=no",
-		"-i", server.priKey,
+		"-i", priKey,
 		fmt.Sprintf("root@%s", server.IP),
 		strings.Join(args, " "),
 	)
@@ -46,10 +47,11 @@ func (server *Server) Copy(source, dest string) error {
 		return server.Error
 	}
 
+	_, priKey := server.Keys()
 	cmd := exec.Command(
 		"scp",
 		"-o", "StrictHostKeyChecking=no",
-		"-i", server.priKey,
+		"-i", priKey,
 		source,
 		fmt.Sprintf("root@%s:%s", server.IP, dest),
 	)

@@ -1,6 +1,7 @@
 package congo_host
 
 import (
+	"context"
 	_ "embed"
 	"fmt"
 	"time"
@@ -14,7 +15,8 @@ func (server *Server) startDroplet(size string) {
 		return
 	}
 
-	server.droplet, _, server.Error = server.platform.Droplets.Create(server.ctx, &godo.DropletCreateRequest{
+	ctx := context.Background()
+	server.droplet, _, server.Error = server.host.platform.Droplets.Create(ctx, &godo.DropletCreateRequest{
 		Name:   server.Name,
 		Region: server.Region,
 		Size:   size,
@@ -48,8 +50,9 @@ func (server *Server) deleteDroplet() error {
 		return errors.New("server has no droplet")
 	}
 
+	ctx := context.Background()
 	fmt.Printf("Deleting droplet %s...\n", server.droplet.Name)
-	_, err := server.platform.Droplets.Delete(server.ctx, server.droplet.ID)
+	_, err := server.host.platform.Droplets.Delete(ctx, server.droplet.ID)
 	if err != nil {
 		return errors.Wrap(err, "failed to delete droplet")
 	}

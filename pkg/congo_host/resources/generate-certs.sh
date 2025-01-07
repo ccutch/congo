@@ -1,4 +1,4 @@
-certbot certonly --standalone -d %[1]s --non-interactive --agree-tos --email connormccutcheon95@gmail.com --expand
+certbot certonly --standalone -d %[1]s %[2]s --non-interactive --agree-tos --email connormccutcheon95@gmail.com --expand
 exit_code=$?
 
 if [ $exit_code -eq 0 ]; then

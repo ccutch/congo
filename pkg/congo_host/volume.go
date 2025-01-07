@@ -1,6 +1,7 @@
 package congo_host
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/digitalocean/godo"
@@ -10,7 +11,8 @@ func (server *Server) setupVolumne(size int64) {
 	if server.Error != nil {
 		return
 	}
-	server.volume, _, server.Error = server.platform.Storage.CreateVolume(server.ctx, &godo.VolumeCreateRequest{
+	ctx := context.Background()
+	server.volume, _, server.Error = server.host.platform.Storage.CreateVolume(ctx, &godo.VolumeCreateRequest{
 		Name:          server.Name + "-data",
 		Region:        server.Region,
 		SizeGigaBytes: size,
@@ -23,8 +25,9 @@ func (server *Server) deleteVolume() error {
 		return nil
 	}
 
+	ctx := context.Background()
 	fmt.Printf("Deleting volume %s...\n", server.volume.Name)
-	_, err := server.platform.Storage.DeleteVolume(server.ctx, server.volume.ID)
+	_, err := server.host.platform.Storage.DeleteVolume(ctx, server.volume.ID)
 	if err != nil {
 		return fmt.Errorf("failed to delete volume: %w", err)
 	}

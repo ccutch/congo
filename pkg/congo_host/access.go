@@ -1,36 +1,44 @@
 package congo_host
 
 import (
+	"context"
 	"fmt"
 	"os"
 
 	"github.com/digitalocean/godo"
+	"github.com/pkg/errors"
 )
 
 func (server *Server) checkAccessKeys() {
 	if server.Error != nil {
 		return
 	}
-	if _, server.Error = os.Stat(server.pubKey); server.Error != nil {
+	pubKey, priKey := server.Keys()
+	if _, server.Error = os.Stat(pubKey); server.Error != nil {
 		return
 	}
-	_, server.Error = os.Stat(server.priKey)
+	_, server.Error = os.Stat(priKey)
 }
 
 func (server *Server) setupAccessKey() {
 	if server.Error != nil {
 		return
 	}
-	server.pubKey, server.priKey, server.Error = server.generateSSHKey(server.Name)
+
+	_, _, server.Error = server.host.generateSSHKey(server.Name)
 	if server.Error != nil {
 		return
 	}
-	var data []byte
-	data, server.Error = os.ReadFile(server.pubKey)
-	if server.Error != nil {
+
+	pubKey, _ := server.Keys()
+	data, err := os.ReadFile(pubKey)
+	if err != nil {
+		server.Error = errors.Wrap(err, "failed to read public key")
 		return
 	}
-	server.sshKey, _, server.Error = server.CongoHost.platform.Keys.Create(server.ctx, &godo.KeyCreateRequest{
+
+	ctx := context.Background()
+	server.sshKey, _, server.Error = server.host.platform.Keys.Create(ctx, &godo.KeyCreateRequest{
 		Name:      server.Name + "-admin-key",
 		PublicKey: string(data),
 	})
@@ -41,9 +49,9 @@ func (server *Server) deleteRemoteKeys() error {
 		return nil
 	}
 
+	ctx := context.Background()
 	fmt.Printf("Deleting SSH key %s...\n", server.sshKey.Name)
-	_, err := server.platform.Keys.DeleteByID(server.ctx, server.sshKey.ID)
-	if err != nil {
+	if _, err := server.host.platform.Keys.DeleteByID(ctx, server.sshKey.ID); err != nil {
 		return fmt.Errorf("failed to delete SSH key: %w", err)
 	}
 
@@ -52,15 +60,15 @@ func (server *Server) deleteRemoteKeys() error {
 }
 
 func (server *Server) deleteLocalKeys() error {
-
-	if server.priKey != "" {
-		if err := os.Remove(server.priKey); err != nil && !os.IsNotExist(err) {
+	pubKey, priKey := server.Keys()
+	if priKey != "" {
+		if err := os.Remove(priKey); err != nil && !os.IsNotExist(err) {
 			return fmt.Errorf("failed to delete private key file: %w", err)
 		}
 	}
 
-	if server.pubKey != "" {
-		if err := os.Remove(server.pubKey); err != nil && !os.IsNotExist(err) {
+	if pubKey != "" {
+		if err := os.Remove(pubKey); err != nil && !os.IsNotExist(err) {
 			return fmt.Errorf("failed to delete public key file: %w", err)
 		}
 	}

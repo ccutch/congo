@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/ccutch/congo/pkg/congo_host"
 )
@@ -11,10 +12,9 @@ import (
 func destroy(args ...string) error {
 	var (
 		cmd    = flag.NewFlagSet("destroy", flag.ExitOnError)
-		apiKey = cmd.String("api-key", "$DIGITAL_OCEAN_API_KEY", "Digital Ocean API Key")
+		apiKey = cmd.String("api-key", "", "Digital Ocean API Key default to environ")
 		path   = cmd.String("data-path", "/tmp/congo", "Local storage for SSH Keys")
 		name   = cmd.String("name", "congo-server", "Name of Digital Ocean droplet")
-		region = cmd.String("region", "sfo2", "Region of Digital Ocean droplet")
 		force  = cmd.Bool("force", false, "Force destroy even if there are errors")
 		purge  = cmd.Bool("purge", false, "Destroy droplet and purge data volumes")
 	)
@@ -23,12 +23,12 @@ func destroy(args ...string) error {
 		return err
 	}
 
-	if *apiKey == "$DIGITAL_OCEAN_API_KEY" {
+	if *apiKey == "" {
 		*apiKey = os.Getenv("DIGITAL_OCEAN_API_KEY")
 	}
 
 	host := congo_host.InitCongoHost(*path, congo_host.WithApiToken(*apiKey))
-	server, err := host.LoadServer(*name, *region)
+	server, err := host.LoadServer(*name)
 	if err != nil {
 		return fmt.Errorf("failed to load server: %w", err)
 	}
@@ -38,6 +38,7 @@ func destroy(args ...string) error {
 	}
 
 	if *purge {
+		time.Sleep(15 * time.Second)
 		if err := server.Purge(*force); err != nil {
 			return fmt.Errorf("failed to purge server: %w", err)
 		}
