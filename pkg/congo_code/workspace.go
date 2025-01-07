@@ -102,10 +102,7 @@ func (w *Workspace) Start() error {
 
 	if repo, err := w.Repo(); repo != nil && err == nil {
 		if token, err := w.code.NewAccessToken(time.Now().Add(100_000 * time.Hour)); err == nil {
-			output, errput, _ := w.Run(fmt.Sprintf(cloneRepository, token.ID, token.Secret))
-			log.Println("cloning", output.String(), errput.String())
-		} else {
-			log.Println("Failed to create access token: ", err)
+			w.Run(fmt.Sprintf(cloneRepository, token.ID, token.Secret))
 		}
 	}
 
@@ -129,7 +126,7 @@ var createCongoApp string
 
 func (w *Workspace) CreateCongoApp(name, template string) error {
 	_, output, err := w.code.bash(fmt.Sprintf(createCongoApp, name, template))
-	return errors.Wrap(err, output.String())
+	return errors.Wrapf(err, "failed to create congo app: %s", output.String())
 }
 
 func (w *Workspace) Save() error {

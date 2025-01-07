@@ -7,7 +7,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/digitalocean/godo"
 	"github.com/pkg/errors"
@@ -136,8 +135,6 @@ func (server *Server) Destroy(force bool) error {
 
 	if err := server.deleteDroplet(); !force && err != nil {
 		return errors.Wrap(err, "failed to delete droplet")
-	} else {
-		time.Sleep(15 * time.Second)
 	}
 
 	if err := server.deleteRemoteKeys(); !force && err != nil {

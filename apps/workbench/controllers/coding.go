@@ -22,26 +22,26 @@ func (coding *CodingController) Setup(app *congo.Application) {
 	coding.code = congo_code.InitCongoCode(app.DB.Root)
 	coding.Repo, _ = coding.code.NewRepo("code", congo_code.WithName("Code"))
 
-	var err error
-	coding.Workspace, err = coding.code.RunWorkspace("coder", 7000, coding.Repo)
-	go func(err error) {
+	auth, ok := app.Use("auth").(*congo_auth.Controller)
+	if !ok {
+		log.Fatal("Missing auth controller")
+	}
+
+	go func() {
+		var err error
+		coding.Workspace, err = coding.code.RunWorkspace("coder", 7000, coding.Repo)
 		if err != nil {
 			log.Println("Failed to setup workspace: ", err)
 			return
 		}
+
 		if err = coding.Workspace.Start(); err != nil {
 			log.Println("Failed to start workspace: ", err)
 			return
 		}
-		err = coding.Workspace.CreateCongoApp("foobar", "blogfront")
-		if err != nil {
-			log.Println("Failed to create congo app: ", err)
-		}
-	}(err)
+	}()
 
-	if auth, ok := app.Use("auth").(*congo_auth.Controller); ok {
-		app.HandleFunc("/_coding/download", auth.ProtectFunc(coding.handleDownload))
-	}
+	app.HandleFunc("/_coding/download", auth.ProtectFunc(coding.handleDownload))
 }
 
 func (coding CodingController) Handle(req *http.Request) congo.Controller {

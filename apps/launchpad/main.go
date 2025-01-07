@@ -10,7 +10,6 @@ import (
 
 	"github.com/ccutch/congo/pkg/congo"
 	"github.com/ccutch/congo/pkg/congo_auth"
-	"github.com/ccutch/congo/pkg/congo_stat"
 )
 
 var (
@@ -55,5 +54,5 @@ func main() {
 	http.Handle("/users", auth.Protect(app.Serve("users-dashboard.html"), "admin"))
 	http.Handle("/create/app", auth.Protect(app.Serve("create-app.html"), "admin"))
 
-	app.StartFromEnv(congo_stat.NewMonitor(app, auth))
+	app.StartFromEnv()
 }

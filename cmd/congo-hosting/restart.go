@@ -18,6 +18,7 @@ func restart(args ...string) error {
 		region  = cmd.String("region", "sfo2", "Region of Digital Ocean droplet")
 		rebuild = cmd.Bool("rebuild", false, "Rebuld local directory as Congo binary")
 		binary  = cmd.String("binary", "", "Local binary to copy to Digital Ocean droplet")
+		app     = cmd.String("app", "", "Prototype to use for the server")
 	)
 
 	if err := cmd.Parse(args[1:]); err != nil {
@@ -34,8 +35,8 @@ func restart(args ...string) error {
 		return err
 	}
 
-	if *rebuild && *binary == "" {
-		exec.Command("go", "build", "-o", "congo", ".").Run()
+	if (*app != "" || *rebuild) && *binary == "" {
+		exec.Command("go", "build", "-o", "congo", "./apps/"+*app).Run()
 		*binary = "./congo"
 	}
 

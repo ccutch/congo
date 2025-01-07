@@ -22,7 +22,11 @@ var (
 	path = cmp.Or(os.Getenv("DATA_PATH"), os.TempDir()+"/congo-blog")
 
 	auth = congo_auth.InitCongoAuth(path,
-		congo_auth.WithDefaultRole("applicant"))
+		congo_auth.WithDefaultRole("applicant"),
+		congo_auth.WithSetupView("admin-setup.html"),
+		congo_auth.WithSigninView("admin", "admin-login.html"),
+		congo_auth.WithSigninView("writer", "writer-login.html"),
+	)
 
 	app = congo.NewApplication(
 		congo.WithDatabase(congo.SetupDatabase(path, "app.db", migrations)),

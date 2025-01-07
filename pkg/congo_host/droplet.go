@@ -3,10 +3,10 @@ package congo_host
 import (
 	_ "embed"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/digitalocean/godo"
+	"github.com/pkg/errors"
 )
 
 func (server *Server) startDroplet(size string) {
@@ -37,9 +37,7 @@ func (server *Server) startDroplet(size string) {
 	for server.IP == "" {
 		fmt.Printf("Server Info: %v\n", server)
 		time.Sleep(10 * time.Second)
-		if server.Refresh(); server.Error != nil {
-			log.Fatalf("Error checking status: %s", server.Error)
-		}
+		server.Refresh()
 	}
 
 	time.Sleep(30 * time.Second)
@@ -47,13 +45,13 @@ func (server *Server) startDroplet(size string) {
 
 func (server *Server) deleteDroplet() error {
 	if server.droplet == nil {
-		return nil
+		return errors.New("server has no droplet")
 	}
 
 	fmt.Printf("Deleting droplet %s...\n", server.droplet.Name)
 	_, err := server.platform.Droplets.Delete(server.ctx, server.droplet.ID)
 	if err != nil {
-		return fmt.Errorf("failed to delete droplet: %w", err)
+		return errors.Wrap(err, "failed to delete droplet")
 	}
 
 	server.droplet = nil
