@@ -41,6 +41,7 @@ func launch(args ...string) (*congo_host.Server, error) {
 		return nil, errors.Wrap(err, "failed to create server")
 	}
 
+	server.Setup()
 	if err = exec.Command("go", "build", "-o", "congo", "./apps/"+*app).Run(); err != nil {
 		log.Println("Failed to build binary: ", err)
 		return nil, errors.Wrap(err, "failed to build binary")

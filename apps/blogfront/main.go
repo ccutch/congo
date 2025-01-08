@@ -19,17 +19,16 @@ var (
 	//go:embed all:templates
 	templates embed.FS
 
-	path = cmp.Or(os.Getenv("DATA_PATH"), os.TempDir()+"/congo-blog")
+	path = cmp.Or(os.Getenv("DATA_PATH"), os.TempDir()+"/congo")
 
 	auth = congo_auth.InitCongoAuth(path,
 		congo_auth.WithDefaultRole("applicant"),
 		congo_auth.WithSetupView("admin-setup.html"),
 		congo_auth.WithSigninView("admin", "admin-login.html"),
-		congo_auth.WithSigninView("writer", "writer-login.html"),
-	)
+		congo_auth.WithSigninView("writer", "writer-login.html"))
 
 	app = congo.NewApplication(
-		congo.WithDatabase(congo.SetupDatabase(path, "app.db", migrations)),
+		congo.WithDatabase(congo.SetupDatabase(path, "blog.db", migrations)),
 		congo.WithController(auth.Controller()),
 		congo.WithController("posts", new(controllers.PostController)),
 		congo.WithTemplates(templates))
@@ -43,7 +42,7 @@ func main() {
 	app.Handle("GET /blog/{post}", app.Serve("read-post.html"))
 	app.Handle("GET /admin", auth.Protect(app.Serve("admin.html"), "admin"))
 	app.Handle("GET /blog/write", auth.Protect(app.Serve("write-post.html"), "writer", "admin"))
-	app.Handle("GET /blog/{post}/edit", auth.Protect(app.Serve("edit-post.html"), "writer", "admin"))
+	app.Handle("GET /edit/{post}", auth.Protect(app.Serve("edit-post.html"), "writer", "admin"))
 
 	app.StartFromEnv(congo_stat.NewMonitor(app, auth))
 }

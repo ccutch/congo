@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (server *Server) startDroplet(size string) {
+func (server *Server) startDroplet() {
 	if server.Error != nil {
 		return
 	}
@@ -19,7 +19,7 @@ func (server *Server) startDroplet(size string) {
 	server.droplet, _, server.Error = server.host.platform.Droplets.Create(ctx, &godo.DropletCreateRequest{
 		Name:   server.Name,
 		Region: server.Region,
-		Size:   size,
+		Size:   server.Size,
 		Image: godo.DropletCreateImage{
 			Slug: "docker-20-04",
 		},

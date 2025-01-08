@@ -7,7 +7,7 @@ import (
 	"github.com/digitalocean/godo"
 )
 
-func (server *Server) setupVolumne(size int64) {
+func (server *Server) setupVolumne() {
 	if server.Error != nil {
 		return
 	}
@@ -15,7 +15,7 @@ func (server *Server) setupVolumne(size int64) {
 	server.volume, _, server.Error = server.host.platform.Storage.CreateVolume(ctx, &godo.VolumeCreateRequest{
 		Name:          server.Name + "-data",
 		Region:        server.Region,
-		SizeGigaBytes: size,
+		SizeGigaBytes: server.VolumeSize,
 		Description:   "volume for congo server",
 	})
 }

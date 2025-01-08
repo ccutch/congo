@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/ccutch/congo/apps/workbench/models"
 	"github.com/ccutch/congo/pkg/congo"
 	"github.com/ccutch/congo/pkg/congo_auth"
 	"github.com/ccutch/congo/pkg/congo_host"
@@ -32,39 +31,32 @@ func (servers ServersController) Handle(req *http.Request) congo.Controller {
 	return &servers
 }
 
-func (servers *ServersController) Servers() ([]*models.Server, error) {
-	return models.AllServers(servers.DB)
+func (servers *ServersController) Servers() ([]*congo_host.Server, error) {
+	return servers.hosting.ListServers()
 }
 
 func (servers ServersController) handleLaunch(w http.ResponseWriter, r *http.Request) {
 	storage, err := strconv.Atoi(r.FormValue("storage"))
 	if err != nil {
-		servers.Render(w, r, "error-message", err)
+		servers.hosting.Render(w, r, "error-message", err)
+		return
+	}
+	name, region, size := r.FormValue("name"), r.FormValue("region"), r.FormValue("size")
+	server, err := servers.hosting.NewServer(name, region, size, int64(storage))
+	if err != nil {
+		servers.hosting.Render(w, r, "error-message", err)
 		return
 	}
 
-	name, region, size := r.FormValue("name"), r.FormValue("region"), r.FormValue("size")
-	server, err := models.NewServer(servers.DB, name, region, "")
-	if err != nil {
-		servers.Render(w, r, "error-message", err)
-	}
-
 	go func() {
-		host, err := servers.hosting.NewServer(name, region, size, int64(storage))
-		if err != nil {
-			log.Println("Failed to start server")
-			server.Error = err.Error()
-		} else {
-			server.IpAddress = host.IP
+		if server.Setup(); server.Error != nil {
+			server.Save()
+			return
 		}
-		if err := server.Save(); err != nil {
-			log.Println("Failed to save server", server, err)
-		}
-
 		if coding, ok := servers.Use("coding").(*CodingController); ok {
 			if source, err := coding.Repo.Build("master", "."); err != nil {
 				log.Println("Failed to build binary: ", err)
-			} else if err = host.Deploy(source); err != nil {
+			} else if err = server.Deploy(source); err != nil {
 				log.Println("Failed to deploy server: ", err)
 			}
 		}
@@ -74,28 +66,24 @@ func (servers ServersController) handleLaunch(w http.ResponseWriter, r *http.Req
 }
 
 func (servers ServersController) handleDomain(w http.ResponseWriter, r *http.Request) {
-	server, err := models.GetServer(servers.DB, r.FormValue("server"))
+	server, err := servers.hosting.LoadServer(r.FormValue("server"))
 	if err != nil {
 		servers.Render(w, r, "error-message", err)
 		return
 	}
 
-	host, err := servers.hosting.LoadServer(server.Name)
-	if err != nil {
-		servers.Render(w, r, "error-message", err)
-		return
-	}
-
-	domain := r.FormValue("domain")
-	if d, err := host.NewDomain(domain); err != nil {
-		server.Error = err.Error()
-	} else if d.Verify(); host.Error != nil {
-		d.Verified = false
-		d.Save()
+	if domain := r.FormValue("domain"); domain != "" {
+		if d, err := server.NewDomain(domain); err != nil {
+			servers.Render(w, r, "error-message", err)
+			return
+		} else if err = d.Verify(); err == nil {
+			d.Verified = true
+			d.Save()
+		}
 	}
 
 	if err := server.Save(); err != nil {
-		log.Println("Failed to save server", server, err)
+		servers.Render(w, r, "error-message", err)
 		return
 	}
 
@@ -103,7 +91,7 @@ func (servers ServersController) handleDomain(w http.ResponseWriter, r *http.Req
 }
 
 func (servers ServersController) handleRestart(w http.ResponseWriter, r *http.Request) {
-	server, err := models.GetServer(servers.DB, r.PathValue("server"))
+	server, err := servers.hosting.LoadServer(r.PathValue("server"))
 	if err != nil {
 		servers.Render(w, r, "error-message", err)
 		return

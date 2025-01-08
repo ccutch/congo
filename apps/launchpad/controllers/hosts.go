@@ -55,7 +55,9 @@ func (hosts HostsController) handleCreate(w http.ResponseWriter, r *http.Request
 		server, err := hosts.host.NewServer(host.Name, host.Region, host.Size, storage)
 		if err != nil {
 			host.Error = err.Error()
-		} else {
+		} 
+		
+		if err != nil {
 			host.IpAddr = server.IP
 		}
 

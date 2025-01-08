@@ -19,7 +19,7 @@ var (
 	//go:embed all:migrations
 	migrations embed.FS
 
-	data = cmp.Or(os.Getenv("DATA_PATH"), os.TempDir()+"/congo-workbench")
+	data = cmp.Or(os.Getenv("DATA_PATH"), os.TempDir()+"/congo")
 
 	auth = congo_auth.InitCongoAuth(data,
 		congo_auth.WithDefaultRole("developer"),
@@ -29,7 +29,7 @@ var (
 	host = congo_host.InitCongoHost(data)
 
 	app = congo.NewApplication(
-		congo.WithDatabase(congo.SetupDatabase(data, "app.db", migrations)),
+		congo.WithDatabase(congo.SetupDatabase(data, "workbench.db", migrations)),
 		congo.WithController(auth.Controller()),
 		congo.WithController(host.Controller()),
 		congo.WithController("coding", new(controllers.CodingController)),

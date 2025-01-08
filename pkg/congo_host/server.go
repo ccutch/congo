@@ -31,6 +31,7 @@ type Server struct {
 	Stdout io.Writer
 }
 
+
 func (host *CongoHost) NewServer(name, region, size string, storage int64) (*Server, error) {
 	s := Server{
 		host:       host,
@@ -42,18 +43,13 @@ func (host *CongoHost) NewServer(name, region, size string, storage int64) (*Ser
 		Stdin:      os.Stdin,
 		Stdout:     os.Stdout,
 	}
-	s.Error = host.db.Query(`
+	return &s, host.db.Query(`
 
 	INSERT INTO servers (id, name, region, size, volume_size)
 	VALUES (?, ?, ?, ?, ?)
 	RETURNING created_at, updated_at
 
 	`, s.ID, s.Name, s.Region, s.Size, s.VolumeSize).Scan(&s.CreatedAt, &s.UpdatedAt)
-	s.setupAccessKey()
-	s.setupVolumne(storage)
-	s.startDroplet(size)
-	s.prepareServer()
-	return &s, errors.Wrap(s.Error, "first error")
 }
 
 func (host *CongoHost) LoadServer(name string) (*Server, error) {
@@ -112,12 +108,21 @@ func (s *Server) Keys() (string, string) {
 //go:embed resources/start-server.sh
 var startServer string
 
-func (server *Server) Start() {
-	if server.Error != nil {
+func (s *Server) Setup() {
+	if s.Error != nil {
 		return
 	}
+	s.setupAccessKey()
+	s.setupVolumne()
+	s.startDroplet()
+	s.prepareServer()
+}
 
-	server.Error = server.Run(fmt.Sprintf(startServer, 8080))
+func (s *Server) Start() {
+	if s.Error != nil {
+		return
+	}
+	s.Error = s.Run(fmt.Sprintf(startServer, 8080))
 }
 
 func (server *Server) Refresh() {

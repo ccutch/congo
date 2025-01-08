@@ -19,7 +19,7 @@ var (
 	//go:embed all:templates
 	templates embed.FS
 
-	data = cmp.Or(os.Getenv("DATA_PATH"), os.TempDir()+"/launchpad")
+	data = cmp.Or(os.Getenv("DATA_PATH"), os.TempDir()+"/congo")
 
 	auth = congo_auth.InitCongoAuth(data,
 		congo_auth.WithCookieName("launchpad"),
@@ -30,7 +30,7 @@ var (
 		congo_auth.WithSigninDest("/hosts"))
 
 	app = congo.NewApplication(
-		congo.WithDatabase(congo.SetupDatabase(data, "launcher.db", migrations)),
+		congo.WithDatabase(congo.SetupDatabase(data, "launchpad.db", migrations)),
 		congo.WithHostPrefix("/coder/proxy/8000"),
 		congo.WithController(auth.Controller()),
 		congo.WithController("apps", new(controllers.AppsController)),
