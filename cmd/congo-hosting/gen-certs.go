@@ -6,6 +6,8 @@ import (
 	"os"
 
 	"github.com/ccutch/congo/pkg/congo_host"
+	"github.com/ccutch/congo/pkg/congo_host/backend/digitalocean"
+	"github.com/pkg/errors"
 )
 
 func genCerts(args ...string) error {
@@ -29,16 +31,19 @@ func genCerts(args ...string) error {
 		log.Fatal("Missing domain name")
 	}
 
-	host := congo_host.InitCongoHost(*path, congo_host.WithApiToken(*apiKey))
-	server := host.Server(*name)
-	if err := server.Load(); err != nil {
-		return err
+	host := congo_host.InitCongoHost(*path, digitalocean.NewClient(*apiKey))
+	server, err := host.GetServer(*name)
+	if err != nil {
+		return errors.Wrap(err, "failed to get server")
+	}
+
+	if err := server.Reload(); err != nil {
+		return errors.Wrap(err, "failed to reload server")
 	} else if domain, err := server.NewDomain(*domainName); err != nil {
-		return err
+		return errors.Wrap(err, "failed to create domain")
 	} else if err := domain.Verify(); err != nil {
-		return err
+		return errors.Wrap(err, "failed to verify domain")
 	} else {
-		server.Start()
-		return server.Error
+		return server.Restart()
 	}
 }

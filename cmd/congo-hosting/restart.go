@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 
 	"github.com/ccutch/congo/pkg/congo_host"
+	"github.com/ccutch/congo/pkg/congo_host/backend/digitalocean"
+	"github.com/pkg/errors"
 )
 
 func restart(args ...string) error {
@@ -27,9 +29,13 @@ func restart(args ...string) error {
 		*apiKey = os.Getenv("DIGITAL_OCEAN_API_KEY")
 	}
 
-	host := congo_host.InitCongoHost(*path, congo_host.WithApiToken(*apiKey))
-	server := host.Server(*name)
-	if err := server.Load(); err != nil {
+	host := congo_host.InitCongoHost(*path, digitalocean.NewClient(*apiKey))
+	server, err := host.GetServer(*name)
+	if err != nil {
+		return err
+	}
+
+	if err := server.Reload(); err != nil {
 		return err
 	}
 
@@ -39,10 +45,13 @@ func restart(args ...string) error {
 	}
 
 	if *binary != "" {
-		*binary, server.Error = filepath.Abs(*binary)
-		server.Error = server.Copy(*binary, "/root/congo")
+		if *binary, err = filepath.Abs(*binary); err != nil {
+			return errors.Wrap(err, "failed to get absolute path")
+		}
+		if _, _, err = server.Copy(*binary, "/root/congo"); err != nil {
+			return errors.Wrap(err, "failed to copy binary to server")
+		}
 	}
 
-	server.Start()
-	return server.Error
+	return server.Restart()
 }

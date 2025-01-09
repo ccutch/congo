@@ -21,7 +21,7 @@ type CodingController struct {
 
 func (coding *CodingController) Setup(app *congo.Application) {
 	coding.BaseController.Setup(app)
-	coding.host = congo_host.InitCongoHost(app.DB.Root)
+	coding.host = congo_host.InitCongoHost(app.DB.Root, nil)
 	coding.code = congo_code.InitCongoCode(app.DB.Root)
 	coding.Repo, _ = coding.code.NewRepo("code", congo_code.WithName("Code"))
 

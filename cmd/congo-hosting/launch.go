@@ -7,10 +7,11 @@ import (
 	"os/exec"
 
 	"github.com/ccutch/congo/pkg/congo_host"
+	"github.com/ccutch/congo/pkg/congo_host/backend/digitalocean"
 	"github.com/pkg/errors"
 )
 
-func launch(args ...string) (*congo_host.Server, error) {
+func launch(args ...string) (*congo_host.RemoteServer, error) {
 	var (
 		cmd     = flag.NewFlagSet("launch", flag.ExitOnError)
 		apiKey  = cmd.String("api-key", "$DIGITAL_OCEAN_API_KEY", "Digital Ocean API Key")
@@ -35,19 +36,30 @@ func launch(args ...string) (*congo_host.Server, error) {
 		*apiKey = os.Getenv("DIGITAL_OCEAN_API_KEY")
 	}
 
-	host := congo_host.InitCongoHost(*path, congo_host.WithApiToken(*apiKey))
-	server := host.Server(*name)
-	err := server.Create(*region, *size, *storage)
+	log.Println("Recording record...")
+	host := congo_host.InitCongoHost(*path, digitalocean.NewClient(*apiKey))
+	server, err := host.NewServer(*name, *size, *region)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create server")
 	}
 
-	server.Setup()
+	log.Println("Creating server...")
+	if err = server.Create(*region, *size, *storage); err != nil {
+		return nil, errors.Wrap(err, "failed to create server")
+	}
+
+	log.Println("Preparing server...")
+	if err = server.Prepare(); err != nil {
+		return nil, errors.Wrap(err, "failed to prepare server")
+	}
+
+	log.Println("Building binary...")
 	if err = exec.Command("go", "build", "-o", "congo", "./apps/"+*app).Run(); err != nil {
 		log.Println("Failed to build binary: ", err)
 		return nil, errors.Wrap(err, "failed to build binary")
 	}
 
+	log.Println("Deploying binary...")
 	if err = server.Deploy("congo"); err != nil {
 		return nil, errors.Wrap(err, "failed to deploy binary")
 	}

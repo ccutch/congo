@@ -5,6 +5,8 @@ import (
 	"os"
 
 	"github.com/ccutch/congo/pkg/congo_host"
+	"github.com/ccutch/congo/pkg/congo_host/backend/digitalocean"
+	"github.com/pkg/errors"
 )
 
 func connect(args ...string) error {
@@ -23,11 +25,16 @@ func connect(args ...string) error {
 		*apiKey = os.Getenv("DIGITAL_OCEAN_API_KEY")
 	}
 
-	host := congo_host.InitCongoHost(*path, congo_host.WithApiToken(*apiKey))
-	server := host.Server(*name)
-	if err := server.Load(); err != nil {
+	host := congo_host.InitCongoHost(*path, digitalocean.NewClient(*apiKey))
+	server, err := host.GetServer(*name)
+	if err != nil {
+		return errors.Wrap(err, "failed to get server")
+	}
+
+	if err := server.Reload(); err != nil {
 		return err
 	}
 
-	return server.Run(cmd.Args()...)
+	_, out, err := server.Run(nil, cmd.Args()...)
+	return errors.Wrap(err, out.String())
 }

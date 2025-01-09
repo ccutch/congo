@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/ccutch/congo/pkg/congo"
@@ -50,22 +49,27 @@ func (hosts HostsController) handleCreate(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	go func(host *models.Host) {
-		server := hosts.host.Server(host.Name)
-		storage := map[string]int64{"SM": 5, "MD": 25, "LG": 50, "XL": 100}[host.Size]
-		err := server.Create(host.Region, host.Size, storage)
-		if err != nil {
-			host.Error = err.Error()
-		}
+	// go func(host *models.Host) {
+	// 	server, err := host.GetServer(r.FormValue("server"))
+	// 	if err != nil {
+	// 		host.Render(w, r, "error-message", err)
+	// 		return
+	// 	}
 
-		if err != nil {
-			host.IpAddr = server.IP
-		}
+	// 	storage := map[string]int64{"SM": 5, "MD": 25, "LG": 50, "XL": 100}[host.Size]
+	// 	err := server.Create(host.Region, host.Size, storage)
+	// 	if err != nil {
+	// 		host.Error = err.Error()
+	// 	}
 
-		if err := host.Save(); err != nil {
-			log.Println("Failed to save server", server, err)
-		}
-	}(host)
+	// 	if err != nil {
+	// 		host.IpAddr = server.IP
+	// 	}
+
+	// 	if err := host.Save(); err != nil {
+	// 		log.Println("Failed to save server", server, err)
+	// 	}
+	// }(host)
 
 	hosts.Redirect(w, r, "/hosts/"+host.ID)
 }

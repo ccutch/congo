@@ -19,7 +19,7 @@ func (hosting *HostingController) Setup(app *congo.Application) {
 	hosting.BaseController.Setup(app)
 
 	auth := app.Use("auth").(*congo_auth.Controller)
-	hosting.host = congo_host.InitCongoHost(app.DB.Root)
+	hosting.host = congo_host.InitCongoHost(app.DB.Root, nil)
 
 	app.HandleFunc("POST /_hosting/launch", auth.ProtectFunc(hosting.handleLaunch))
 	app.HandleFunc("POST /_hosting/restart/{server}", auth.ProtectFunc(hosting.handleRestart))
@@ -32,7 +32,7 @@ func (hosting HostingController) Handle(req *http.Request) congo.Controller {
 	return &hosting
 }
 
-func (hosting *HostingController) List() ([]*congo_host.Server, error) {
+func (hosting *HostingController) List() ([]*congo_host.RemoteServer, error) {
 	return hosting.host.ListServers()
 }
 
@@ -44,15 +44,20 @@ func (hosting HostingController) handleLaunch(w http.ResponseWriter, r *http.Req
 	}
 
 	name, region, size := r.FormValue("name"), r.FormValue("region"), r.FormValue("size")
-	server := hosting.host.Server(name)
+	server, err := hosting.host.NewServer(name, size, region)
+	if err != nil {
+		hosting.Render(w, r, "error-message", err)
+		return
+	}
+
 	if err := server.Create(region, size, int64(storage)); err != nil {
 		hosting.Render(w, r, "error-message", err)
 		return
 	}
 
 	go func() {
-		if server.Setup(); server.Error != nil {
-			server.Save()
+		if err := server.Prepare(); err != nil {
+			// TODO: record error
 			return
 		}
 
@@ -68,8 +73,13 @@ func (hosting HostingController) handleLaunch(w http.ResponseWriter, r *http.Req
 }
 
 func (hosting HostingController) handleDomain(w http.ResponseWriter, r *http.Request) {
-	server := hosting.host.Server(r.FormValue("server"))
-	if err := server.Load(); err != nil {
+	server, err := hosting.host.GetServer(r.FormValue("server"))
+	if err != nil {
+		hosting.Render(w, r, "error-message", err)
+		return
+	}
+
+	if err := server.Reload(); err != nil {
 		hosting.Render(w, r, "error-message", err)
 		return
 	}
@@ -93,8 +103,13 @@ func (hosting HostingController) handleDomain(w http.ResponseWriter, r *http.Req
 }
 
 func (hosting HostingController) handleRestart(w http.ResponseWriter, r *http.Request) {
-	server := hosting.host.Server(r.PathValue("server"))
-	if err := server.Load(); err != nil {
+	server, err := hosting.host.GetServer(r.FormValue("server"))
+	if err != nil {
+		hosting.Render(w, r, "error-message", err)
+		return
+	}
+
+	if err := server.Reload(); err != nil {
 		hosting.Render(w, r, "error-message", err)
 		return
 	}

@@ -13,22 +13,31 @@ import (
 )
 
 type Service struct {
-	server *Server
-	Name   string
-	Port   int
-	Image  string
-	Tag    string
-	args   []string
-	envs   []string
-	vols   []string
+	Target
+	host  *CongoHost
+	Name  string
+	Port  int
+	Image string
+	Tag   string
+	args  []string
+	envs  []string
+	vols  []string
 }
 
-func (server *Server) Service(name string, opts ...ServiceOpt) *Service {
-	s := &Service{server, name, 0, "", "latest", []string{}, []string{}, []string{}}
+func (s *LocalServer) Service(name string, opts ...ServiceOpt) *Service {
+	info := &Service{s, s.host, name, 0, "", "latest", []string{}, []string{}, []string{}}
 	for _, opt := range opts {
-		opt(s)
+		opt(info)
 	}
-	return s
+	return info
+}
+
+func (s *RemoteServer) Service(name string, opts ...ServiceOpt) *Service {
+	info := &Service{s, s.host, name, 0, "", "latest", []string{}, []string{}, []string{}}
+	for _, opt := range opts {
+		opt(info)
+	}
+	return info
 }
 
 type ServiceOpt func(*Service)
@@ -59,7 +68,7 @@ func WithVolume(volume string) ServiceOpt {
 }
 
 func (s *Service) Running() bool {
-	stdout, _, err := s.server.docker("inspect", "-f", "{{.State.Status}}", s.Name)
+	stdout, _, err := s.Run(nil, "docker", "inspect", "-f", "{{.State.Status}}", s.Name)
 	return err == nil && strings.TrimSpace(stdout.String()) == "running"
 }
 
@@ -90,7 +99,7 @@ func (s *Service) Start() error {
 	}
 
 	args := strings.Join(s.args, " ")
-	_, output, err := s.server.bash(fmt.Sprintf(startService, s.Name, s.Port, envs, volumes, s.Image, s.Tag, args))
+	_, output, err := s.Run(nil, fmt.Sprintf(startService, s.Name, s.Port, envs, volumes, s.Image, s.Tag, args))
 	return errors.Wrap(err, output.String())
 }
 
@@ -98,8 +107,7 @@ func (s *Service) Start() error {
 var setupService string
 
 func (s *Service) setupService() error {
-	log.Println("setup service", s.server, s.server.DB)
-	_, output, err := s.server.bash(fmt.Sprintf(setupService, s.server.DB.Root, s.Name))
+	_, output, err := s.Run(nil, fmt.Sprintf(setupService, s.host.DB.Root, s.Name))
 	return errors.Wrap(err, output.String())
 }
 
@@ -116,11 +124,11 @@ func (s *Service) Stop() error {
 		return nil
 	}
 
-	if _, _, err := s.server.docker("stop", s.Name); err != nil {
+	if _, _, err := s.Run(nil, "docker", "stop", s.Name); err != nil {
 		return errors.Wrap(err, "failed to stop service")
 	}
 
-	if _, _, err := s.server.docker("rm", s.Name); err != nil {
+	if _, _, err := s.Run(nil, "docker", "rm", s.Name); err != nil {
 		return errors.Wrap(err, "failed to remove service")
 	}
 

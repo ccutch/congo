@@ -6,22 +6,20 @@ import (
 	"strings"
 
 	"github.com/ccutch/congo/pkg/congo"
+	"github.com/pkg/errors"
 )
 
-//go:embed resources/server/generate-certs.sh
-var generateCerts string
-
 type Domain struct {
+	host *CongoHost
 	congo.Model
-	host       *CongoHost
 	ServerID   string
 	DomainName string
 	Verified   bool
 }
 
-func (server *Server) NewDomain(name string) (*Domain, error) {
-	domain := Domain{host: server.host, Model: server.host.db.NewModel(name), ServerID: server.ID, DomainName: name}
-	return &domain, server.host.db.Query(`
+func (server *RemoteServer) NewDomain(name string) (*Domain, error) {
+	domain := Domain{host: server.host, Model: server.host.DB.NewModel(name), ServerID: server.ID, DomainName: name}
+	return &domain, server.host.DB.Query(`
 
 		INSERT INTO domains (id, server_id, domain_name)
 		VALUES (?, ?, ?)
@@ -30,9 +28,9 @@ func (server *Server) NewDomain(name string) (*Domain, error) {
 	`, domain.ID, server.ID, domain.DomainName).Scan(&domain.CreatedAt, &domain.UpdatedAt)
 }
 
-func (server *Server) Domains() ([]*Domain, error) {
+func (server *RemoteServer) Domains() ([]*Domain, error) {
 	domains := []*Domain{}
-	return domains, server.host.db.Query(`
+	return domains, server.DB.Query(`
 
 		SELECT id, server_id, domain_name, verified, created_at, updated_at
 		FROM domains
@@ -40,7 +38,7 @@ func (server *Server) Domains() ([]*Domain, error) {
 		ORDER BY created_at DESC
 
 	`, server.ID).All(func(scan congo.Scanner) error {
-		d := Domain{host: server.host, Model: server.host.db.Model()}
+		d := Domain{host: server.host, Model: server.host.DB.Model()}
 		if err := scan(&d.ID, &d.ServerID, &d.DomainName, &d.Verified, &d.CreatedAt, &d.UpdatedAt); err != nil {
 			return err
 		}
@@ -50,8 +48,8 @@ func (server *Server) Domains() ([]*Domain, error) {
 }
 
 func (host *CongoHost) GetDomain(domain string) (*Domain, error) {
-	d := Domain{host: host, Model: host.db.Model()}
-	return &d, host.db.Query(`
+	d := Domain{host: host, Model: host.DB.Model()}
+	return &d, host.DB.Query(`
 
 		SELECT id, server_id, domain_name, verified, created_at, updated_at
 		FROM domains
@@ -81,26 +79,32 @@ func (domain *Domain) Delete() error {
 	`, domain.ID).Exec()
 }
 
-func (domain *Domain) Server() (*Server, error) {
-	server := domain.host.Server(domain.ServerID)
-	return server, server.Load()
+func (domain *Domain) Server() (*RemoteServer, error) {
+	return domain.host.GetServer(domain.ServerID)
 }
+
+//go:embed resources/server/generate-certs.sh
+var generateCerts string
 
 func (domain *Domain) Verify() error {
 	server, err := domain.Server()
 	if err != nil {
 		return err
 	}
+
 	domains, err := server.Domains()
 	if err != nil {
 		return err
 	}
-	var verified []string
+
+	var existingDomains []string
 	for _, d := range domains {
 		if d.Verified {
-			verified = append(verified, d.DomainName)
+			existingDomains = append(existingDomains, d.DomainName)
 		}
 	}
-	cmd := fmt.Sprintf(generateCerts, domain.ID, strings.Join(verified, " -d "))
-	return server.Run(cmd)
+
+	id, other := domain.ID, strings.Join(existingDomains, " -d ")
+	_, out, err := server.Run(nil, fmt.Sprintf(generateCerts, id, other))
+	return errors.Wrap(err, out.String())
 }

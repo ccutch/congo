@@ -15,8 +15,8 @@ import (
 )
 
 type Workspace struct {
-	congo.Model
 	code *CongoCode
+	congo.Model
 	*congo_host.Service
 	Port   int
 	Ready  bool
@@ -40,7 +40,7 @@ func (code *CongoCode) RunWorkspace(host *congo_host.CongoHost, name string, por
 	}, opts...)
 
 	id := fmt.Sprintf("workspace-%s", name)
-	w := Workspace{code.DB.NewModel(id), code, host.LocalHost().Service(id, opts...), port, false, repoID}
+	w := Workspace{code, code.DB.NewModel(id), host.Local().Service(id, opts...), port, false, repoID}
 	return &w, code.DB.Query(`
 	
 		INSERT INTO workspaces (id, name, port, image, tag, ready, repo_id)
