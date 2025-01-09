@@ -30,7 +30,8 @@ func genCerts(args ...string) error {
 	}
 
 	host := congo_host.InitCongoHost(*path, congo_host.WithApiToken(*apiKey))
-	if server, err := host.LoadServer(*name); err != nil {
+	server := host.Server(*name)
+	if err := server.Load(); err != nil {
 		return err
 	} else if domain, err := server.NewDomain(*domainName); err != nil {
 		return err

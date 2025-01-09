@@ -1,4 +1,4 @@
-package congo_code
+package congo_host
 
 import (
 	_ "embed"
@@ -13,18 +13,18 @@ import (
 )
 
 type Service struct {
-	code  *CongoCode
-	Name  string
-	Port  int
-	Image string
-	Tag   string
-	args  []string
-	envs  []string
-	vols  []string
+	server *Server
+	Name   string
+	Port   int
+	Image  string
+	Tag    string
+	args   []string
+	envs   []string
+	vols   []string
 }
 
-func (code *CongoCode) Service(name string, opts ...ServiceOpt) *Service {
-	s := &Service{code, name, 0, "", "latest", []string{}, []string{}, []string{}}
+func (server *Server) Service(name string, opts ...ServiceOpt) *Service {
+	s := &Service{server, name, 0, "", "latest", []string{}, []string{}, []string{}}
 	for _, opt := range opts {
 		opt(s)
 	}
@@ -59,7 +59,7 @@ func WithVolume(volume string) ServiceOpt {
 }
 
 func (s *Service) Running() bool {
-	stdout, _, err := s.code.docker("inspect", "-f", "{{.State.Status}}", s.Name)
+	stdout, _, err := s.server.docker("inspect", "-f", "{{.State.Status}}", s.Name)
 	return err == nil && strings.TrimSpace(stdout.String()) == "running"
 }
 
@@ -90,7 +90,7 @@ func (s *Service) Start() error {
 	}
 
 	args := strings.Join(s.args, " ")
-	_, output, err := s.code.bash(fmt.Sprintf(startService, s.Name, s.Port, envs, volumes, s.Image, s.Tag, args))
+	_, output, err := s.server.bash(fmt.Sprintf(startService, s.Name, s.Port, envs, volumes, s.Image, s.Tag, args))
 	return errors.Wrap(err, output.String())
 }
 
@@ -98,7 +98,8 @@ func (s *Service) Start() error {
 var setupService string
 
 func (s *Service) setupService() error {
-	_, output, err := s.code.bash(fmt.Sprintf(setupService, s.code.DB.Root, s.Name))
+	log.Println("setup service", s.server, s.server.DB)
+	_, output, err := s.server.bash(fmt.Sprintf(setupService, s.server.DB.Root, s.Name))
 	return errors.Wrap(err, output.String())
 }
 
@@ -115,11 +116,11 @@ func (s *Service) Stop() error {
 		return nil
 	}
 
-	if _, _, err := s.code.docker("stop", s.Name); err != nil {
+	if _, _, err := s.server.docker("stop", s.Name); err != nil {
 		return errors.Wrap(err, "failed to stop service")
 	}
 
-	if _, _, err := s.code.docker("rm", s.Name); err != nil {
+	if _, _, err := s.server.docker("rm", s.Name); err != nil {
 		return errors.Wrap(err, "failed to remove service")
 	}
 
@@ -127,7 +128,7 @@ func (s *Service) Stop() error {
 }
 
 func (s *Service) Proxy(prefix string) http.Handler {
-	url, err := url.Parse(fmt.Sprintf("http://localhost:%d", s.Port))
+	url, err := url.Parse(fmt.Sprintf("http://localserver:%d", s.Port))
 	if err != nil {
 		log.Fatal("Failed to create reverse proxy: ", err)
 	}

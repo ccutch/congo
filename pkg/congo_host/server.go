@@ -15,6 +15,7 @@ import (
 
 type Server struct {
 	congo.Model
+	local      bool
 	Name       string
 	Region     string
 	Size       string
@@ -31,19 +32,17 @@ type Server struct {
 	Stdout io.Writer
 }
 
+func (host *CongoHost) LocalHost() *Server {
+	return &Server{host: host, local: true, Model: host.db.NewModel("local"), Stdin: os.Stdin, Stdout: os.Stdout}
+}
 
-func (host *CongoHost) NewServer(name, region, size string, storage int64) (*Server, error) {
-	s := Server{
-		host:       host,
-		Model:      host.db.NewModel(name),
-		Name:       name,
-		Region:     region,
-		Size:       size,
-		VolumeSize: storage,
-		Stdin:      os.Stdin,
-		Stdout:     os.Stdout,
-	}
-	return &s, host.db.Query(`
+func (host *CongoHost) Server(name string) *Server {
+	return &Server{host: host, Model: host.db.NewModel(name), Name: name, Stdin: os.Stdin, Stdout: os.Stdout}
+}
+
+func (s *Server) Create(region, size string, storage int64) error {
+	s.Region, s.Size, s.VolumeSize = region, size, storage
+	return s.host.db.Query(`
 
 	INSERT INTO servers (id, name, region, size, volume_size)
 	VALUES (?, ?, ?, ?, ?)
@@ -52,24 +51,24 @@ func (host *CongoHost) NewServer(name, region, size string, storage int64) (*Ser
 	`, s.ID, s.Name, s.Region, s.Size, s.VolumeSize).Scan(&s.CreatedAt, &s.UpdatedAt)
 }
 
-func (host *CongoHost) LoadServer(name string) (*Server, error) {
-	server, err := Server{host: host, Model: host.db.NewModel(name), Name: name, Stdin: os.Stdin, Stdout: os.Stdout}, ""
-	server.Error = host.db.Query(`
+func (server *Server) Load() error {
+	err := ""
+	server.Error = server.host.db.Query(`
 
 		SELECT id, name, region, size, volume_size, ip_address, error, created_at, updated_at
 		FROM servers
 		WHERE name = ?
 
-	`, name).Scan(&server.ID, &server.Name, &server.Region, &server.Size, &server.VolumeSize, &server.IP, &err, &server.CreatedAt, &server.UpdatedAt)
+	`, server.Name).Scan(&server.ID, &server.Name, &server.Region, &server.Size, &server.VolumeSize, &server.IP, &err, &server.CreatedAt, &server.UpdatedAt)
 	if server.Error != nil {
-		return nil, server.Error
+		return server.Error
 	}
 	if err != "" {
 		server.Error = errors.New(err)
 	}
 	server.checkAccessKeys()
 	server.Refresh()
-	return &server, server.Error
+	return server.Error
 }
 
 func (host *CongoHost) ListServers() (servers []*Server, err error) {
@@ -105,7 +104,7 @@ func (s *Server) Keys() (string, string) {
 	return pubKey, priKey
 }
 
-//go:embed resources/start-server.sh
+//go:embed resources/server/start-server.sh
 var startServer string
 
 func (s *Server) Setup() {

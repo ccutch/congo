@@ -8,7 +8,7 @@ import (
 	"github.com/ccutch/congo/pkg/congo"
 )
 
-//go:embed resources/generate-certs.sh
+//go:embed resources/server/generate-certs.sh
 var generateCerts string
 
 type Domain struct {
@@ -49,6 +49,17 @@ func (server *Server) Domains() ([]*Domain, error) {
 	})
 }
 
+func (host *CongoHost) GetDomain(domain string) (*Domain, error) {
+	d := Domain{host: host, Model: host.db.Model()}
+	return &d, host.db.Query(`
+
+		SELECT id, server_id, domain_name, verified, created_at, updated_at
+		FROM domains
+		WHERE domain_name = ?
+
+	`, domain).Scan(&d.ID, &d.ServerID, &d.DomainName, &d.Verified, &d.CreatedAt, &d.UpdatedAt)
+}
+
 func (domain *Domain) Save() error {
 	return domain.DB.Query(`
 
@@ -71,7 +82,8 @@ func (domain *Domain) Delete() error {
 }
 
 func (domain *Domain) Server() (*Server, error) {
-	return domain.host.LoadServer(domain.ServerID)
+	server := domain.host.Server(domain.ServerID)
+	return server, server.Load()
 }
 
 func (domain *Domain) Verify() error {

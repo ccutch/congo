@@ -8,10 +8,12 @@ import (
 	"github.com/ccutch/congo/pkg/congo"
 	"github.com/ccutch/congo/pkg/congo_auth"
 	"github.com/ccutch/congo/pkg/congo_code"
+	"github.com/ccutch/congo/pkg/congo_host"
 )
 
 type CodingController struct {
 	congo.BaseController
+	host      *congo_host.CongoHost
 	code      *congo_code.CongoCode
 	Repo      *congo_code.Repository
 	Workspace *congo_code.Workspace
@@ -19,6 +21,7 @@ type CodingController struct {
 
 func (coding *CodingController) Setup(app *congo.Application) {
 	coding.BaseController.Setup(app)
+	coding.host = congo_host.InitCongoHost(app.DB.Root)
 	coding.code = congo_code.InitCongoCode(app.DB.Root)
 	coding.Repo, _ = coding.code.NewRepo("code", congo_code.WithName("Code"))
 
@@ -29,7 +32,7 @@ func (coding *CodingController) Setup(app *congo.Application) {
 
 	go func() {
 		var err error
-		coding.Workspace, err = coding.code.RunWorkspace("coder", 7000, coding.Repo)
+		coding.Workspace, err = coding.code.RunWorkspace(coding.host, "coder", 7000, coding.Repo)
 		if err != nil {
 			log.Println("Failed to setup workspace: ", err)
 			return

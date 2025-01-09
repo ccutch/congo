@@ -13,16 +13,17 @@ type SettingsController struct {
 
 func (settings *SettingsController) Setup(app *congo.Application) {
 	settings.BaseController.Setup(app)
-	app.HandleFunc("POST /_settings/theme", settings.updateTheme)
-	app.HandleFunc("POST /_settings/token", settings.updateToken)
 
 	if settings.Get("token") == "" {
 		settings.set("token", os.Getenv("DIGITAL_OCEAN_API_KEY"))
 	}
 
-	if hosting, ok := app.Use("hosting").(*ServersController); ok {
-		hosting.hosting.WithApiToken(settings.Get("token"))
+	if hosting, ok := app.Use("hosting").(*HostingController); ok {
+		hosting.host.WithApiToken(settings.Get("token"))
 	}
+
+	app.HandleFunc("POST /_settings/theme", settings.updateTheme)
+	app.HandleFunc("POST /_settings/token", settings.updateToken)
 }
 
 func (settings SettingsController) Handle(req *http.Request) congo.Controller {
@@ -36,9 +37,10 @@ func (settings *SettingsController) Has(id string) bool {
 
 func (settings *SettingsController) Get(id string) (val string) {
 	settings.DB.Query(`
-
-		SELECT value FROM settings WHERE id = ?
-
+	
+		SELECT value
+		FROM settings WHERE id = ?
+	
 	`, id).Scan(&val)
 	return val
 }
@@ -65,7 +67,7 @@ func (settings SettingsController) updateToken(w http.ResponseWriter, r *http.Re
 	settings.set("token", token)
 	settings.Refresh(w, r)
 
-	if hosting, ok := settings.Use("hosting").(*ServersController); ok {
-		hosting.hosting.WithApiToken(settings.Get("token"))
+	if hosting, ok := settings.Use("hosting").(*HostingController); ok {
+		hosting.host.WithApiToken(settings.Get("token"))
 	}
 }

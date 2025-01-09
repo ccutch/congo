@@ -10,39 +10,43 @@ import (
 	"time"
 
 	"github.com/ccutch/congo/pkg/congo"
+	"github.com/ccutch/congo/pkg/congo_host"
 	"github.com/pkg/errors"
 )
 
 type Workspace struct {
 	congo.Model
-	*Service
+	code *CongoCode
+	*congo_host.Service
 	Port   int
 	Ready  bool
 	RepoID string
 }
 
-func (code *CongoCode) RunWorkspace(name string, port int, repo *Repository, opts ...ServiceOpt) (*Workspace, error) {
+func (code *CongoCode) RunWorkspace(host *congo_host.CongoHost, name string, port int, repo *Repository, opts ...congo_host.ServiceOpt) (*Workspace, error) {
 	repoID := ""
 	if repo != nil {
 		repoID = repo.ID
 	}
 
-	opts = append([]ServiceOpt{
-		WithImage("codercom/code-server"),
-		WithTag("latest"),
-		WithPort(port),
-		WithEnv("PORT", strconv.Itoa(port)),
-		WithVolume(fmt.Sprintf("%s/services/workspace-%s/.config:/home/coder/.config", code.DB.Root, name)),
-		WithVolume(fmt.Sprintf("%s/services/workspace-%s/project:/home/coder/project", code.DB.Root, name)),
-		WithArgs("--auth", "none"),
+	opts = append([]congo_host.ServiceOpt{
+		congo_host.WithImage("codercom/code-server"),
+		congo_host.WithTag("latest"),
+		congo_host.WithPort(port),
+		congo_host.WithEnv("PORT", strconv.Itoa(port)),
+		congo_host.WithVolume(fmt.Sprintf("%s/services/workspace-%s/.config:/home/coder/.config", code.DB.Root, name)),
+		congo_host.WithVolume(fmt.Sprintf("%s/services/workspace-%s/project:/home/coder/project", code.DB.Root, name)),
+		congo_host.WithArgs("--auth", "none"),
 	}, opts...)
 
 	id := fmt.Sprintf("workspace-%s", name)
-	w := Workspace{code.DB.NewModel(id), code.Service(id, opts...), port, false, repoID}
+	w := Workspace{code.DB.NewModel(id), code, host.LocalHost().Service(id, opts...), port, false, repoID}
 	return &w, code.DB.Query(`
 	
 		INSERT INTO workspaces (id, name, port, image, tag, ready, repo_id)
 		VALUES (?, ?, ?, ?, ?, ?, ?)
+		ON CONFLICT (id) DO UPDATE SET
+			updated_at = CURRENT_TIMESTAMP
 		RETURNING created_at, updated_at
 
 	`, w.ID, w.Name, w.Port, w.Image, w.Tag, w.Ready, w.RepoID).Scan(&w.CreatedAt, &w.UpdatedAt)

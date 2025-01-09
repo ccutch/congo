@@ -36,7 +36,8 @@ func launch(args ...string) (*congo_host.Server, error) {
 	}
 
 	host := congo_host.InitCongoHost(*path, congo_host.WithApiToken(*apiKey))
-	server, err := host.NewServer(*name, *region, *size, *storage)
+	server := host.Server(*name)
+	err := server.Create(*region, *size, *storage)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create server")
 	}

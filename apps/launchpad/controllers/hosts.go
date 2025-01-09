@@ -51,12 +51,13 @@ func (hosts HostsController) handleCreate(w http.ResponseWriter, r *http.Request
 	}
 
 	go func(host *models.Host) {
+		server := hosts.host.Server(host.Name)
 		storage := map[string]int64{"SM": 5, "MD": 25, "LG": 50, "XL": 100}[host.Size]
-		server, err := hosts.host.NewServer(host.Name, host.Region, host.Size, storage)
+		err := server.Create(host.Region, host.Size, storage)
 		if err != nil {
 			host.Error = err.Error()
-		} 
-		
+		}
+
 		if err != nil {
 			host.IpAddr = server.IP
 		}

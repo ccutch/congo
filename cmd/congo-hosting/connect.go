@@ -24,8 +24,8 @@ func connect(args ...string) error {
 	}
 
 	host := congo_host.InitCongoHost(*path, congo_host.WithApiToken(*apiKey))
-	server, err := host.LoadServer(*name)
-	if err != nil {
+	server := host.Server(*name)
+	if err := server.Load(); err != nil {
 		return err
 	}
 

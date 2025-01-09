@@ -7,7 +7,6 @@ import (
 
 	"github.com/ccutch/congo/pkg/congo"
 	"github.com/ccutch/congo/pkg/congo_auth"
-	"github.com/ccutch/congo/pkg/congo_host"
 
 	"github.com/ccutch/congo/apps/workbench/controllers"
 )
@@ -26,14 +25,11 @@ var (
 		congo_auth.WithSetupView("setup.html"),
 		congo_auth.WithSigninView("developer", "login.html"))
 
-	host = congo_host.InitCongoHost(data)
-
 	app = congo.NewApplication(
 		congo.WithDatabase(congo.SetupDatabase(data, "workbench.db", migrations)),
 		congo.WithController(auth.Controller()),
-		congo.WithController(host.Controller()),
 		congo.WithController("coding", new(controllers.CodingController)),
-		congo.WithController("servers", new(controllers.ServersController)),
+		congo.WithController("hosting", new(controllers.HostingController)),
 		congo.WithController("settings", new(controllers.SettingsController)),
 		congo.WithHtmlTheme(cmp.Or(os.Getenv("CONGO_THEME"), "dark")),
 		congo.WithTemplates(templates))

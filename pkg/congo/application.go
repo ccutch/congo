@@ -58,6 +58,7 @@ func (app Application) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	app.router.ServeHTTP(w, r)
 }
 
+// Start runs the application HTTP server and SSL server
 func (app *Application) Start() error {
 	http.Handle("/", app.router)
 	go app.sslServer()
@@ -66,6 +67,7 @@ func (app *Application) Start() error {
 	return http.ListenAndServe(addr, nil)
 }
 
+// sslServer starts the HTTPS server
 func (app *Application) sslServer() {
 	if app.creds == nil {
 		return
@@ -78,16 +80,19 @@ func (app *Application) sslServer() {
 	}
 }
 
+// Use returns the controller with the given name
 func (app Application) Use(name string) Controller {
 	return app.controllers[name]
 }
 
+// WithController adds a controller to the application
 func WithController(name string, ctrl Controller) ApplicationOpt {
 	return func(app *Application) error {
 		return app.WithController(name, ctrl)
 	}
 }
 
+// WithController adds a controller to the application
 func (app *Application) WithController(name string, controller Controller) error {
 	if _, ok := app.controllers[name]; !ok {
 		app.controllers[name] = controller
