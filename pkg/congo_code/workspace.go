@@ -34,14 +34,14 @@ func (code *CongoCode) RunWorkspace(host *congo_host.CongoHost, name string, por
 		congo_host.WithTag("latest"),
 		congo_host.WithPort(port),
 		congo_host.WithEnv("PORT", strconv.Itoa(port)),
-		congo_host.WithVolume(fmt.Sprintf("%s/services/workspace-%s/.config:/home/coder/.config", code.DB.Root, name)),
-		congo_host.WithVolume(fmt.Sprintf("%s/services/workspace-%s/project:/home/coder/project", code.DB.Root, name)),
+		congo_host.WithVolume(fmt.Sprintf("%s/services/workspace-%s/.config:/home/coder/.config", code.db.Root, name)),
+		congo_host.WithVolume(fmt.Sprintf("%s/services/workspace-%s/project:/home/coder/project", code.db.Root, name)),
 		congo_host.WithArgs("--auth", "none"),
 	}, opts...)
 
 	id := fmt.Sprintf("workspace-%s", name)
-	w := Workspace{code, code.DB.NewModel(id), host.Local().Service(id, opts...), port, false, repoID}
-	return &w, code.DB.Query(`
+	w := Workspace{code, code.db.NewModel(id), host.Local().Service(id, opts...), port, false, repoID}
+	return &w, code.db.Query(`
 	
 		INSERT INTO workspaces (id, name, port, image, tag, ready, repo_id)
 		VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -53,8 +53,8 @@ func (code *CongoCode) RunWorkspace(host *congo_host.CongoHost, name string, por
 }
 
 func (code *CongoCode) GetWorkspace(id string) (*Workspace, error) {
-	w := Workspace{Model: code.DB.Model()}
-	return &w, code.DB.Query(`
+	w := Workspace{Model: code.db.Model()}
+	return &w, code.db.Query(`
 	
 		SELECT id, name, port, image, tag, ready, repo_id, created_at, updated_at
 		FROM workspaces
@@ -65,17 +65,22 @@ func (code *CongoCode) GetWorkspace(id string) (*Workspace, error) {
 
 func (code *CongoCode) AllWorkspaces() ([]*Workspace, error) {
 	var workspaces []*Workspace
-	return workspaces, code.DB.Query(`
+	return workspaces, code.db.Query(`
 	
 		SELECT id, name, port, image, tag, ready, repo_id, created_at, updated_at
 		FROM workspaces
 		ORDER BY created_at DESC
 
 	`).All(func(scan congo.Scanner) error {
-		w := Workspace{Model: code.DB.Model()}
+		w := Workspace{Model: code.db.Model()}
 		workspaces = append(workspaces, &w)
 		return scan(&w.ID, &w.Name, &w.Port, &w.Image, &w.Tag, &w.Ready, &w.RepoID, &w.CreatedAt, &w.UpdatedAt)
 	})
+}
+
+func (code *CongoCode) Count() (count int) {
+	code.db.Query(`SELECT count(*) FROM workspaces`).Scan(&count)
+	return count
 }
 
 //go:embed resources/workspace/prepare-workspace.sh
@@ -93,7 +98,7 @@ func (w *Workspace) Start() error {
 		return nil
 	}
 
-	_, output, err := w.code.bash(fmt.Sprintf(prepareWorkspace, w.Name, w.code.DB.Root))
+	_, output, err := w.code.bash(fmt.Sprintf(prepareWorkspace, w.Name, w.code.db.Root))
 	if err != nil {
 		return errors.Wrap(err, "failed to prepare workspace")
 	}

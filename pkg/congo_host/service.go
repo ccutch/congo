@@ -142,6 +142,9 @@ func (s *Service) Proxy(prefix string) http.Handler {
 		log.Fatal("Failed to create reverse proxy: ", err)
 	}
 
-	h := httputil.NewSingleHostReverseProxy(url)
-	return http.StripPrefix(prefix, h)
+	var h http.Handler = httputil.NewSingleHostReverseProxy(url)
+	if prefix != "" {
+		h = http.StripPrefix(prefix, h)
+	}
+	return h
 }

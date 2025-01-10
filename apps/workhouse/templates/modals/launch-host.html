@@ -1,0 +1,45 @@
+{{define "modals/launch-host"}}
+<dialog id="launch_host_modal" class="modal">
+  <div class="modal-box">
+    <h2 class="text-2xl font-medium">
+      Launch a new Host
+    </h2>
+    <p class="text-base font-medium opacity-80 mt-2 mb-8">
+      This will be a new Droplet in your Digital Ocean account.
+    </p>
+
+    <div class="error"></div>
+
+    <form class="flex flex-col gap-4 mb-0"
+          hx-post="/_hosting/launch" hx-target="previous .error">
+
+      <input name="name" type="text" class="input input-bordered"
+             required placeholder="Server Name">
+
+      <select required name="region" class="select select-bordered">
+        <option value="sfo2">San Francisco</option>
+        <option value="nyc1">New York</option>
+      </select>
+
+      <select required name="size" class="select select-bordered">
+        <option value="s-1vcpu-1gb">Small ($6/month)</option>
+        <option value="s-1vcpu-2gb">Medium ($12/month)</option>
+        <option value="s-2vcpu-4gb">Large ($24/month)</option>
+        <option value="s-4vcpu-8gb">Extra Large ($48/month)</option>
+      </select>
+
+      <input name="storage" type="number" class="input input-bordered"
+             required placeholder="Attached Storage Size" min="5">
+
+      <button class="btn btn-primary">
+        <div class="loading loading-bars loading-sm htmx-indicator"></div>
+        Launch Server
+      </button>
+
+    </form>
+  </div>
+  <form method="dialog" class="modal-backdrop">
+    <button>close</button>
+  </form>
+</dialog>
+{{end}}

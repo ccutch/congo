@@ -14,12 +14,8 @@ import (
 )
 
 func (code *CongoCode) GitServer(auth *congo_auth.Controller, roles ...string) http.Handler {
-	if len(roles) == 0 {
-		roles = []string{auth.DefaultRole}
-	}
-
 	git := gitkit.New(gitkit.Config{
-		Dir:        filepath.Join(code.DB.Root, "repos"),
+		Dir:        filepath.Join(code.db.Root, "repos"),
 		AutoCreate: true,
 		Auth:       auth != nil,
 	})

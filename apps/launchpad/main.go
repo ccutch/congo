@@ -23,20 +23,18 @@ var (
 
 	auth = congo_auth.InitCongoAuth(data,
 		congo_auth.WithCookieName("launchpad"),
-		congo_auth.WithSetupView("setup.html"),
-		congo_auth.WithSetupDest("/apps"),
+		congo_auth.WithSigninDest("/hosts"),
+		congo_auth.WithSetupView("setup.html", "/apps"),
 		congo_auth.WithSigninView("user", "login-user.html"),
-		congo_auth.WithSigninView("admin", "login-admin.html"),
-		congo_auth.WithSigninDest("/hosts"))
+		congo_auth.WithSigninView("admin", "login-admin.html"))
 
 	app = congo.NewApplication(
 		congo.WithDatabase(congo.SetupDatabase(data, "launchpad.db", migrations)),
-		congo.WithHostPrefix("/coder/proxy/8000"),
+		congo.WithTemplates(templates),
+		congo.WithHtmlTheme(cmp.Or(os.Getenv("CONGO_THEME"), "wireframe")),
 		congo.WithController(auth.Controller()),
 		congo.WithController("apps", new(controllers.AppsController)),
-		congo.WithController("hosts", new(controllers.HostsController)),
-		congo.WithHtmlTheme(cmp.Or(os.Getenv("CONGO_THEME"), "wireframe")),
-		congo.WithTemplates(templates))
+		congo.WithController("hosts", new(controllers.HostsController)))
 )
 
 func main() {

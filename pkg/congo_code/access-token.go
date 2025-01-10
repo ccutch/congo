@@ -14,8 +14,8 @@ type AccessToken struct {
 }
 
 func (code *CongoCode) NewAccessToken(expires time.Time) (*AccessToken, error) {
-	t := AccessToken{Model: code.DB.NewModel(uuid.NewString())}
-	return &t, code.DB.Query(`
+	t := AccessToken{Model: code.db.NewModel(uuid.NewString())}
+	return &t, code.db.Query(`
 	
 		INSERT INTO access_tokens (id, secret, expires_at)
 		VALUES (?, ?, ?)
@@ -25,8 +25,8 @@ func (code *CongoCode) NewAccessToken(expires time.Time) (*AccessToken, error) {
 }
 
 func (code *CongoCode) GetAccessToken(id, secret string) (*AccessToken, error) {
-	t := AccessToken{Model: code.DB.NewModel(id)}
-	return &t, code.DB.Query(`
+	t := AccessToken{Model: code.db.NewModel(id)}
+	return &t, code.db.Query(`
 	
 		SELECT secret, expires_at, created_at, updated_at
 		FROM access_tokens

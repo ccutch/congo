@@ -1,0 +1,50 @@
+<html data-theme='{{theme}}'>
+
+<head>
+  <title>Congo Workbench</title>
+  {{template "includes"}}
+</head>
+
+<body class="bg-base-200">
+  <div class="space-y-8 py-8 px-4 max-w-screen-xl w-full mx-auto">
+    <div class="flex justify-between items-end">
+
+      {{with auth.Current "developer"}}
+      <h1 class="text-3xl font-semibold capitalize">
+        Welcome back {{.Username}}!
+      </h1>
+      {{end}}
+
+      <div class="flex items-center gap-2">
+        <a target="_blank" href="/coder/?folder=/home/coder/project" class="btn btn-sm btn-primary">
+          <img class="w-4" src="https://coder.com/favicon-light.png">
+          Start Coding
+        </a>
+
+        {{template "theme-selector" "light"}}
+        {{template "logout-button"}}
+      </div>
+
+    </div>
+
+    <div class='grid {{if eq req.URL.Path "/"}}grid-cols-2{{end}} gap-8'>
+
+      <div class="flex flex-col w-full">
+        {{template "file-explorer"}}
+      </div>
+
+      {{if eq req.URL.Path "/"}}
+      <div class="flex flex-col w-full">
+        {{template "hosts-manager"}}
+      </div>
+      {{end}}
+
+    </div>
+  </div>
+
+  {{template "modals/add-domain"}}
+  {{template "modals/launch-host"}}
+  {{template "modals/set-api-token"}}
+</body>
+
+</html>

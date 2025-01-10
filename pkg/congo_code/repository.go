@@ -18,27 +18,27 @@ type Repository struct {
 
 func (code *CongoCode) Repositories() ([]*Repository, error) {
 	repos := []*Repository{}
-	return repos, code.DB.Query(`
+	return repos, code.db.Query(`
 	
 		SELECT id, name, created_at, updated_at
 		FROM repositories
 		ORDER BY created_at DESC
 
 	`).All(func(scan congo.Scanner) error {
-		r := Repository{Model: code.DB.Model()}
+		r := Repository{Model: code.db.Model()}
 		repos = append(repos, &r)
 		return scan(&r.ID, &r.Name, &r.CreatedAt, &r.UpdatedAt)
 	})
 }
 
 func (code *CongoCode) NewRepo(id string, opts ...RepoOpt) (*Repository, error) {
-	repo := Repository{code, code.DB.NewModel(id), id}
+	repo := Repository{code, code.db.NewModel(id), id}
 	for _, opt := range opts {
 		if err := opt(&repo); err != nil {
 			return nil, err
 		}
 	}
-	return &repo, code.DB.Query(`
+	return &repo, code.db.Query(`
 
 		INSERT INTO repositories (id, name)
 		VALUES (?, ?)
@@ -48,8 +48,8 @@ func (code *CongoCode) NewRepo(id string, opts ...RepoOpt) (*Repository, error) 
 }
 
 func (code *CongoCode) GetRepository(id string) (*Repository, error) {
-	repo := Repository{Model: code.DB.Model()}
-	return &repo, code.DB.Query(`
+	repo := Repository{Model: code.db.Model()}
+	return &repo, code.db.Query(`
 	
 		SELECT id, name, created_at, updated_at
 		FROM repositories
@@ -88,7 +88,7 @@ func WithName(name string) RepoOpt {
 }
 
 func (repo *Repository) Path() string {
-	return filepath.Join(repo.code.DB.Root, "repos", repo.ID)
+	return filepath.Join(repo.code.db.Root, "repos", repo.ID)
 }
 
 func (repo *Repository) Open(branch, path string) (*Blob, error) {

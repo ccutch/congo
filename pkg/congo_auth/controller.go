@@ -1,7 +1,6 @@
 package congo_auth
 
 import (
-	"cmp"
 	"embed"
 	"fmt"
 	"net/http"
@@ -51,44 +50,52 @@ func (auth *Controller) Identities() ([]*Identity, error) {
 	if role != "" {
 		return auth.SearchByRole(role, auth.URL.Query().Get("query"))
 	}
+
 	var identities []*Identity
 	imap, err := auth.Search(auth.URL.Query().Get("query"))
 	for _, idents := range imap {
 		identities = append(identities, idents...)
 	}
+
 	return identities, err
 }
 
 func (auth Controller) handleSignup(w http.ResponseWriter, r *http.Request) {
-	role := cmp.Or(r.FormValue("role"), auth.CongoAuth.DefaultRole)
 	email, username, password := r.FormValue("email"), r.FormValue("username"), r.FormValue("password")
 	if email == "" || username == "" || password == "" {
 		auth.Render(w, r, "error-message", fmt.Errorf("missing required fields"))
 		return
 	}
-	identity, err := auth.CongoAuth.Create(role, email, username, password)
+
+	identity, err := auth.CongoAuth.Create(r.PathValue("role"), email, username, password)
 	if err != nil {
 		auth.Render(w, r, "error-message", fmt.Errorf("failed to create identity: %s", err))
 		return
 	}
+
 	session, err := identity.NewSession()
 	if err != nil {
 		auth.Render(w, r, "error-message", fmt.Errorf("failed to start session: %s", err))
 		return
 	}
-	token := session.Token()
+
 	http.SetCookie(w, &http.Cookie{
-		Name:     auth.CongoAuth.CookieName + "-" + role,
+		Name:     auth.CongoAuth.CookieName + "-" + r.PathValue("role"),
 		Path:     "/",
-		Value:    token,
+		Value:    session.Token(),
 		Expires:  time.Now().Add(24 * time.Hour),
 		HttpOnly: true,
 	})
-	if auth.CongoAuth.SetupRedirect != "" {
-		http.Redirect(w, r, auth.CongoAuth.SetupRedirect, http.StatusFound)
-		return
+
+	if auth.CongoAuth.SignupCallback != nil {
+		auth.CongoAuth.SignupCallback(&auth, identity).ServeHTTP(w, r)
+	} else {
+		if auth.CongoAuth.SetupRedirect != "" {
+			http.Redirect(w, r, auth.CongoAuth.SetupRedirect, http.StatusFound)
+			return
+		}
+		auth.Refresh(w, r)
 	}
-	auth.Refresh(w, r)
 }
 
 func (auth Controller) handleSignin(w http.ResponseWriter, r *http.Request) {
@@ -97,15 +104,18 @@ func (auth Controller) handleSignin(w http.ResponseWriter, r *http.Request) {
 		auth.Render(w, r, "error-message", fmt.Errorf("failed to find identity"))
 		return
 	}
+
 	if !identity.Verify(r.FormValue("password")) {
 		auth.Render(w, r, "error-message", fmt.Errorf("failed to find identity"))
 		return
 	}
+
 	session, err := identity.NewSession()
 	if err != nil {
 		auth.Render(w, r, "error-message", fmt.Errorf("failed to start session: %s", err))
 		return
 	}
+
 	http.SetCookie(w, &http.Cookie{
 		Name:     auth.CongoAuth.CookieName + "-" + r.PathValue("role"),
 		Path:     "/",
@@ -113,17 +123,23 @@ func (auth Controller) handleSignin(w http.ResponseWriter, r *http.Request) {
 		Expires:  time.Now().Add(24 * time.Hour),
 		HttpOnly: true,
 	})
+
 	if auth.CongoAuth.SigninRedirect != "" {
 		http.Redirect(w, r, auth.CongoAuth.SigninRedirect, http.StatusFound)
 		return
 	}
+
 	auth.Refresh(w, r)
 }
 
 func (auth Controller) handleLogout(w http.ResponseWriter, r *http.Request) {
 	role := r.PathValue("role")
 	if _, s := auth.CongoAuth.Authenticate(role, r); s != nil {
-		s.Delete()
+		if err := s.Delete(); err != nil {
+			auth.Render(w, r, "error-message", err)
+			return
+		}
+
 		http.SetCookie(w, &http.Cookie{
 			Name:     auth.CongoAuth.CookieName + "-" + role,
 			Path:     "/",
@@ -132,6 +148,7 @@ func (auth Controller) handleLogout(w http.ResponseWriter, r *http.Request) {
 			HttpOnly: true,
 		})
 	}
+
 	auth.Redirect(w, r, auth.CongoAuth.LogoutRedirect)
 }
 
@@ -141,9 +158,11 @@ func (auth Controller) endSession(w http.ResponseWriter, r *http.Request) {
 		auth.Render(w, r, "error-message", err)
 		return
 	}
+
 	if err = session.Delete(); err != nil {
 		auth.Render(w, r, "error-message", err)
 		return
 	}
+
 	auth.Redirect(w, r, "/")
 }

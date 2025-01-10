@@ -11,22 +11,15 @@ import (
 var migrations embed.FS
 
 type CongoCode struct {
-	DB *congo.Database
+	db *congo.Database
 }
 
-func InitCongoCode(root string, opts ...CongoCodeOpt) *CongoCode {
-	code := CongoCode{DB: congo.SetupDatabase(root, "code.db", migrations)}
-	if err := code.DB.MigrateUp(); err != nil {
+func InitCongoCode(root string) *CongoCode {
+	code := CongoCode{
+		db: congo.SetupDatabase(root, "code.db", migrations),
+	}
+	if err := code.db.MigrateUp(); err != nil {
 		log.Fatal("Failed to setup code db:", err)
 	}
-
-	for _, opt := range opts {
-		if err := opt(&code); err != nil {
-			log.Fatal("Failed to setup Congo Code: ", err)
-		}
-	}
-
 	return &code
 }
-
-type CongoCodeOpt func(*CongoCode) error

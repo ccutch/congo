@@ -3,6 +3,7 @@ package congo_auth
 import (
 	"embed"
 	"log"
+	"net/http"
 
 	"github.com/ccutch/congo/pkg/congo"
 )
@@ -10,9 +11,9 @@ import (
 type CongoAuth struct {
 	DB             *congo.Database
 	CookieName     string
-	DefaultRole    string
 	SetupView      string
 	SetupRedirect  string
+	SignupCallback func(*Controller, *Identity) http.HandlerFunc
 	SigninViews    map[string]string
 	SigninRedirect string
 	LogoutRedirect string
@@ -25,7 +26,6 @@ func InitCongoAuth(root string, opts ...DirectoryOpt) *CongoAuth {
 	dir := &CongoAuth{
 		DB:             congo.SetupDatabase(root, "auth.db", migrations),
 		CookieName:     "congo-app",
-		DefaultRole:    "user",
 		SetupView:      "congo-signup.html",
 		SigninViews:    map[string]string{},
 		LogoutRedirect: "/",
@@ -50,24 +50,16 @@ func WithCookieName(name string) DirectoryOpt {
 	}
 }
 
-func WithDefaultRole(role string) DirectoryOpt {
-	return func(d *CongoAuth) {
-		if role == "" {
-			log.Fatal("cannot have empty default role")
-		}
-		d.DefaultRole = role
-	}
-}
-
-func WithSetupView(view string) DirectoryOpt {
+func WithSetupView(view, dest string) DirectoryOpt {
 	return func(auth *CongoAuth) {
 		auth.SetupView = view
+		auth.SetupRedirect = dest
 	}
 }
 
-func WithSetupDest(url string) DirectoryOpt {
+func WithSignupCallback(fn func(*Controller, *Identity) http.HandlerFunc) DirectoryOpt {
 	return func(auth *CongoAuth) {
-		auth.SetupRedirect = url
+		auth.SignupCallback = fn
 	}
 }
 
