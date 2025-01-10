@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/ccutch/congo/pkg/congo"
-	"github.com/pkg/errors"
 )
 
 type Domain struct {
@@ -105,6 +104,5 @@ func (domain *Domain) Verify() error {
 	}
 
 	id, other := domain.ID, strings.Join(existingDomains, " -d ")
-	_, out, err := server.Run(nil, fmt.Sprintf(generateCerts, id, other))
-	return errors.Wrap(err, out.String())
+	return server.Run(fmt.Sprintf(generateCerts, id, other))
 }

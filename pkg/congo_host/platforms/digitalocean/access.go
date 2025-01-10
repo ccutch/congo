@@ -11,8 +11,9 @@ import (
 )
 
 func (s *Server) keys() (string, string) {
-	pubKey := fmt.Sprintf("%s/id_rsa.pub", filepath.Join(s.client.host.DB.Root, "hosts", s.Name))
-	priKey := fmt.Sprintf("%s/id_rsa", filepath.Join(s.client.host.DB.Root, "hosts", s.Name))
+	dir := filepath.Join(s.client.host.DB.Root, "hosts", s.Name)
+	pubKey := fmt.Sprintf("%s/id_rsa.pub", dir)
+	priKey := fmt.Sprintf("%s/id_rsa", dir)
 	return pubKey, priKey
 }
 

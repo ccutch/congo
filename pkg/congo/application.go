@@ -60,11 +60,10 @@ func (app Application) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // Start runs the application HTTP server and SSL server
 func (app *Application) Start() error {
-	http.Handle("/", app.router)
 	go app.sslServer()
 	addr := "0.0.0.0:" + cmp.Or(os.Getenv("PORT"), "5000")
 	log.Print("Serving Unsecure Congo @ http://" + addr)
-	return http.ListenAndServe(addr, nil)
+	return http.ListenAndServe(addr, app.router)
 }
 
 // sslServer starts the HTTPS server

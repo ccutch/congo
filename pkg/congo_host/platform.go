@@ -11,14 +11,11 @@ type Platform interface {
 }
 
 type Server interface {
+	Addr() string
 	Create(region, size string, storage int64) error
 	Delete(purge, force bool) error
 	Reload() error
-	Run(_ io.Reader, args ...string) (stdout, stderr bytes.Buffer, _ error)
+	Run(io.Reader, io.Writer, ...string) error
 	Copy(source, dest string) (stdout, stderr bytes.Buffer, _ error)
-	Domain(name string) TDomain
 }
 
-type TDomain interface {
-	Verify(other ...string) error
-}

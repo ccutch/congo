@@ -16,7 +16,7 @@ func main() {
 		if server, err := launch(flag.Args()...); err != nil {
 			log.Fatal("Failed to launch server:", err)
 		} else {
-			log.Println("Successfully launched:", server)
+			log.Println("Successfully launched:", server.Server.Addr())
 		}
 
 	case "restart":

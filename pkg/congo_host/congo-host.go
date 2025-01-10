@@ -28,13 +28,16 @@ func InitCongoHost(root string, api Platform) *CongoHost {
 	if err := host.DB.MigrateUp(); err != nil {
 		log.Fatal("Failed to setup host db:", err)
 	}
-	api.Init(&host)
+	if api != nil {
+		api.Init(&host)
+	}
 	return &host
 }
 
 func (host *CongoHost) WithApi(api Platform) {
-	host.api = api
-	host.api.Init(host)
+	if host.api = api; api != nil {
+		host.api.Init(host)
+	}
 }
 
 func (host *CongoHost) GenerateSSHKey(name string) (string, string, error) {

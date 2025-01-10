@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
 	"os/exec"
 	"strings"
 	"time"
@@ -23,7 +22,7 @@ type Client struct {
 
 func NewClient(token string) congo_host.Platform {
 	if token == "" {
-		log.Fatal("Missing Digital Ocean API Key")
+		return nil
 	}
 	return &Client{godo.NewClient(oauth2.NewClient(
 		context.Background(),
@@ -42,7 +41,7 @@ func (client *Client) Server(name string) congo_host.Server {
 type Server struct {
 	client *Client
 	Name   string
-	Addr   string
+	IP     string
 	sshKey *godo.Key
 	volume *godo.Volume
 }
@@ -99,7 +98,7 @@ func (d *Server) Reload() error {
 	}
 
 	d.Name = droplet.Name
-	if d.Addr, err = droplet.PublicIPv4(); err != nil {
+	if d.IP, err = droplet.PublicIPv4(); err != nil {
 		return errors.Wrap(err, "failed to get droplet IP")
 	}
 
@@ -130,18 +129,23 @@ func (d *Server) Reload() error {
 	return nil
 }
 
-func (s *Server) Run(stdin io.Reader, args ...string) (stdout bytes.Buffer, stderr bytes.Buffer, err error) {
+func (s *Server) Addr() string {
+	return s.IP
+}
+
+func (s *Server) Run(stdin io.Reader, stdout io.Writer, args ...string) error {
+	var stderr bytes.Buffer
 	_, priKey := s.keys()
 	cmd := exec.Command(
 		"ssh",
 		"-o", "StrictHostKeyChecking=no",
 		"-i", priKey,
-		fmt.Sprintf("root@%s", s.Addr),
+		fmt.Sprintf("root@%s", s.IP),
 		strings.Join(args, " "))
 	cmd.Stdin = stdin
-	cmd.Stdout = &stdout
+	cmd.Stdout = stdout
 	cmd.Stderr = &stderr
-	return stdout, stderr, cmd.Run()
+	return errors.Wrap(cmd.Run(), stderr.String())
 }
 
 func (s *Server) Copy(source, dest string) (stdout bytes.Buffer, stderr bytes.Buffer, err error) {
@@ -151,12 +155,8 @@ func (s *Server) Copy(source, dest string) (stdout bytes.Buffer, stderr bytes.Bu
 		"-o", "StrictHostKeyChecking=no",
 		"-i", priKey,
 		source,
-		fmt.Sprintf("root@%s:%s", s.Addr, dest))
+		fmt.Sprintf("root@%s:%s", s.IP, dest))
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	return stdout, stderr, cmd.Run()
-}
-
-func (server *Server) Domain(domain string) congo_host.TDomain {
-	return &Domain{server: server, DomainName: domain}
 }

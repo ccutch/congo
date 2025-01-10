@@ -5,7 +5,8 @@ import (
 	"os"
 
 	"github.com/ccutch/congo/pkg/congo"
-	"github.com/ccutch/congo/pkg/congo_host/backend/digitalocean"
+	"github.com/ccutch/congo/pkg/congo_auth"
+	"github.com/ccutch/congo/pkg/congo_host/platforms/digitalocean"
 )
 
 type SettingsController struct {
@@ -14,17 +15,17 @@ type SettingsController struct {
 
 func (settings *SettingsController) Setup(app *congo.Application) {
 	settings.BaseController.Setup(app)
+	auth := app.Use("auth").(*congo_auth.Controller)
+
+	app.HandleFunc("POST /_settings/theme", auth.ProtectFunc(settings.updateTheme))
+	app.HandleFunc("POST /_settings/token", auth.ProtectFunc(settings.updateToken))
 
 	if settings.Get("token") == "" {
 		settings.set("token", os.Getenv("DIGITAL_OCEAN_API_KEY"))
 	}
 
-	if hosting, ok := app.Use("hosting").(*HostingController); ok {
-		hosting.host.WithApi(digitalocean.NewClient(settings.Get("token")))
-	}
-
-	app.HandleFunc("POST /_settings/theme", settings.updateTheme)
-	app.HandleFunc("POST /_settings/token", settings.updateToken)
+	hosting := app.Use("hosting").(*HostingController)
+	hosting.host.WithApi(digitalocean.NewClient(settings.Get("token")))
 }
 
 func (settings SettingsController) Handle(req *http.Request) congo.Controller {

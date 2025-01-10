@@ -13,33 +13,45 @@ import (
 )
 
 type Target interface {
-	Run(io.Reader, ...string) (stdout, stderr bytes.Buffer, _ error)
+	SetStdin(io.Reader)
+	SetStdout(io.Writer)
+	Run(...string) error
 }
 
 type LocalServer struct {
-	host *CongoHost
+	host   *CongoHost
+	stdin  io.Reader
+	stdout io.Writer
 }
 
 func (host *CongoHost) Local() *LocalServer {
-	return &LocalServer{host: host}
+	return &LocalServer{host, os.Stdin, os.Stdout}
 }
 
-func (s *LocalServer) Run(stdin io.Reader, args ...string) (stdout bytes.Buffer, stderr bytes.Buffer, err error) {
-	cmd := exec.Command(args[0], args[1:]...)
-	cmd.Stdin = stdin
-	cmd.Stdout = &stdout
+func (s *LocalServer) SetStdin(stdin io.Reader) {
+	s.stdin = stdin
+}
+
+func (s *LocalServer) SetStdout(stdout io.Writer) {
+	s.stdout = stdout
+}
+
+func (s *LocalServer) Run(args ...string) error {
+	cmd := exec.Command("bash", append([]string{"-c"}, args...)...)
+	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
-	return stdout, stderr, cmd.Run()
+	cmd.Stdout = s.stdout
+	cmd.Stdin = s.stdin
+	return errors.Wrap(cmd.Run(), stderr.String())
 }
 
 type RemoteServer struct {
-	host *CongoHost
 	Server
 	congo.Model
+	host     *CongoHost
 	Name     string
 	Size     string
 	Location string
-	IP       string
 
 	Stdin  io.Reader
 	Stdout io.Writer
@@ -47,9 +59,9 @@ type RemoteServer struct {
 
 func (host *CongoHost) NewServer(name, size, location string) (*RemoteServer, error) {
 	s := RemoteServer{
-		host:     host,
 		Server:   host.api.Server(name),
 		Model:    host.DB.NewModel(name),
+		host:     host,
 		Name:     name,
 		Size:     size,
 		Location: location,
@@ -66,7 +78,7 @@ func (host *CongoHost) NewServer(name, size, location string) (*RemoteServer, er
 }
 
 func (host *CongoHost) GetServer(id string) (*RemoteServer, error) {
-	s := RemoteServer{host: host, Model: host.DB.Model(), Server: host.api.Server(id)}
+	s := RemoteServer{Model: host.DB.Model(), Server: host.api.Server(id), host: host, Stdin: os.Stdin, Stdout: os.Stdout}
 	return &s, host.DB.Query(`
 
 		SELECT id, name, size, location, created_at, updated_at
@@ -84,7 +96,7 @@ func (host *CongoHost) ListServers() (servers []*RemoteServer, err error) {
 		ORDER BY created_at DESC
 
 	`).All(func(scan congo.Scanner) error {
-		s := RemoteServer{host: host, Model: host.DB.Model()}
+		s := RemoteServer{Model: host.DB.Model(), host: host, Stdin: os.Stdin, Stdout: os.Stdout}
 		err = scan(&s.ID, &s.Name, &s.Size, &s.Location, &s.CreatedAt, &s.UpdatedAt)
 		servers = append(servers, &s)
 		s.Server = host.api.Server(s.ID)
@@ -106,12 +118,35 @@ func (s *RemoteServer) Save() error {
 	`, s.Name, s.Size, s.Location, s.ID).Scan(&s.UpdatedAt)
 }
 
+func (s *RemoteServer) Delete(purge, force bool) error {
+	if err := s.Server.Delete(purge, force); !force && err != nil {
+		return errors.Wrap(err, "failed to delete server")
+	}
+	return s.host.DB.Query(`
+
+		DELETE FROM servers
+		WHERE id = ? 
+	
+	`, s.ID).Exec()
+}
+
+func (s *RemoteServer) SetStdin(stdin io.Reader) {
+	s.Stdin = stdin
+}
+
+func (s *RemoteServer) SetStdout(stdout io.Writer) {
+	s.Stdout = stdout
+}
+
+func (s *RemoteServer) Run(args ...string) error {
+	return s.Server.Run(s.Stdin, s.Stdout, args...)
+}
+
 //go:embed resources/server/prepare-server.sh
 var prepareServer string
 
 func (server *RemoteServer) Prepare() error {
-	_, stderr, err := server.Run(server.Stdin, fmt.Sprintf(prepareServer, server.Name+"-data"))
-	return errors.Wrap(err, stderr.String())
+	return server.Run(fmt.Sprintf(prepareServer, server.Name+"-data"))
 }
 
 func (server *RemoteServer) Deploy(source string) error {
@@ -119,19 +154,12 @@ func (server *RemoteServer) Deploy(source string) error {
 		return errors.Wrap(err, "failed to copy source to server")
 	}
 
-	volume, ok := map[string]int64{"SM": 5, "MD": 25, "LG": 50}[server.Size]
-	if !ok {
-		return errors.New("invalid size")
-	}
-
-	err := server.Create(server.Size, server.Location, volume)
-	return errors.Wrap(err, "failed to start server")
+	return server.Restart()
 }
 
 //go:embed resources/server/start-server.sh
 var startServer string
 
 func (server *RemoteServer) Restart() error {
-	_, out, err := server.Run(nil, fmt.Sprintf(startServer, 8080))
-	return errors.Wrap(err, out.String())
+	return server.Run(fmt.Sprintf(startServer, 8080))
 }

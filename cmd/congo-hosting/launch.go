@@ -7,7 +7,7 @@ import (
 	"os/exec"
 
 	"github.com/ccutch/congo/pkg/congo_host"
-	"github.com/ccutch/congo/pkg/congo_host/backend/digitalocean"
+	"github.com/ccutch/congo/pkg/congo_host/platforms/digitalocean"
 	"github.com/pkg/errors"
 )
 
@@ -65,7 +65,6 @@ func launch(args ...string) (*congo_host.RemoteServer, error) {
 	}
 
 	if *domain != "" {
-		log.Printf("Add A record for %s to %s", *domain, server.IP)
 		if d, err := server.NewDomain(*domain); err != nil {
 			return nil, errors.Wrap(err, "failed to create domain")
 		} else if err = d.Verify(); err != nil {

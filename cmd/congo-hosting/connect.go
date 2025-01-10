@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/ccutch/congo/pkg/congo_host"
-	"github.com/ccutch/congo/pkg/congo_host/backend/digitalocean"
+	"github.com/ccutch/congo/pkg/congo_host/platforms/digitalocean"
 	"github.com/pkg/errors"
 )
 
@@ -35,6 +35,5 @@ func connect(args ...string) error {
 		return err
 	}
 
-	_, out, err := server.Run(nil, cmd.Args()...)
-	return errors.Wrap(err, out.String())
+	return server.Run(cmd.Args()...)
 }

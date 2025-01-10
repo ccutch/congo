@@ -5,14 +5,12 @@ import (
 
 	"github.com/ccutch/congo/pkg/congo"
 	"github.com/ccutch/congo/pkg/congo_auth"
-	"github.com/ccutch/congo/pkg/congo_host"
 
 	"github.com/ccutch/congo/apps/launchpad/models"
 )
 
 type HostsController struct {
 	congo.BaseController
-	host *congo_host.CongoHost
 }
 
 func (hosts *HostsController) Setup(app *congo.Application) {

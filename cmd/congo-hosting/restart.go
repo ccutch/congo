@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/ccutch/congo/pkg/congo_host"
-	"github.com/ccutch/congo/pkg/congo_host/backend/digitalocean"
+	"github.com/ccutch/congo/pkg/congo_host/platforms/digitalocean"
 	"github.com/pkg/errors"
 )
 

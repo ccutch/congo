@@ -30,7 +30,7 @@ func (s *Server) createDroplet(region, size string) error {
 		return err
 	}
 
-	for s.Addr == "" {
+	for s.IP == "" {
 		time.Sleep(10 * time.Second)
 		s.Reload()
 	}

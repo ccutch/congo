@@ -1,6 +1,7 @@
 package congo_host
 
 import (
+	"bytes"
 	_ "embed"
 	"fmt"
 	"log"
@@ -68,7 +69,9 @@ func WithVolume(volume string) ServiceOpt {
 }
 
 func (s *Service) Running() bool {
-	stdout, _, err := s.Run(nil, "docker", "inspect", "-f", "{{.State.Status}}", s.Name)
+	var stdout bytes.Buffer
+	s.SetStdout(&stdout)
+	err := s.Run("docker", "inspect", "-f", "{{.State.Status}}", s.Name)
 	return err == nil && strings.TrimSpace(stdout.String()) == "running"
 }
 
@@ -99,16 +102,14 @@ func (s *Service) Start() error {
 	}
 
 	args := strings.Join(s.args, " ")
-	_, output, err := s.Run(nil, fmt.Sprintf(startService, s.Name, s.Port, envs, volumes, s.Image, s.Tag, args))
-	return errors.Wrap(err, output.String())
+	return s.Run(fmt.Sprintf(startService, s.Name, s.Port, envs, volumes, s.Image, s.Tag, args))
 }
 
 //go:embed resources/service/setup-service.sh
 var setupService string
 
 func (s *Service) setupService() error {
-	_, output, err := s.Run(nil, fmt.Sprintf(setupService, s.host.DB.Root, s.Name))
-	return errors.Wrap(err, output.String())
+	return s.Run(fmt.Sprintf(setupService, s.host.DB.Root, s.Name))
 }
 
 func (s *Service) Restart() error {
@@ -124,11 +125,11 @@ func (s *Service) Stop() error {
 		return nil
 	}
 
-	if _, _, err := s.Run(nil, "docker", "stop", s.Name); err != nil {
+	if err := s.Run("docker", "stop", s.Name); err != nil {
 		return errors.Wrap(err, "failed to stop service")
 	}
 
-	if _, _, err := s.Run(nil, "docker", "rm", s.Name); err != nil {
+	if err := s.Run("docker", "rm", s.Name); err != nil {
 		return errors.Wrap(err, "failed to remove service")
 	}
 
