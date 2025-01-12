@@ -3,11 +3,14 @@ package congo
 import (
 	"cmp"
 	"embed"
+	"fmt"
 	"html/template"
+	"io"
 	"io/fs"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 )
 
 //go:embed all:templates
@@ -50,6 +53,7 @@ func (app *Application) Serve(name string) http.Handler {
 		log.Fatalf("Template %s not found", name)
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Println("Serving: ", name, r.URL.Path)
 		app.Render(w, r, name, nil)
 	})
 }
@@ -73,7 +77,7 @@ func (app *Application) sslServer() {
 	}
 	cert, key := app.creds.fullchain, app.creds.privkey
 	log.Print("Serving Secure Congo @ https://localhost:443")
-	err := http.ListenAndServeTLS("0.0.0.0:443", cert, key, nil)
+	err := http.ListenAndServeTLS("0.0.0.0:443", cert, key, app.router)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -171,6 +175,7 @@ func (app *Application) PrepareTemplates() {
 		"req":  func() *http.Request { return nil },
 		"host": func() string { return app.hostPrefix },
 		"raw":  func(val string) template.HTML { return template.HTML(val) },
+		"path": func(parts ...string) string { return fmt.Sprintf("/%s", strings.Join(parts, "/")) },
 	}
 
 	for name, ctrl := range app.controllers {
@@ -191,13 +196,11 @@ func (app *Application) PrepareTemplates() {
 
 		if tmpl, err := app.templates.ParseFS(source, "templates/**/*.html"); err == nil {
 			app.templates = tmpl
-		} else {
-			log.Print("Failed to parse root templates", err)
 		}
 	}
 }
 
-func (app *Application) Render(w http.ResponseWriter, r *http.Request, page string, data any) {
+func (app *Application) Render(w io.Writer, r *http.Request, page string, data any) {
 	funcs := template.FuncMap{
 		"db":   func() *Database { return app.DB },
 		"req":  func() *http.Request { return r },

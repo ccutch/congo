@@ -16,18 +16,16 @@ type Domain struct {
 	Verified   bool
 }
 
-func (server *RemoteServer) NewDomain(name string) (*Domain, error) {
-	domain := Domain{host: server.host, Model: server.host.DB.NewModel(name), ServerID: server.ID, DomainName: name}
-	return &domain, server.host.DB.Query(`
-
-		INSERT INTO domains (id, server_id, domain_name)
-		VALUES (?, ?, ?)
-		RETURNING created_at, updated_at
-
-	`, domain.ID, server.ID, domain.DomainName).Scan(&domain.CreatedAt, &domain.UpdatedAt)
+func (host *RemoteHost) Domain(name string) *Domain {
+	return &Domain{
+		host:       host.host,
+		Model:      host.host.DB.NewModel(name),
+		ServerID:   host.ID,
+		DomainName: name,
+	}
 }
 
-func (server *RemoteServer) Domains() ([]*Domain, error) {
+func (server *RemoteHost) Domains() ([]*Domain, error) {
 	domains := []*Domain{}
 	return domains, server.DB.Query(`
 
@@ -60,13 +58,14 @@ func (host *CongoHost) GetDomain(domain string) (*Domain, error) {
 func (domain *Domain) Save() error {
 	return domain.DB.Query(`
 
-		UPDATE domains
-		SET verified = ?,
-				updated_at = CURRENT_TIMESTAMP
-		WHERE id = ?
+		INSERT INTO domains (id, server_id, domain_name)
+		VALUES (?, ?, ?)
+		ON CONFLICT (id) DO UPDATE SET
+			verified = ?,
+			updated_at = CURRENT_TIMESTAMP
 		RETURNING updated_at
 
-	`, domain.Verified, domain.ID).Scan(&domain.UpdatedAt)
+	`, domain.ID, domain.ServerID, domain.DomainName, domain.Verified).Scan(&domain.UpdatedAt)
 }
 
 func (domain *Domain) Delete() error {
@@ -78,7 +77,7 @@ func (domain *Domain) Delete() error {
 	`, domain.ID).Exec()
 }
 
-func (domain *Domain) Server() (*RemoteServer, error) {
+func (domain *Domain) Server() (*RemoteHost, error) {
 	return domain.host.GetServer(domain.ServerID)
 }
 
@@ -96,13 +95,22 @@ func (domain *Domain) Verify() error {
 		return err
 	}
 
-	var existingDomains []string
+	var otherURL []string
 	for _, d := range domains {
 		if d.Verified {
-			existingDomains = append(existingDomains, d.DomainName)
+			otherURL = append(otherURL, d.DomainName)
 		}
 	}
 
-	id, other := domain.ID, strings.Join(existingDomains, " -d ")
-	return server.Run(fmt.Sprintf(generateCerts, id, other))
+	var rest string
+	if len(otherURL) > 0 {
+		rest = strings.Join(otherURL, " -d ")
+	}
+
+	if err = server.Run(fmt.Sprintf(generateCerts, domain.ID, rest)); err != nil {
+		return err
+	}
+
+	domain.Verified = true
+	return domain.Save()
 }

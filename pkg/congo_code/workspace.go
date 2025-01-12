@@ -98,15 +98,18 @@ func (w *Workspace) Start() error {
 		return nil
 	}
 
-	_, output, err := w.code.bash(fmt.Sprintf(prepareWorkspace, w.Name, w.code.db.Root))
-	if err != nil {
+	var stdout bytes.Buffer
+	host := w.Host.Local()
+	if err := host.Run(fmt.Sprintf(prepareWorkspace, w.Name, w.code.db.Root)); err != nil {
 		return errors.Wrap(err, "failed to prepare workspace")
 	}
 	if err := w.Service.Start(); err != nil {
 		return errors.Wrap(err, "failed to start workspace")
 	}
-	if _, output, err = w.Run(setupWorkspace); err != nil {
-		return errors.Wrap(err, "failed to setup workspace: "+output.String())
+
+	stdout.Reset()
+	if err := host.Run(setupWorkspace); err != nil {
+		return errors.Wrap(err, "failed to setup workspace: "+stdout.String())
 	}
 
 	if repo, err := w.Repo(); repo != nil && err == nil {
@@ -126,16 +129,17 @@ func (w *Workspace) Repo() (*Repository, error) {
 	return w.code.GetRepository(w.RepoID)
 }
 
-func (w *Workspace) Run(args ...string) (bytes.Buffer, bytes.Buffer, error) {
-	return w.code.docker("exec", w.Name, "sh", "-c", strings.Join(args, " "))
+func (w *Workspace) Run(args ...string) (stdout bytes.Buffer, err error) {
+	s := w.Host.Local()
+	s.SetStdout(&stdout)
+	return stdout, s.Run("docker", "exec", w.Name, "sh", "-c", strings.Join(args, " "))
 }
 
 //go:embed resources/workspace/create-congo-app.sh
 var createCongoApp string
 
 func (w *Workspace) CreateCongoApp(name, template string) error {
-	_, output, err := w.code.bash(fmt.Sprintf(createCongoApp, name, template))
-	return errors.Wrapf(err, "failed to create congo app: %s", output.String())
+	return w.Host.Local().Run(fmt.Sprintf(createCongoApp, name, template))
 }
 
 func (w *Workspace) Save() error {

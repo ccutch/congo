@@ -1,0 +1,33 @@
+<html data-theme='{{theme}}'>
+
+<head>
+  <title>Congo Chatter</title>
+
+  {{template "includes"}}
+</head>
+
+<body>
+  <div class="hero min-h-screen">
+    <div class="hero-content flex-col gap-4">
+      <h1 class="text-5xl font-bold">
+        Welcome to Chatter!
+      </h1>
+
+      <p class="text-center text-xl font-medium max-w-lg">
+        Chatter is a simple chat application built with Congo.
+        It's a great way to get started talking about Congo.
+      </p>
+
+      <a hx-boost="true" href="{{host}}/me" class="btn btn-lg btn-primary mt-8">
+        {{if auth.Current "user"}}
+        Go to My Mailboxes
+        {{else}}
+        Get Started Chatting
+        {{end}}
+      </a>
+
+    </div>
+  </div>
+</body>
+
+</html>

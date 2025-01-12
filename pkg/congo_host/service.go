@@ -15,7 +15,7 @@ import (
 
 type Service struct {
 	Target
-	host  *CongoHost
+	Host  *CongoHost
 	Name  string
 	Port  int
 	Image string
@@ -25,7 +25,7 @@ type Service struct {
 	vols  []string
 }
 
-func (s *LocalServer) Service(name string, opts ...ServiceOpt) *Service {
+func (s *LocalHost) Service(name string, opts ...ServiceOpt) *Service {
 	info := &Service{s, s.host, name, 0, "", "latest", []string{}, []string{}, []string{}}
 	for _, opt := range opts {
 		opt(info)
@@ -33,7 +33,7 @@ func (s *LocalServer) Service(name string, opts ...ServiceOpt) *Service {
 	return info
 }
 
-func (s *RemoteServer) Service(name string, opts ...ServiceOpt) *Service {
+func (s *RemoteHost) Service(name string, opts ...ServiceOpt) *Service {
 	info := &Service{s, s.host, name, 0, "", "latest", []string{}, []string{}, []string{}}
 	for _, opt := range opts {
 		opt(info)
@@ -109,7 +109,7 @@ func (s *Service) Start() error {
 var setupService string
 
 func (s *Service) setupService() error {
-	return s.Run(fmt.Sprintf(setupService, s.host.DB.Root, s.Name))
+	return s.Run(fmt.Sprintf(setupService, s.Host.DB.Root, s.Name))
 }
 
 func (s *Service) Restart() error {

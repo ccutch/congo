@@ -32,7 +32,7 @@ func (hosting HostingController) Handle(req *http.Request) congo.Controller {
 	return &hosting
 }
 
-func (hosting *HostingController) List() ([]*congo_host.RemoteServer, error) {
+func (hosting *HostingController) List() ([]*congo_host.RemoteHost, error) {
 	return hosting.host.ListServers()
 }
 
@@ -85,12 +85,10 @@ func (hosting HostingController) handleDomain(w http.ResponseWriter, r *http.Req
 	}
 
 	if domain := r.FormValue("domain"); domain != "" {
-		if d, err := server.NewDomain(domain); err != nil {
+		d := server.Domain(domain)
+		if err = d.Verify(); err == nil {
 			hosting.Render(w, r, "error-message", err)
 			return
-		} else if err = d.Verify(); err == nil {
-			d.Verified = true
-			d.Save()
 		}
 	}
 

@@ -15,11 +15,9 @@ type CongoCode struct {
 }
 
 func InitCongoCode(root string) *CongoCode {
-	code := CongoCode{
-		db: congo.SetupDatabase(root, "code.db", migrations),
-	}
-	if err := code.db.MigrateUp(); err != nil {
+	db := congo.SetupDatabase(root, "code.db", migrations)
+	if err := db.MigrateUp(); err != nil {
 		log.Fatal("Failed to setup code db:", err)
 	}
-	return &code
+	return &CongoCode{db}
 }

@@ -1,0 +1,22 @@
+{{define "contact-messages"}}
+<div class="bg-base-200 w-full flex flex-col h-full rounded-box">
+
+  <div id="messages" class="flex flex-col-reverse w-full p-4 h-full overflow-y-auto"
+       hx-ext="sse" sse-connect="{{host}}/chatting/{{chatting.Mailbox.ID}}" sse-swap="message" hx-swap="afterbegin">
+    {{range chatting.Messages}}
+    {{block "chat-message" .}}
+    <div class="flex gap-2 p-2">
+      {{.Content}}
+    </div>
+    {{end}}
+    {{end}}
+  </div>
+
+  <form class="flex gap-2 px-4" hx-post="{{host}}/chatting/messages" hx-on::after-request="this.reset();document.messageInput.focus();">
+    <input type="hidden" name="mailbox" value='{{req.PathValue "user"}}'>
+    <input type="text" name="message" class="input input-bordered w-full" placeholder="Your message" id="messageInput" autofocus required>
+    <button class="btn btn-primary px-8">Send</button>
+  </form>
+
+</div>
+{{end}}

@@ -1,0 +1,27 @@
+{{define "contact-selector"}}
+<ul class="bg-base-200 w-full max-w-xs menu menu-lg rounded-box" hx-boost="true">
+
+  {{with chatting.Mailbox}}
+  <li>
+    <a href="{{host}}/me" {{if eq req.URL.Path "/me" }}class="active" {{end}}>
+      {{.Name}}
+    </a>
+  </li>
+  {{end}}
+
+
+  {{range chatting.Contacts}}
+  <li>
+    <a href="{{host}}/{{.ID}}" {{if eq req.URL.Path (path .ID)}}class="active" {{end}}>
+      {{.Username}}
+    </a>
+  </li>
+  {{else}}
+  <div class="p-6 flex flex-col gap-2 text-center text-lg font-semibold">
+    No Contacts
+  </div>
+
+  {{end}}
+
+</ul>
+{{end}}

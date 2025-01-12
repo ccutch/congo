@@ -9,21 +9,6 @@ import (
 	"path/filepath"
 )
 
-func (code *CongoCode) run(args ...string) (stdout, stderr bytes.Buffer, _ error) {
-	cmd := exec.Command(args[0], args[1:]...)
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-	return stdout, stderr, cmd.Run()
-}
-
-func (code *CongoCode) bash(args ...string) (bytes.Buffer, bytes.Buffer, error) {
-	return code.run(append([]string{"bash", "-c"}, args...)...)
-}
-
-func (code *CongoCode) docker(args ...string) (bytes.Buffer, bytes.Buffer, error) {
-	return code.run(append([]string{"docker"}, args...)...)
-}
-
 func (repo *Repository) Run(args ...string) (stdout bytes.Buffer, stderr bytes.Buffer, err error) {
 	cmd := exec.Command("git", args...)
 	cmd.Dir = repo.Path()

@@ -1,0 +1,14 @@
+{{define "navbar"}}
+<div class="flex justify-between items-end">
+  {{with auth.Current "user"}}
+  <h1 class="text-3xl font-semibold capitalize">
+    Welcome back {{.Username}}!
+  </h1>
+  {{end}}
+
+  <div class="flex items-center gap-2">
+    {{template "theme-selector" "lemonade"}}
+    {{template "logout-button"}}
+  </div>
+</div>
+{{end}}

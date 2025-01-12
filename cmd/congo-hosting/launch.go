@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func launch(args ...string) (*congo_host.RemoteServer, error) {
+func launch(args ...string) (*congo_host.RemoteHost, error) {
 	var (
 		cmd     = flag.NewFlagSet("launch", flag.ExitOnError)
 		apiKey  = cmd.String("api-key", "$DIGITAL_OCEAN_API_KEY", "Digital Ocean API Key")
@@ -65,9 +65,7 @@ func launch(args ...string) (*congo_host.RemoteServer, error) {
 	}
 
 	if *domain != "" {
-		if d, err := server.NewDomain(*domain); err != nil {
-			return nil, errors.Wrap(err, "failed to create domain")
-		} else if err = d.Verify(); err != nil {
+		if err = server.Domain(*domain).Verify(); err != nil {
 			return nil, errors.Wrap(err, "failed to verify domain")
 		}
 	}

@@ -1,0 +1,19 @@
+<html data-theme='{{theme}}'>
+
+<head>
+  <title>Congo Chatter</title>
+  {{template "includes"}}
+</head>
+
+<body>
+  <div class="flex flex-col gap-y-4 p-4 max-w-screen-xl h-screen w-full mx-auto overflow-hidden">
+    {{template "navbar"}}
+
+    <div class="flex justify-between gap-4 h-full w-full max-w-screen-lg mx-auto overflow-hidden">
+      {{template "contact-selector"}}
+      {{template "contact-messages"}}
+    </div>
+  </div>
+</body>
+
+</html>

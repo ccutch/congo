@@ -1,0 +1,35 @@
+{{define "congo-chat/messages"}}
+<div class="menu menu-lg">
+
+  {{range .}}
+
+  {{block "congo-chat/message" .}}
+  <li>
+    <a class="flex flex-col gap-2">
+      <div class="flex items-center justify-between">
+        <span class="text-lg font-semibold">
+          {{.Content}}
+        </span>
+
+        <div class="text-md opacity-80">
+          {{.CreatedAt.Format "2006-01-02 15:04:05"}}
+        </div>
+      </div>
+    </a>
+  </li>
+
+  <div class="menu ml-12">
+    {{range .Attachments}}
+    <li>
+      <a class="text-md opacity-80">
+        {{.Filename}}
+      </a>
+    </li>
+    {{end}}
+  </div>
+  {{end}}
+
+  {{end}}
+
+</div>
+{{end}}

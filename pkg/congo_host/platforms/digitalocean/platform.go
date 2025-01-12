@@ -134,6 +134,10 @@ func (s *Server) Addr() string {
 }
 
 func (s *Server) Run(stdin io.Reader, stdout io.Writer, args ...string) error {
+	if err := s.Reload(); err != nil {
+		return errors.Wrap(err, "failed to reload server")
+	}
+
 	var stderr bytes.Buffer
 	_, priKey := s.keys()
 	cmd := exec.Command(
@@ -145,7 +149,7 @@ func (s *Server) Run(stdin io.Reader, stdout io.Writer, args ...string) error {
 	cmd.Stdin = stdin
 	cmd.Stdout = stdout
 	cmd.Stderr = &stderr
-	return errors.Wrap(cmd.Run(), stderr.String())
+	return errors.Wrap(cmd.Run(), strings.Join(args, " ")+"\n"+stderr.String())
 }
 
 func (s *Server) Copy(source, dest string) (stdout bytes.Buffer, stderr bytes.Buffer, err error) {

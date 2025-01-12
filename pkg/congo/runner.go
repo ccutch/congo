@@ -31,7 +31,7 @@ func envCredentials() (string, string) {
 	return cert, key
 }
 
-func Start(main Service, services ...Service) {
+func Start(main *Application, services ...Service) {
 	for i, s := range services {
 		go func() {
 			if err := s.Start(); err != nil {
