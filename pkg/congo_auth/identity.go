@@ -11,8 +11,8 @@ import (
 type Identity struct {
 	congo.Model
 	Role     string
+	Name     string
 	Email    string
-	Username string
 	PassHash []byte
 }
 
@@ -24,7 +24,7 @@ func hash(pass string) (hash []byte, err error) {
 }
 
 func (auth *CongoAuth) Create(role, email, name, password string) (i *Identity, err error) {
-	i = &Identity{Model: auth.DB.NewModel(uuid.NewString()), Role: role, Email: email, Username: name}
+	i = &Identity{Model: auth.DB.NewModel(uuid.NewString()), Role: role, Email: email, Name: name}
 	if i.PassHash, err = hash(password); err != nil {
 		return nil, err
 	}
@@ -32,7 +32,7 @@ func (auth *CongoAuth) Create(role, email, name, password string) (i *Identity, 
 		INSERT INTO identities (id, role, email, username, passhash)
 		VALUES (?, ?, ?, ?, ?)
 		RETURNING created_at, updated_at
-	`, i.ID, i.Role, i.Email, i.Username, i.PassHash).Scan(&i.CreatedAt, &i.UpdatedAt)
+	`, i.ID, i.Role, i.Email, i.Name, i.PassHash).Scan(&i.CreatedAt, &i.UpdatedAt)
 }
 
 func (auth *CongoAuth) Lookup(ident string) (*Identity, error) {
@@ -41,7 +41,7 @@ func (auth *CongoAuth) Lookup(ident string) (*Identity, error) {
 		SELECT id, role, email, username, passhash, created_at, updated_at
 		FROM identities
 		WHERE id = $1 OR email = $1 OR username = $1
-	`, ident).Scan(&i.ID, &i.Role, &i.Email, &i.Username, &i.PassHash, &i.CreatedAt, &i.UpdatedAt)
+	`, ident).Scan(&i.ID, &i.Role, &i.Email, &i.Name, &i.PassHash, &i.CreatedAt, &i.UpdatedAt)
 }
 
 func (auth *CongoAuth) count() (count int) {
@@ -57,7 +57,7 @@ func (auth *CongoAuth) Search(query string) (imap map[string][]*Identity, err er
 		WHERE id LIKE $1 OR email LIKE $1 OR username LIKE $1
 	`, "%"+query+"%").All(func(scan congo.Scanner) error {
 		i := &Identity{Model: congo.Model{DB: auth.DB}}
-		err = scan(&i.ID, &i.Role, &i.Email, &i.Username, &i.PassHash, &i.CreatedAt, &i.UpdatedAt)
+		err = scan(&i.ID, &i.Role, &i.Email, &i.Name, &i.PassHash, &i.CreatedAt, &i.UpdatedAt)
 		if err != nil {
 			return err
 		}
@@ -75,7 +75,7 @@ func (auth *CongoAuth) SearchByRole(role, query string) (iarr []*Identity, err e
 	`, role, "%"+query+"%").All(func(scan congo.Scanner) error {
 		i := Identity{Model: congo.Model{DB: auth.DB}}
 		iarr = append(iarr, &i)
-		return scan(&i.ID, &i.Role, &i.Email, &i.Username, &i.PassHash, &i.CreatedAt, &i.UpdatedAt)
+		return scan(&i.ID, &i.Role, &i.Email, &i.Name, &i.PassHash, &i.CreatedAt, &i.UpdatedAt)
 	})
 }
 
@@ -88,7 +88,7 @@ func (i *Identity) Save() error {
 		UPDATE identities
 		SET role = ?, email = ?, username = ?, passhash = ?, updated_at = CURRENT_TIMESTAMP
 		RETURNING updated_at
-	`, i.Role, i.Email, i.Username, i.PassHash).Scan(&i.UpdatedAt)
+	`, i.Role, i.Email, i.Name, i.PassHash).Scan(&i.UpdatedAt)
 }
 
 func (i *Identity) Delete() error {

@@ -25,6 +25,7 @@ func (chatting *ChattingController) Setup(app *congo.Application) {
 	chatting.Chat = congo_chat.InitCongoChat(app.DB.Root, chatting.auth.CongoAuth)
 	app.HandleFunc("GET /chatting/{user}", chatting.handleMessages)
 	app.Handle("POST /chatting/messages", chatting.auth.ProtectFunc(chatting.sendMessage))
+	app.Handle("GET /chatting/invite", chatting.auth.ProtectFunc(chatting.copyInviteURL))
 }
 
 func (chatting ChattingController) Handle(req *http.Request) congo.Controller {
@@ -38,28 +39,19 @@ func (chatting *ChattingController) Mailbox() (*congo_chat.Mailbox, error) {
 	return mb, err
 }
 
-func (chatting *ChattingController) Contacts() ([]*congo_auth.Identity, error) {
-	mb, err := chatting.Mailbox()
-	log.Println("mailbox", mb, err)
+func (chatting *ChattingController) Contacts() (ids []*congo_auth.Identity, err error) {
+	users, err := chatting.auth.Search("")
 	if err != nil {
 		return nil, err
 	}
-
-	contacts, err := mb.Contacts()
-	if err != nil {
-		return nil, err
-	}
-
-	var identities []*congo_auth.Identity
-	for _, contact := range contacts {
-		i, err := chatting.auth.Lookup(contact.OwnerID)
-		if err != nil {
-			return nil, err
+	i, _ := chatting.auth.Authenticate("user", chatting.Request)
+	for _, user := range users["user"] {
+		if user.ID == i.ID {
+			continue
 		}
-		identities = append(identities, i)
+		ids = append(ids, user)
 	}
-
-	return identities, nil
+	return ids, nil
 }
 
 func (chatting *ChattingController) Messages() ([]*congo_chat.Message, error) {
@@ -86,6 +78,10 @@ func (chatting ChattingController) handleMessages(w http.ResponseWriter, r *http
 		return
 	}
 
+	//ping
+	fmt.Fprintf(w, "event: ping\ndata: pong\n\n")
+	flusher.Flush()
+
 	// user, _ := chatting.auth.Authenticate("user", r)
 	userID := r.PathValue("user")
 	if userID == "me" {
@@ -97,7 +93,7 @@ func (chatting ChattingController) handleMessages(w http.ResponseWriter, r *http
 	defer close()
 
 	log.Println("Listening for messages...", userID)
-	for m := range feed {
+	for m := range feed.Messages {
 		var buf bytes.Buffer
 		chatting.Render(&buf, r, "chat-message", m)
 		content := strings.ReplaceAll(buf.String(), "\n", "")
@@ -140,4 +136,8 @@ func (chatting ChattingController) sendMessage(w http.ResponseWriter, r *http.Re
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (chatting ChattingController) copyInviteURL(w http.ResponseWriter, r *http.Request) {
+	chatting.Render(w, r, "url-copied-toast", nil)
 }

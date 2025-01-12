@@ -11,13 +11,10 @@ import (
 //go:embed all:migrations
 var migrations embed.FS
 
-//go:embed all:templates
-var Templates embed.FS
-
 type CongoChat struct {
-	db     *congo.Database
-	auth   *congo_auth.CongoAuth
-	events map[string][]chan *Message
+	db    *congo.Database
+	auth  *congo_auth.CongoAuth
+	feeds map[string][]*Listener
 }
 
 func InitCongoChat(root string, auth *congo_auth.CongoAuth) *CongoChat {
@@ -25,28 +22,42 @@ func InitCongoChat(root string, auth *congo_auth.CongoAuth) *CongoChat {
 	if err := db.MigrateUp(); err != nil {
 		log.Fatal("Failed to setup chat db:", err)
 	}
-	return &CongoChat{db, auth, map[string][]chan *Message{}}
+	return &CongoChat{db, auth, map[string][]*Listener{}}
 }
 
-func (chat *CongoChat) Listen(id string) (chan *Message, func()) {
+type Listener struct {
+	Messages chan *Message
+	Closed   bool
+	Close    func()
+}
+
+func (chat *CongoChat) Listen(id string) (*Listener, func()) {
 	feed := make(chan *Message)
-	chat.events[id] = append(chat.events[id], feed)
-	return feed, func() {
+	listener := &Listener{
+		Messages: feed,
+		Closed:   false,
+		Close:    func() { close(feed) },
+	}
+	chat.feeds[id] = append(chat.feeds[id], listener)
+	return listener, func() {
+		listener.Closed = true
 		close(feed)
 	}
 }
 
 func (chat *CongoChat) Notify(m *Message) {
-	to := m.ToID
-	log.Println("Notifying", to)
-	if l, ok := chat.events[to]; ok {
-		for i, ch := range l {
-			select {
-			case ch <- m:
+	if f, ok := chat.feeds[m.ToID]; ok {
+		for _, l := range f {
+			if !l.Closed {
+				l.Messages <- m
 				continue
-			default:
-				chat.events[to] = append(chat.events[to][:i], chat.events[to][i+1:]...)
-				i--
+			}
+		}
+	}
+	if f, ok := chat.feeds[m.FromID]; ok {
+		for _, l := range f {
+			if !l.Closed {
+				l.Messages <- m
 			}
 		}
 	}

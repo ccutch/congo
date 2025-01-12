@@ -1,18 +1,38 @@
 {{define "contact-messages"}}
-<div class="bg-base-200 w-full flex flex-col h-full rounded-box">
+<div class="bg-base-200 w-full flex flex-col gap-2 h-full rounded-box p-4">
 
   <div id="messages" class="flex flex-col-reverse w-full p-4 h-full overflow-y-auto"
        hx-ext="sse" sse-connect="{{host}}/chatting/{{chatting.Mailbox.ID}}" sse-swap="message" hx-swap="afterbegin">
     {{range chatting.Messages}}
     {{block "chat-message" .}}
-    <div class="flex gap-2 p-2">
-      {{.Content}}
+    <div class="flex items-center gap-3 py-2">
+      {{with .Owner}}
+      <div class="avatar">
+        <div class="h-8 w-8 rounded-full bg-base-100">
+          <img src="https://robohash.org/{{.ID}}" alt="{{.Username}}">
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-0">
+        <div class="flex gap-2">
+          <div class="text-sm font-semibold">
+            {{.Username}}
+          </div>
+          {{end}}
+          <div class="text-sm opacity-80">
+            {{.CreatedAt.Format "Jan 2, 3:04 pm"}}
+          </div>
+        </div>
+        <div class="text-base">
+          {{.Content}}
+        </div>
+      </div>
     </div>
     {{end}}
     {{end}}
   </div>
 
-  <form class="flex gap-2 px-4" hx-post="{{host}}/chatting/messages" hx-on::after-request="this.reset();document.messageInput.focus();">
+  <form class="m-0 flex gap-2" hx-post="{{host}}/chatting/messages" hx-on::after-request="this.reset();this.querySelector('#messageInput').focus();">
     <input type="hidden" name="mailbox" value='{{req.PathValue "user"}}'>
     <input type="text" name="message" class="input input-bordered w-full" placeholder="Your message" id="messageInput" autofocus required>
     <button class="btn btn-primary px-8">Send</button>

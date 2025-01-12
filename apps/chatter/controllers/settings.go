@@ -37,6 +37,15 @@ func (settings *SettingsController) Get(id string) (val string) {
 	return val
 }
 
+func (settings *SettingsController) MyTheme() string {
+	auth := settings.Use("auth").(*congo_auth.Controller)
+	i, _ := auth.Authenticate("user", settings.Request)
+	if i == nil {
+		return ""
+	}
+	return settings.Get(i.ID + "-theme")
+}
+
 func (settings *SettingsController) set(id, val string) error {
 	return settings.DB.Query(`
 
@@ -50,6 +59,8 @@ func (settings *SettingsController) set(id, val string) error {
 }
 
 func (settings SettingsController) updateTheme(w http.ResponseWriter, r *http.Request) {
-	settings.set("theme", r.FormValue("theme"))
+	auth := settings.Use("auth").(*congo_auth.Controller)
+	i, _ := auth.Authenticate("user", r)
+	settings.set(i.ID+"-theme", r.FormValue("theme"))
 	w.WriteHeader(http.StatusNoContent)
 }

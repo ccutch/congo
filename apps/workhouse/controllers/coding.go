@@ -57,14 +57,14 @@ func (coding *CodingController) CurrentFile() *congo_code.Blob {
 func (coding *CodingController) HandleNewSignup(auth *congo_auth.Controller, i *congo_auth.Identity) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ws, _ := coding.Code.AllWorkspaces()
-		workspace, err := coding.Code.RunWorkspace(coding.Host, "workspace-"+i.Username, 7000+len(ws), coding.Repo)
+		workspace, err := coding.Code.RunWorkspace(coding.Host, "workspace-"+i.Name, 7000+len(ws), coding.Repo)
 		if err != nil {
 			auth.Render(w, r, "error-message", err)
 			return
 		}
 
 		go workspace.Start()
-		auth.Redirect(w, r, "/@"+i.Username)
+		auth.Redirect(w, r, "/@"+i.Name)
 	}
 }
 

@@ -1,5 +1,5 @@
 {{define "contact-selector"}}
-<ul class="bg-base-200 w-full max-w-xs menu menu-lg rounded-box" hx-boost="true">
+<ul class="bg-base-200 w-full max-w-xs menu menu-lg gap-2 rounded-box" hx-boost="true">
 
   {{with chatting.Mailbox}}
   <li>
@@ -13,6 +13,11 @@
   {{range chatting.Contacts}}
   <li>
     <a href="{{host}}/{{.ID}}" {{if eq req.URL.Path (path .ID)}}class="active" {{end}}>
+      <div class="avatar">
+        <div class="h-8 w-8 rounded-full bg-base-100">
+          <img src="https://robohash.org/{{.ID}}" alt="{{.Username}}">
+        </div>
+      </div>
       {{.Username}}
     </a>
   </li>
@@ -20,8 +25,12 @@
   <div class="p-6 flex flex-col gap-2 text-center text-lg font-semibold">
     No Contacts
   </div>
-
   {{end}}
 
+  <button class="btn btn-ghost mt-auto"
+          hx-get="{{host}}/chatting/invite" hx-target="body" hx-swap="beforeend"
+          hx-on::after-request="window.navigator.clipboard.writeText(window.location.origin+'/signup')">
+    Invite Users
+  </button>
 </ul>
 {{end}}

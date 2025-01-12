@@ -2,6 +2,7 @@ package congo_chat
 
 import (
 	"github.com/ccutch/congo/pkg/congo"
+	"github.com/ccutch/congo/pkg/congo_auth"
 	"github.com/google/uuid"
 )
 
@@ -86,6 +87,10 @@ func (mb *Mailbox) Messages(from string) ([]*Message, error) {
 		messages = append(messages, &m)
 		return scan(&m.ID, &m.ToID, &m.FromID, &m.Content, &m.CreatedAt, &m.UpdatedAt)
 	})
+}
+
+func (m *Message) Owner() (*congo_auth.Identity, error) {
+	return m.chat.auth.Lookup(m.FromID)
 }
 
 func (m *Message) Save() error {

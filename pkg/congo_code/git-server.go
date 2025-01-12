@@ -43,7 +43,7 @@ func (code *CongoCode) GitServer(auth *congo_auth.Controller, roles ...string) h
 				}
 				if !slices.Contains(roles, i.Role) {
 					role_list := strings.Join(roles, " or ")
-					return false, fmt.Errorf("%s is not a %s", i.Username, role_list)
+					return false, fmt.Errorf("%s is not a %s", i.Name, role_list)
 				}
 				return true, nil
 			}

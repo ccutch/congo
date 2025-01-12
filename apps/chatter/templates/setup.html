@@ -8,19 +8,15 @@
 <body>
   <div class="flex flex-col items-center gap-12 py-20">
     <h1 class="text-4xl font-semibold">
-      Welcome Back!
+      Welcome Aboard!
     </h1>
 
     <div class="card bg-base-300 shadow w-full max-w-sm p-8">
       <h2 class="card-title mb-4 text-xl">
-        Login to Access your Messages.
+        Create an Account to Get Started.
       </h2>
 
-      {{template "congo-auth/signin-form" "user"}}
-
-      <a hx-boost="true" href="{{host}}/signup" class="text-info underline text-center mt-4">
-        Need to create an account?
-      </a>
+      {{template "congo-auth/signup-form" "user"}}
     </div>
   </div>
 </body>

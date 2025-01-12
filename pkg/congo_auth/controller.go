@@ -125,7 +125,7 @@ func (auth Controller) handleSignin(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if auth.CongoAuth.SigninRedirect != "" {
-		http.Redirect(w, r, auth.CongoAuth.SigninRedirect, http.StatusFound)
+		auth.Redirect(w, r, auth.CongoAuth.SigninRedirect)
 		return
 	}
 
