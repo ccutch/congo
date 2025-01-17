@@ -1,9 +1,14 @@
 package congo
 
 import (
+	"bytes"
 	"cmp"
+	"errors"
+	"fmt"
+	"log"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 type Controller interface {
@@ -50,4 +55,28 @@ func (ctrl *BaseController) Redirect(w http.ResponseWriter, r *http.Request, pat
 		return
 	}
 	http.Redirect(w, r, path, http.StatusFound)
+}
+
+func (ctrl *BaseController) EventStream(w http.ResponseWriter, r *http.Request) (func(string, any), error) {
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		return nil, errors.New("event streaming not supported")
+	}
+
+	fmt.Fprintf(w, "event: ping\ndata: pong\n\n")
+	flusher.Flush()
+
+	return func(template string, data any) {
+		var buf bytes.Buffer
+		ctrl.Render(&buf, r, template, data)
+		data = strings.ReplaceAll(buf.String(), "\n", "")
+		if _, err := fmt.Fprintf(w, "event: message\ndata: %s\n\n", data); err != nil {
+			log.Println("Failed to flush: ", template, data)
+		}
+		flusher.Flush()
+	}, nil
 }

@@ -15,10 +15,10 @@
     <a href="{{host}}/{{.ID}}" {{if eq req.URL.Path (path .ID)}}class="active" {{end}}>
       <div class="avatar">
         <div class="h-8 w-8 rounded-full bg-base-100">
-          <img src="https://robohash.org/{{.ID}}" alt="{{.Username}}">
+          <img src="https://robohash.org/{{.ID}}" alt="{{.Name}}">
         </div>
       </div>
-      {{.Username}}
+      {{.Name}}
     </a>
   </li>
   {{else}}

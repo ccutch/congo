@@ -1,7 +1,6 @@
 package congo_bots
 
 import (
-	"context"
 	"fmt"
 	"log"
 
@@ -34,17 +33,17 @@ func WithModel(name string) CongoBotsOpt {
 	return func(bots *CongoBots) {
 		bots.models[name] = false
 		go func() {
-			client, err := api.ClientFromEnvironment()
-			if err != nil {
-				log.Fatal("Failed to create ollama client:", err)
-			}
+			// client, err := api.ClientFromEnvironment()
+			// if err != nil {
+			// 	log.Fatal("Failed to create ollama client:", err)
+			// }
 
-			err = client.Pull(context.Background(), &api.PullRequest{Model: name}, nil)
-			if err != nil {
-				log.Fatal("Failed to pull ollama model:", err)
-			}
+			// err = client.Pull(context.Background(), &api.PullRequest{Model: name}, nil)
+			// if err != nil {
+			// 	log.Fatal("Failed to pull ollama model:", err)
+			// }
 
-			bots.models[name] = true
+			// bots.models[name] = true
 		}()
 	}
 }

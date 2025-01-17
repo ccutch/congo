@@ -6,6 +6,10 @@ import (
 	"net/http"
 )
 
+func (auth *Controller) Serve(name string, roles ...string) http.Handler {
+	return auth.Protect(auth.Application.Serve(name), roles...)
+}
+
 func (auth *Controller) Protect(h http.Handler, roles ...string) http.Handler {
 	return auth.ProtectFunc(h.ServeHTTP, roles...)
 }

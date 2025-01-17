@@ -63,7 +63,7 @@ func WithSignupCallback(fn func(*Controller, *Identity) http.HandlerFunc) Direct
 	}
 }
 
-func WithSigninView(role, view string) DirectoryOpt {
+func WithAccessView(role, view string) DirectoryOpt {
 	return func(auth *CongoAuth) {
 		auth.SigninViews[role] = view
 	}

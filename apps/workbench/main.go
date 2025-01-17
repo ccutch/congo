@@ -22,7 +22,7 @@ var (
 
 	auth = congo_auth.InitCongoAuth(data,
 		congo_auth.WithSetupView("setup.html", "/"),
-		congo_auth.WithSigninView("developer", "login.html"))
+		congo_auth.WithAccessView("developer", "login.html"))
 
 	app = congo.NewApplication(
 		congo.WithDatabase(congo.SetupDatabase(data, "workbench.db", migrations)),

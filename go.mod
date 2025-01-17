@@ -8,15 +8,16 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.18.1
 	github.com/google/uuid v1.6.0
 	github.com/mattn/go-sqlite3 v1.14.24
-	github.com/ollama/ollama v0.5.5
 	github.com/pkg/errors v0.9.1
 	github.com/sosedoff/gitkit v0.4.0
 	golang.org/x/crypto v0.31.0
 	golang.org/x/oauth2 v0.23.0
+	golang.org/x/text v0.21.0
 )
 
 require (
 	github.com/gofrs/uuid v4.0.0+incompatible // indirect
+	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect

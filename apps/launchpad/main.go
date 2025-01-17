@@ -24,8 +24,8 @@ var (
 		congo_auth.WithCookieName("launchpad"),
 		congo_auth.WithSigninDest("/hosts"),
 		congo_auth.WithSetupView("setup.html", "/apps"),
-		congo_auth.WithSigninView("user", "login-user.html"),
-		congo_auth.WithSigninView("admin", "login-admin.html"))
+		congo_auth.WithAccessView("user", "login-user.html"),
+		congo_auth.WithAccessView("admin", "login-admin.html"))
 
 	app = congo.NewApplication(
 		congo.WithDatabase(congo.SetupDatabase(data, "launchpad.db", migrations)),

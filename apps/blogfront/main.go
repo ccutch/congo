@@ -22,8 +22,8 @@ var (
 
 	auth = congo_auth.InitCongoAuth(path,
 		congo_auth.WithSetupView("admin-setup.html", "/admin"),
-		congo_auth.WithSigninView("admin", "admin-login.html"),
-		congo_auth.WithSigninView("writer", "writer-login.html"))
+		congo_auth.WithAccessView("admin", "admin-login.html"),
+		congo_auth.WithAccessView("writer", "writer-login.html"))
 
 	app = congo.NewApplication(
 		congo.WithDatabase(congo.SetupDatabase(path, "blog.db", migrations)),
