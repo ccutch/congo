@@ -53,7 +53,7 @@ func (code *CongoCode) RunWorkspace(host *congo_host.CongoHost, name string, por
 }
 
 func (code *CongoCode) GetWorkspace(id string) (*Workspace, error) {
-	w := Workspace{Model: code.db.Model()}
+	w := Workspace{code: code, Model: code.db.Model(), Service: &congo_host.Service{}}
 	return &w, code.db.Query(`
 	
 		SELECT id, name, port, image, tag, ready, repo_id, created_at, updated_at
@@ -72,7 +72,7 @@ func (code *CongoCode) AllWorkspaces() ([]*Workspace, error) {
 		ORDER BY created_at DESC
 
 	`).All(func(scan congo.Scanner) error {
-		w := Workspace{Model: code.db.Model()}
+		w := Workspace{code: code, Model: code.db.Model()}
 		workspaces = append(workspaces, &w)
 		return scan(&w.ID, &w.Name, &w.Port, &w.Image, &w.Tag, &w.Ready, &w.RepoID, &w.CreatedAt, &w.UpdatedAt)
 	})

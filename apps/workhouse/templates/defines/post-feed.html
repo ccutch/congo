@@ -1,0 +1,18 @@
+{{define "post-feed"}}
+<div class="flex flex-col gap-2 w-full">
+
+  {{range content.Posts}}
+  <div class="card shadow bg-base-100">
+    <div class="card-body gap-0">
+      <h2 class="card-title">{{.Title}}</h2>
+      <span class="mb-2 text-xs font-semibold opacity-80">
+        {{.CreatedAt.Format "Jan 2, 3:04 pm"}}
+      </span>
+
+      <p>{{.Content}}</p>
+    </div>
+  </div>
+  {{end}}
+
+</div>
+{{end}}

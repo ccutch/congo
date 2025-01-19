@@ -1,0 +1,16 @@
+{{define "settings-form"}}
+
+<div class="card shadow bg-base-100">
+  <div class="card-body gap-4">
+    <h2 class="card-title">
+      Workhouse Settings
+    </h2>
+
+    <input name="name" type="text" class="input input-bordered" value='{{settings.Name}}'
+           hx-post="{{host}}/_settings/name" hx-trigger="input changed delay:500ms, keyup[key=='Enter']">
+
+    <textarea name="description" class="textarea textarea-bordered" rows="7" placeholder="Write a welcome message for new users to your site."
+              hx-post="{{host}}/_settings/description" hx-trigger="input changed delay:500ms, keyup[key=='Enter']">{{settings.Description}}</textarea>
+  </div>
+</div>
+{{end}}

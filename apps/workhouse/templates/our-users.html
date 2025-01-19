@@ -8,9 +8,35 @@
 <body class="bg-base-300">
   {{template "navbar"}}
 
-  <div class="full flex-col justify-center items-center gap-4 p-8 w-full max-w-screen-xl mx-auto">
-    asdfas
+  <div class="flex justify-between gap-12 py-6 px-8 w-full max-w-screen-xl mx-auto">
+    {{template "users-menu"}}
 
+    <div class="flex flex-col gap-2 w-full">
+      {{if not (eq (req.PathValue "user") "")}}
+
+      {{if auth.SelectedUser}}
+
+      {{template "user-info" auth.SelectedUser}}
+      {{template "user-hosts" auth.SelectedUser}}
+
+      {{else}}
+      <div class="flex flex-col gap-4 pt-12 items-center">
+        <h2 class="text-3xl font-bold opacity-60">
+          User Not Found
+        </h2>
+        <a hx-boost="true" href="{{host}}/users" class="px-8 w-max btn btn-sm btn-ghost">
+          Back to Posts
+        </a>
+      </div>
+      {{end}}
+
+      {{else}}
+
+      {{template "post-input"}}
+      {{template "post-feed"}}
+
+      {{end}}
+    </div>
   </div>
 </body>
 

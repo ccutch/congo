@@ -13,6 +13,10 @@ type AuthController struct {
 	*congo_auth.AuthController
 }
 
+func NewAuthController(auth *congo_auth.CongoAuth) *AuthController {
+	return &AuthController{&congo_auth.AuthController{CongoAuth: auth}}
+}
+
 func (auth *AuthController) Setup(app *congo.Application) {
 	auth.BaseController.Setup(app)
 	app.HandleFunc("POST /_auth/signup", auth.handleSignup)
@@ -39,11 +43,11 @@ func (auth *AuthController) CurrentUser() *congo_auth.Identity {
 }
 
 func (auth *AuthController) Developers() ([]*congo_auth.Identity, error) {
-	return auth.CongoAuth.SearchByRole("developers", auth.URL.Query().Get("query"))
+	return auth.CongoAuth.SearchByRole("developer", auth.URL.Query().Get("query"))
 }
 
 func (auth *AuthController) Users() ([]*congo_auth.Identity, error) {
-	return auth.CongoAuth.SearchByRole("users", auth.URL.Query().Get("query"))
+	return auth.CongoAuth.SearchByRole("user", auth.URL.Query().Get("query"))
 }
 
 func (auth AuthController) handleSignup(w http.ResponseWriter, r *http.Request) {
@@ -123,7 +127,7 @@ func (auth AuthController) handleSignin(w http.ResponseWriter, r *http.Request) 
 	}
 
 	if i.Role == "developer" {
-		auth.Redirect(w, r, "/posts")
+		auth.Redirect(w, r, "/code")
 		return
 	}
 

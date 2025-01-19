@@ -1,0 +1,28 @@
+{{define "dev-menu"}}
+<div class="flex flex-col w-full max-w-xl">
+  <input name="query" type="search" class="w-full input input-bordered" placeholder="Search Our Developers"
+         hx-get="" hx-select="#dev-menu" hx-target="#dev-menu" hx-trigger="input changed delay:500ms, search" hx-swap="innerHTML">
+
+  <ul id="dev-menu" class="menu menu-lg w-full">
+
+    {{range auth.Developers}}
+    <li>
+      <a href="{{host}}/dev/{{.ID}}">
+        <div class="flex gap-4 items-center">
+          <div class="avatar">
+            <div class="h-12 w-12 rounded-full bg-base-100 p-0.5">
+              <img src="https://robohash.org/{{.ID}}">
+            </div>
+          </div>
+          <div class="flex flex-col gap-0">
+            <span class="text-lg font-semibold leading-snug">{{.Name}}</span>
+            <span class="text-sm font-bold opacity-60 leading-snug">{{.Email}}</span>
+          </div>
+        </div>
+      </a>
+    </li>
+    {{end}}
+
+  </ul>
+</div>
+{{end}}

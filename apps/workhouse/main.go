@@ -28,9 +28,7 @@ var (
 
 	app = congo.NewApplication(
 		congo.WithDatabase(congo.SetupDatabase(data, "workhouse.db", migrations)),
-		congo.WithController("auth", &controllers.AuthController{
-			AuthController: &congo_auth.AuthController{CongoAuth: auth},
-		}),
+		congo.WithController("auth", controllers.NewAuthController(auth)),
 		congo.WithController("settings", new(controllers.SettingsController)),
 		congo.WithController("content", new(controllers.ContentController)),
 		congo.WithHtmlTheme(cmp.Or(os.Getenv("DAISY_THEME"), "dark")),
@@ -39,6 +37,7 @@ var (
 )
 
 func main() {
+	app.Handle("/", app.Serve("not-found.html"))
 	app.Handle("/signin", app.Serve("signin.html"))
 
 	auth := app.Use("auth").(*controllers.AuthController)
@@ -47,8 +46,9 @@ func main() {
 	app.Handle("/code", auth.Serve("our-code.html", "developer"))
 	app.Handle("/code/{path...}", auth.Serve("our-code.html", "developer"))
 	app.Handle("/users", auth.Serve("our-users.html", "developer"))
-	app.Handle("/user/{user}", auth.Serve("user-hosts.html", "developer"))
+	app.Handle("/user/{user}", auth.Serve("our-users.html", "developer"))
 	app.Handle("/settings", auth.Serve("settings.html", "developer"))
+	app.Handle("/dev/{user}", auth.Serve("settings.html", "developer"))
 
 	app.StartFromEnv()
 }

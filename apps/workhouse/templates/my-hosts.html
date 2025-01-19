@@ -8,8 +8,14 @@
 <body class="bg-base-300">
   {{template "navbar"}}
 
-  <div class="full flex-col justify-center items-center gap-4 p-8 w-full max-w-screen-xl mx-auto">
-    asdfas
+  <div class="flex justify-between gap-12 py-6 px-8 w-full max-w-screen-xl mx-auto">
+    <div class="flex flex-col gap-4 w-full">
+      <h2 class="text-2xl font-bold opacity-80">
+        Get the Latest Updates
+      </h2>
+
+      {{template "post-feed"}}
+    </div>
 
   </div>
 </body>

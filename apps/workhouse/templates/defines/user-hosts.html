@@ -1,0 +1,9 @@
+{{define "user-hosts"}}
+<ul class="menu menu-lg">
+  {{range content.Hosts ""}}
+  <li>
+    <a>{{.ID}}</a>
+  </li>
+  {{end}}
+</ul>
+{{end}}

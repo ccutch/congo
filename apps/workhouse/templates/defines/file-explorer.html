@@ -1,10 +1,10 @@
 {{define "file-explorer"}}
-<div class="card bg-base-100 shadow">
+<div class="card bg-base-100 shadow max-w-screen-lg w-full mx-auto">
   <ul class="menu gap-1 p-2" hx-boost="true">
 
-    {{if not (eq req.URL.Path "/")}}
+    {{if not (eq (req.PathValue "path") "")}}
     <li>
-      <a href='/'>
+      <a href='{{host}}/'>
         {{template "dir-icon" .}}
         ..
       </a>
@@ -19,7 +19,7 @@
 
     {{if .IsDir}}
     <li>
-      <a href='/{{.Path}}'>
+      <a href='{{host}}/{{.Path}}'>
         {{template "dir-icon" .}}
         {{.Name}}
       </a>
@@ -27,7 +27,7 @@
     {{else}}
 
     <li>
-      <a href='/{{.Path}}' {{if eq .Path (req.URL.Path)}}class="active" {{end}}>
+      <a href='{{host}}/{{.Path}}' {{if eq .Path (req.URL.Path)}}class="active" {{end}}>
         {{template "file-icon" .}}
         {{.Name}}
       </a>

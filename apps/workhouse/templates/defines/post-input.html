@@ -1,0 +1,21 @@
+{{define "post-input"}}
+<form class="card bg-base-100 p-4 shadow mb-0 flex flex-col gap-2 w-full" hx-post="{{host}}/_content/post" hx-target="next .error">
+  <div class="flex gap-2 items-center">
+    <div class="avatar">
+      <div class="p-0.5 w-7 rounded-full bg-base-100">
+        <img src="https://robohash.org/{{auth.CurrentUser.ID}}">
+      </div>
+    </div>
+
+    <input required name="title" type="text" class="grow input input-bordered input-sm" placeholder="Post Title">
+
+    <button class="px-8 btn btn-sm btn-primary opacity-60 hover:opacity-100">
+      Publish
+    </button>
+  </div>
+
+  <textarea required name="content" class="textarea textarea-bordered textarea-sm" placeholder="Post Content"></textarea>
+</form>
+
+<div class="error"></div>
+{{end}}

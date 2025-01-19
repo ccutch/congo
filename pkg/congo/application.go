@@ -212,6 +212,15 @@ func (app *Application) Render(w io.Writer, r *http.Request, page string, data a
 	}
 
 	template := app.templates.Lookup(page)
+	if template == nil {
+		if rw, ok := w.(http.ResponseWriter); ok {
+			http.Error(rw, "template not found", http.StatusInternalServerError)
+		} else {
+			fmt.Fprintf(w, "template not found")
+		}
+		return
+	}
+
 	if err := template.Funcs(funcs).Execute(w, data); err != nil {
 		log.Print("Error rendering: ", err)
 		app.templates.ExecuteTemplate(w, "error-message", err)

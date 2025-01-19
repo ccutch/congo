@@ -1,0 +1,7 @@
+CREATE TABLE hosts (
+  id         TEXT PRIMARY KEY,
+  owner_id   TEXT NOT NULL,
+  payment_id TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

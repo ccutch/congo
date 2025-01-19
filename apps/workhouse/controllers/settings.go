@@ -56,8 +56,7 @@ func (settings *SettingsController) Name() string {
 }
 
 func (settings *SettingsController) Description() string {
-	def := "Get started by creating a user account."
-	return cmp.Or(settings.get("description"), def)
+	return settings.get("description")
 }
 
 func (settings *SettingsController) Theme() string {
@@ -78,7 +77,7 @@ func (settings *SettingsController) updateDescription(w http.ResponseWriter, r *
 
 func (settings SettingsController) updateTheme(w http.ResponseWriter, r *http.Request) {
 	auth := settings.Use("auth").(*AuthController)
-	i, _ := auth.Authenticate(settings.Request, "developer", "user")
-	settings.set(i.ID+"theme", r.FormValue("theme"))
+	i, _ := auth.Authenticate(r, "developer", "user")
+	settings.set(i.ID+":theme", r.FormValue("theme"))
 	w.WriteHeader(http.StatusNoContent)
 }

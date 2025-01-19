@@ -1,0 +1,41 @@
+{{define "users-menu"}}
+<div class="flex flex-col w-full max-w-xl">
+  <input name="query" type="search" class="w-full input input-bordered" placeholder="Search Our Users"
+         hx-get="" hx-select="#users-menu" hx-target="#users-menu" hx-trigger="input changed delay:500ms, search" hx-swap="innerHTML">
+
+  <ul id="users-menu" class="menu menu-lg w-full">
+
+    {{range auth.Users}}
+    <li>
+      <a href="{{host}}/user/{{.ID}}">
+        <div class="flex gap-2">
+          <div class="avatar">
+            <div class="w-32 rounded-full">
+              <img src="https://robohash.org/{{.ID}}">
+            </div>
+          </div>
+          <div class="flex flex-col">
+            <span class="text-lg font-semibold leading-snug">{{.Name}}</span>
+            <span class="text-sm font-bold opacity-60 leading-snug">{{.Email}}</span>
+          </div>
+        </div>
+      </a>
+    </li>
+    {{else}}
+
+    <div class="flex flex-col py-12 gap-4 items-center text-center">
+      <h2 class="text-3xl font-bold opacity-80">
+        No Users
+      </h2>
+      <p class="text-lg font-semibold opacity-80 max-w-sm">
+        Setup connections to Hosting and Payment providers
+        to start accepting customers.
+      </p>
+    </div>
+
+
+    {{end}}
+
+  </ul>
+</div>
+{{end}}
