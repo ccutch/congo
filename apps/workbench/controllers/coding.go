@@ -25,7 +25,7 @@ func (coding *CodingController) Setup(app *congo.Application) {
 	coding.code = congo_code.InitCongoCode(app.DB.Root)
 	coding.Repo, _ = coding.code.NewRepo("code", congo_code.WithName("Code"))
 
-	auth, ok := app.Use("auth").(*congo_auth.Controller)
+	auth, ok := app.Use("auth").(*congo_auth.AuthController)
 	if !ok {
 		log.Fatal("Missing auth controller")
 	}

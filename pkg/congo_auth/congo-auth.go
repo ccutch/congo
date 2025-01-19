@@ -13,7 +13,7 @@ type CongoAuth struct {
 	CookieName     string
 	SetupView      string
 	SetupRedirect  string
-	SignupCallback func(*Controller, *Identity) http.HandlerFunc
+	SignupCallback func(*AuthController, *Identity) http.HandlerFunc
 	SigninViews    map[string]string
 	SigninRedirect string
 	LogoutRedirect string
@@ -57,7 +57,7 @@ func WithSetupView(view, dest string) DirectoryOpt {
 	}
 }
 
-func WithSignupCallback(fn func(*Controller, *Identity) http.HandlerFunc) DirectoryOpt {
+func WithSignupCallback(fn func(*AuthController, *Identity) http.HandlerFunc) DirectoryOpt {
 	return func(auth *CongoAuth) {
 		auth.SignupCallback = fn
 	}

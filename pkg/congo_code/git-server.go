@@ -13,7 +13,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func (code *CongoCode) GitServer(auth *congo_auth.Controller, roles ...string) http.Handler {
+func (code *CongoCode) GitServer(auth *congo_auth.AuthController, roles ...string) http.Handler {
 	git := gitkit.New(gitkit.Config{
 		Dir:        filepath.Join(code.db.Root, "repos"),
 		AutoCreate: true,
@@ -57,6 +57,6 @@ func (code *CongoCode) GitServer(auth *congo_auth.Controller, roles ...string) h
 	return git
 }
 
-func (repo *Repository) Serve(auth *congo_auth.Controller, roles ...string) http.Handler {
+func (repo *Repository) Serve(auth *congo_auth.AuthController, roles ...string) http.Handler {
 	return repo.code.GitServer(auth, roles...)
 }

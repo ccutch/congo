@@ -37,11 +37,11 @@ var (
 )
 
 func main() {
-	auth := app.Use("auth").(*congo_auth.Controller)
+	auth := app.Use("auth").(*congo_auth.AuthController)
 
-	app.Handle("/{$}", auth.Track(app.Serve("homepage.html"), "user"))
-	app.Handle("/pricing", auth.Track(app.Serve("pricing.html"), "user"))
-	app.Handle("/register", auth.Track(app.Serve("register.html"), "user"))
+	app.Handle("/{$}", auth.Check(app.Serve("homepage.html"), "user"))
+	app.Handle("/pricing", auth.Check(app.Serve("pricing.html"), "user"))
+	app.Handle("/register", auth.Check(app.Serve("register.html"), "user"))
 
 	app.Handle("/hosts", auth.Protect(app.Serve("hosts-dashboard.html")))
 	app.Handle("/hosts/{host}", auth.Protect(app.Serve("host-details.html")))

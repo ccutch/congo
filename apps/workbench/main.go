@@ -35,12 +35,12 @@ var (
 )
 
 func main() {
-	auth := app.Use("auth").(*congo_auth.Controller)
+	auth := app.Use("auth").(*congo_auth.AuthController)
 	coding := app.Use("coding").(*controllers.CodingController)
 
-	app.Handle("/", auth.Protect(app.Serve("workbench.html")))
+	app.Handle("/", auth.Serve("workbench.html", "developer"))
 	app.Handle("/code/", coding.Repo.Serve(auth, "developer"))
-	app.Handle("/coder/", auth.Protect(coding.Workspace.Proxy("/coder/")))
+	app.Handle("/coder/", auth.Protect(coding.Workspace.Proxy("/coder/"), "developer"))
 
 	app.StartFromEnv()
 }

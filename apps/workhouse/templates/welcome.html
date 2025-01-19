@@ -1,0 +1,66 @@
+<html data-theme='{{theme}}'>
+
+<head>
+  <title>Welcome to {{settings.Name}}</title>
+  {{template "includes"}}
+</head>
+
+<body class="bg-base-300">
+  <div class="relative min-h-screen">
+    <div class="absolute top-0 left-0 right-0">
+      {{template "navbar"}}
+    </div>
+
+    <div class="h-full flex justify-center items-center gap-4 p-12 w-full max-w-screen-lg mx-auto">
+      <div class="flex flex-col gap-2 w-full">
+        <h2 class="text-5xl font-bold mb-4">
+          Welcome to {{settings.Name}}
+        </h2>
+        <p class="text-md font-semibold opacity-75">
+          {{settings.Description}}
+        </p>
+      </div>
+
+      <div class="card bg-base-100 shadow-lg w-full max-w-sm">
+        <div class="card-body">
+          <h2 class="text-xl font-semibold">
+            Create Your Account
+          </h2>
+
+          <div class="space-y-3">
+            <div class="error"></div>
+
+            <form class="flex flex-col gap-y-4 mb-0"
+                  hx-post="{{host}}/_auth/signup"
+                  hx-target="previous .error">
+
+              <input class="input input-bordered"
+                     required name="username" type="text"
+                     placeholder="Your Username">
+
+              <input class="input input-bordered"
+                     required name="email" type="email"
+                     placeholder="Your Email Address">
+
+              <input class="input input-bordered"
+                     required name="password" type="password"
+                     placeholder="A Unique Password">
+
+              <button class="btn btn-primary">
+                Signup
+              </button>
+
+            </form>
+          </div>
+
+          <a hx-boost="true" href="{{host}}/signin" class="btn btn-ghost btn-sm mt-4">
+            Already have an Account?
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</body>
+
+</html>

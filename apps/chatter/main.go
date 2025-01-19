@@ -41,7 +41,7 @@ var (
 )
 
 func main() {
-	auth := app.Use("auth").(*congo_auth.Controller)
+	auth := app.Use("auth").(*congo_auth.AuthController)
 
 	app.Handle("/{$}", app.Serve("homepage.html"))
 	app.Handle("/signin", app.Serve("signin.html"))
@@ -51,7 +51,7 @@ func main() {
 	app.StartFromEnv()
 }
 
-func signup(auth *congo_auth.Controller, user *congo_auth.Identity) http.HandlerFunc {
+func signup(auth *congo_auth.AuthController, user *congo_auth.Identity) http.HandlerFunc {
 	chatting := auth.Use("chatting").(*controllers.ChattingController)
 
 	return func(w http.ResponseWriter, r *http.Request) {

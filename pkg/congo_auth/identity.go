@@ -44,7 +44,7 @@ func (auth *CongoAuth) Lookup(ident string) (*Identity, error) {
 	`, ident).Scan(&i.ID, &i.Role, &i.Email, &i.Name, &i.PassHash, &i.CreatedAt, &i.UpdatedAt)
 }
 
-func (auth *CongoAuth) count() (count int) {
+func (auth *CongoAuth) Count() (count int) {
 	auth.DB.Query(` SELECT count(*) FROM identities `).Scan(&count)
 	return count
 }

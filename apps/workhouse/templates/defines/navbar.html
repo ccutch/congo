@@ -1,0 +1,18 @@
+{{define "navbar"}}
+<div class="flex items-center justify-between px-8 py-4" hx-boost="true">
+  <div class="flex gap-2 items-center">
+    <a href="{{host}}" class="text-2xl font-medium">
+      {{settings.Name}}
+    </a>
+  </div>
+  <div class="flex gap-2 items-center">
+    {{with auth.CurrentUser}}
+    {{template "logout-button"}}
+    {{else}}
+    <a href="{{host}}/signin" class="btn btn-sm btn-primary">
+      Signin
+    </a>
+    {{end}}
+  </div>
+</div>
+{{end}}

@@ -23,6 +23,9 @@ require (
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.7 // indirect
+	github.com/mitranim/gg v0.1.19 // indirect
+	github.com/mitranim/gow v0.0.0-20231026105220-af11a6e1e9eb // indirect
+	github.com/rjeczalik/notify v0.9.3 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	golang.org/x/sys v0.28.0 // indirect
 	golang.org/x/time v0.6.0 // indirect

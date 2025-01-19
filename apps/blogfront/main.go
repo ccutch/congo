@@ -34,7 +34,7 @@ var (
 )
 
 func main() {
-	auth := app.Use("auth").(*congo_auth.Controller)
+	auth := app.Use("auth").(*congo_auth.AuthController)
 
 	app.Handle("GET /{$}", app.Serve("homepage.html"))
 	app.Handle("GET /admin", auth.Protect(app.Serve("admin.html"), "admin"))

@@ -1,11 +1,10 @@
 package controllers
 
 import (
+	"cmp"
 	"net/http"
-	"os"
 
 	"github.com/ccutch/congo/pkg/congo"
-	"github.com/ccutch/congo/pkg/congo_auth"
 )
 
 type SettingsController struct {
@@ -13,33 +12,17 @@ type SettingsController struct {
 }
 
 func (settings *SettingsController) Setup(app *congo.Application) {
+	auth := app.Use("auth").(*AuthController)
+
 	settings.BaseController.Setup(app)
-	auth := app.Use("auth").(*congo_auth.Controller)
-
-	app.HandleFunc("POST /_settings/theme", auth.ProtectFunc(settings.updateTheme))
-
-	if settings.Get("token") == "" {
-		settings.set("token", os.Getenv("DIGITAL_OCEAN_API_KEY"))
-	}
+	app.Handle("POST /_settings/name", auth.ProtectFunc(settings.updateName, "developer"))
+	app.Handle("POST /_settings/description", auth.ProtectFunc(settings.updateDescription, "developer"))
+	app.Handle("POST /_settings/theme", auth.ProtectFunc(settings.updateTheme, "developer"))
 }
 
 func (settings SettingsController) Handle(req *http.Request) congo.Controller {
 	settings.Request = req
 	return &settings
-}
-
-func (settings *SettingsController) Has(id string) bool {
-	return settings.Get(id) != ""
-}
-
-func (settings *SettingsController) Get(id string) (val string) {
-	settings.DB.Query(`
-	
-		SELECT value
-		FROM settings WHERE id = ?
-	
-	`, id).Scan(&val)
-	return val
 }
 
 func (settings *SettingsController) set(id, val string) error {
@@ -54,7 +37,48 @@ func (settings *SettingsController) set(id, val string) error {
 	`, id, val).Exec()
 }
 
+func (settings *SettingsController) get(id string) (val string) {
+	settings.DB.Query(`
+	
+		SELECT value
+		FROM settings WHERE id = ?
+	
+	`, id).Scan(&val)
+	return val
+}
+
+func (settings *SettingsController) Has(id string) bool {
+	return settings.get(id) != ""
+}
+
+func (settings *SettingsController) Name() string {
+	return cmp.Or(settings.get("name"), "Workhouse")
+}
+
+func (settings *SettingsController) Description() string {
+	def := "Get started by creating a user account."
+	return cmp.Or(settings.get("description"), def)
+}
+
+func (settings *SettingsController) Theme() string {
+	auth := settings.Use("auth").(*AuthController)
+	i, _ := auth.Authenticate(settings.Request, "developer", "user")
+	return settings.get(i.ID + ":theme")
+}
+
+func (settings *SettingsController) updateName(w http.ResponseWriter, r *http.Request) {
+	settings.set("name", r.FormValue("name"))
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (settings *SettingsController) updateDescription(w http.ResponseWriter, r *http.Request) {
+	settings.set("description", r.FormValue("description"))
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (settings SettingsController) updateTheme(w http.ResponseWriter, r *http.Request) {
-	settings.set("theme", r.FormValue("theme"))
+	auth := settings.Use("auth").(*AuthController)
+	i, _ := auth.Authenticate(settings.Request, "developer", "user")
+	settings.set(i.ID+"theme", r.FormValue("theme"))
 	w.WriteHeader(http.StatusNoContent)
 }

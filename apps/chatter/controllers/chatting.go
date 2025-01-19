@@ -13,12 +13,12 @@ import (
 type ChattingController struct {
 	congo.BaseController
 	Chat *congo_chat.CongoChat
-	auth *congo_auth.Controller
+	auth *congo_auth.AuthController
 }
 
 func (chatting *ChattingController) Setup(app *congo.Application) {
 	chatting.BaseController.Setup(app)
-	chatting.auth = app.Use("auth").(*congo_auth.Controller)
+	chatting.auth = app.Use("auth").(*congo_auth.AuthController)
 	chatting.Chat = congo_chat.InitCongoChat(app.DB.Root, chatting.auth.CongoAuth)
 	app.Handle("GET /chatting/{user}", chatting.auth.ProtectFunc(chatting.handleMessages))
 	app.Handle("POST /chatting/messages", chatting.auth.ProtectFunc(chatting.sendMessage))
@@ -31,7 +31,7 @@ func (chatting ChattingController) Handle(req *http.Request) congo.Controller {
 }
 
 func (chatting *ChattingController) Mailbox() (*congo_chat.Mailbox, error) {
-	user, _ := chatting.auth.Authenticate("user", chatting.Request)
+	user, _ := chatting.auth.Authenticate(chatting.Request, "user")
 	return chatting.Chat.GetMailboxForOwner(user.ID)
 }
 
@@ -41,7 +41,7 @@ func (chatting *ChattingController) Contacts() (ids []*congo_auth.Identity, err 
 		return nil, err
 	}
 
-	i, _ := chatting.auth.Authenticate("user", chatting.Request)
+	i, _ := chatting.auth.Authenticate(chatting.Request, "user")
 	for _, user := range users["user"] {
 		if user.ID == i.ID {
 			continue
@@ -60,7 +60,7 @@ func (chatting *ChattingController) Messages() ([]*congo_chat.Message, error) {
 
 	senderID := chatting.PathValue("user")
 	if senderID == "me" {
-		user, _ := chatting.auth.Authenticate("user", chatting.Request)
+		user, _ := chatting.auth.Authenticate(chatting.Request, "user")
 		senderID = user.ID
 	}
 
@@ -76,7 +76,7 @@ func (chatting ChattingController) handleMessages(w http.ResponseWriter, r *http
 
 	userID := r.PathValue("user")
 	if userID == "me" {
-		user, _ := chatting.auth.Authenticate("user", r)
+		user, _ := chatting.auth.Authenticate(r, "user")
 		userID = user.ID
 	}
 
@@ -100,7 +100,7 @@ func (chatting ChattingController) sendMessage(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	user, _ := chatting.auth.Authenticate("user", r)
+	user, _ := chatting.auth.Authenticate(r, "user")
 	if user == nil {
 		chatting.Render(w, r, "error-message", errors.New("unauthorized"))
 		return

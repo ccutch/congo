@@ -10,22 +10,32 @@ import (
 )
 
 type AuthController struct {
-	*congo_auth.Controller
+	*congo_auth.AuthController
 }
 
 func (auth *AuthController) Setup(app *congo.Application) {
-	auth.Controller.CongoAuth = congo_auth.InitCongoAuth(app.DB.Root,
-		congo_auth.WithCookieName("workhouse"),
-		congo_auth.WithSetupView("setup.html", "/"),
-		congo_auth.WithAccessView("user", "welcome.html"),
-		congo_auth.WithAccessView("developer", "signin.html"))
-
-	auth.Controller.Setup(app)
-	app.HandleFunc("POST /_auth/signin", auth.customSignin)
+	auth.BaseController.Setup(app)
+	app.HandleFunc("POST /_auth/signup", auth.handleSignup)
+	app.HandleFunc("POST /_auth/signin", auth.handleSignin)
+	app.HandleFunc("POST /_auth/signout", auth.handleSignout)
 }
 
 func (auth AuthController) Handle(req *http.Request) congo.Controller {
+	auth.Request = req
 	return &auth
+}
+
+func (auth *AuthController) SelectedUser() *congo_auth.Identity {
+	i, err := auth.CongoAuth.Lookup(auth.PathValue("user"))
+	if err != nil {
+		return nil
+	}
+	return i
+}
+
+func (auth *AuthController) CurrentUser() *congo_auth.Identity {
+	i, _ := auth.CongoAuth.Authenticate(auth.Request, "user", "developer")
+	return i
 }
 
 func (auth *AuthController) Developers() ([]*congo_auth.Identity, error) {
@@ -36,7 +46,52 @@ func (auth *AuthController) Users() ([]*congo_auth.Identity, error) {
 	return auth.CongoAuth.SearchByRole("users", auth.URL.Query().Get("query"))
 }
 
-func (auth AuthController) customSignin(w http.ResponseWriter, r *http.Request) {
+func (auth AuthController) handleSignup(w http.ResponseWriter, r *http.Request) {
+	email, username, password := r.FormValue("email"), r.FormValue("username"), r.FormValue("password")
+	if email == "" || username == "" || password == "" {
+		auth.Render(w, r, "error-message", fmt.Errorf("missing required fields"))
+		return
+	}
+
+	role := "user"
+	if auth.CongoAuth.Count() == 0 {
+		role = "developer"
+	}
+
+	i, err := auth.CongoAuth.Create(role, email, username, password)
+	if err != nil {
+		auth.Render(w, r, "error-message", fmt.Errorf("failed to create identity: %s", err))
+		return
+	}
+
+	s, err := i.NewSession()
+	if err != nil {
+		auth.Render(w, r, "error-message", fmt.Errorf("failed to start session: %s", err))
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     auth.CongoAuth.CookieName + "-" + r.PathValue("role"),
+		Path:     "/",
+		Value:    s.Token(),
+		Expires:  time.Now().Add(24 * time.Hour),
+		HttpOnly: true,
+	})
+
+	if i.Role == "user" {
+		auth.Redirect(w, r, "/")
+		return
+	}
+
+	if i.Role == "developer" {
+		auth.Redirect(w, r, "/code")
+		return
+	}
+
+	auth.Refresh(w, r)
+}
+
+func (auth AuthController) handleSignin(w http.ResponseWriter, r *http.Request) {
 	i, err := auth.CongoAuth.Lookup(r.FormValue("username"))
 	if err != nil {
 		auth.Render(w, r, "error-message", fmt.Errorf("failed to find identity"))
@@ -73,4 +128,25 @@ func (auth AuthController) customSignin(w http.ResponseWriter, r *http.Request) 
 	}
 
 	auth.Refresh(w, r)
+}
+
+func (auth AuthController) handleSignout(w http.ResponseWriter, r *http.Request) {
+	for role := range auth.CongoAuth.SigninViews {
+		if _, s := auth.CongoAuth.Authenticate(r, role); s != nil {
+			if err := s.Delete(); err != nil {
+				auth.Render(w, r, "error-message", err)
+				return
+			}
+
+			http.SetCookie(w, &http.Cookie{
+				Name:     auth.CongoAuth.CookieName + "-" + role,
+				Path:     "/",
+				Value:    "",
+				Expires:  time.Now().Add(-1 * time.Hour),
+				HttpOnly: true,
+			})
+		}
+	}
+
+	auth.Redirect(w, r, auth.CongoAuth.LogoutRedirect)
 }

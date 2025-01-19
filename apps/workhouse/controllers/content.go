@@ -2,9 +2,9 @@ package controllers
 
 import (
 	"cmp"
-	"fmt"
 	"log"
 	"net/http"
+	"path/filepath"
 
 	"github.com/ccutch/congo/pkg/congo"
 	"github.com/ccutch/congo/pkg/congo_auth"
@@ -14,64 +14,68 @@ import (
 
 type ContentController struct {
 	congo.BaseController
-	Host *congo_host.CongoHost
+
 	Code *congo_code.CongoCode
+	Host *congo_host.CongoHost
 	Repo *congo_code.Repository
 }
 
-func (content *ContentController) Setup(app *congo.Application) {
-	auth := app.Use("auth").(*congo_auth.Controller)
+func (c *ContentController) Setup(app *congo.Application) {
+	c.BaseController.Setup(app)
 
-	content.Host = congo_host.InitCongoHost(app.DB.Root, nil)
-	content.Code = congo_code.InitCongoCode(app.DB.Root)
-	content.Repo, _ = content.Code.NewRepo("code", congo_code.WithName("Code"))
+	c.Code = congo_code.InitCongoCode(app.DB.Root)
+	c.Host = congo_host.InitCongoHost(app.DB.Root, nil)
+	c.Repo, _ = c.Code.NewRepo("source", congo_code.WithName("Code"))
 
-	content.BaseController.Setup(app)
-	app.Handle("/code/", content.Repo.Serve(auth, "developer"))
-	app.Handle("/coder/", auth.ProtectFunc(content.handleWorkspace, "developer"))
-	app.Handle("/_download", auth.ProtectFunc(content.handleDownload, "developer"))
+	auth := app.Use("auth").(*AuthController)
+	app.Handle("/source/", c.Repo.Serve(auth.AuthController, "developer"))
+	app.Handle("/coder/", auth.ProtectFunc(c.handleWorkspace, "developer"))
+	app.Handle("/download", auth.ProtectFunc(c.downloadSource, "developer"))
 }
 
-func (content ContentController) Handle(req *http.Request) congo.Controller {
-	content.Request = req
-	return &content
+func (c ContentController) Handle(req *http.Request) congo.Controller {
+	c.Request = req
+	return &c
 }
 
-func (content *ContentController) Files() []*congo_code.Blob {
-	branch := cmp.Or(content.URL.Query().Get("branch"), "master")
-	blobs, _ := content.Repo.Blobs(branch, content.URL.Path)
+func (c *ContentController) Files() []*congo_code.Blob {
+	branch := cmp.Or(c.URL.Query().Get("branch"), "master")
+	blobs, _ := c.Repo.Blobs(branch, c.URL.Path)
 	return blobs
 }
 
-func (content *ContentController) CurrentFile() *congo_code.Blob {
-	branch := cmp.Or(content.URL.Query().Get("branch"), "master")
-	blob, err := content.Repo.Open(branch, content.URL.Path[1:])
-	if err != nil {
-		return nil
-	}
-	return blob
+func (c *ContentController) CurrentBranch() string {
+	return cmp.Or(c.URL.Query().Get("branch"), "master")
 }
 
-func (content ContentController) handleDownload(w http.ResponseWriter, r *http.Request) {
-	path, err := content.Repo.Build("master", ".")
+func (c *ContentController) CurrentFile() (blob *congo_code.Blob, err error) {
+	branch, path := c.CurrentBranch(), c.PathValue("path")
+	if blob, err = c.Repo.Open(branch, path); err != nil {
+		path = filepath.Join(path, "README.md")
+		if blob, err = c.Repo.Open(branch, path); err != nil {
+			return nil, nil
+		}
+	}
+	return blob, err
+}
+
+func (c ContentController) downloadSource(w http.ResponseWriter, r *http.Request) {
+	branch := cmp.Or(r.URL.Query().Get("branch"), "master")
+	path := cmp.Or(r.URL.Query().Get("path"), ".")
+	binary, err := c.Repo.Build(branch, path)
 	if err != nil {
 		log.Println("Failed to build binary: ", err)
 	}
 	w.Header().Set("Content-Disposition", "attachment; filename=congo")
 	w.Header().Set("Content-Type", "application/octet-stream")
-	http.ServeFile(w, r, path)
+	http.ServeFile(w, r, binary)
 }
 
-func (content ContentController) handleWorkspace(w http.ResponseWriter, r *http.Request) {
-	auth := content.Use("auth").(*congo_auth.Controller)
-
-	i, _ := auth.Authenticate("developer", r)
-	workspaceID := fmt.Sprintf("workspace-%s", i.ID)
-	workspace, err := content.Code.GetWorkspace(workspaceID)
-	if err != nil {
-		content.Render(w, r, "not-found.html", nil)
+func (c ContentController) handleWorkspace(w http.ResponseWriter, r *http.Request) {
+	i, _ := c.Use("auth").(*congo_auth.AuthController).Authenticate(r, "developer")
+	if workspace, err := c.Code.GetWorkspace("workspace-" + i.ID); err == nil {
+		workspace.Proxy(r.URL.Path).ServeHTTP(w, r)
 		return
 	}
-
-	workspace.Proxy(r.URL.Path).ServeHTTP(w, r)
+	c.Render(w, r, "not-found.html", nil)
 }

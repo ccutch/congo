@@ -20,23 +20,34 @@ var (
 
 	data = cmp.Or(os.Getenv("DATA_PATH"), os.TempDir()+"/congo")
 
+	auth = congo_auth.InitCongoAuth(data,
+		congo_auth.WithCookieName("workhouse"),
+		congo_auth.WithSetupView("setup.html", "/"),
+		congo_auth.WithAccessView("user", "welcome.html"),
+		congo_auth.WithAccessView("developer", "signin.html"))
+
 	app = congo.NewApplication(
 		congo.WithDatabase(congo.SetupDatabase(data, "workhouse.db", migrations)),
-		congo.WithController("auth", new(controllers.AuthController)),
-		congo.WithController("content", new(controllers.ContentController)),
+		congo.WithController("auth", &controllers.AuthController{
+			AuthController: &congo_auth.AuthController{CongoAuth: auth},
+		}),
 		congo.WithController("settings", new(controllers.SettingsController)),
-		congo.WithHtmlTheme(cmp.Or(os.Getenv("CONGO_THEME"), "dark")),
+		congo.WithController("content", new(controllers.ContentController)),
+		congo.WithHtmlTheme(cmp.Or(os.Getenv("DAISY_THEME"), "dark")),
+		congo.WithHostPrefix("/coder/proxy/5000"),
 		congo.WithTemplates(templates))
 )
 
 func main() {
-	auth := app.Use("auth").(*congo_auth.Controller)
-
 	app.Handle("/signin", app.Serve("signin.html"))
 
-	app.Handle("/{$}", auth.Serve("homepage.html", "user", "developer"))
-	app.Handle("/posts", auth.Serve("our-posts.html", "developer"))
+	auth := app.Use("auth").(*controllers.AuthController)
+
+	app.Handle("/{$}", auth.Serve("my-hosts.html", "user", "developer"))
+	app.Handle("/code", auth.Serve("our-code.html", "developer"))
+	app.Handle("/code/{path...}", auth.Serve("our-code.html", "developer"))
 	app.Handle("/users", auth.Serve("our-users.html", "developer"))
+	app.Handle("/user/{user}", auth.Serve("user-hosts.html", "developer"))
 	app.Handle("/settings", auth.Serve("settings.html", "developer"))
 
 	app.StartFromEnv()

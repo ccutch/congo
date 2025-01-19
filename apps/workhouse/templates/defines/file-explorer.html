@@ -11,11 +11,11 @@
     </li>
     {{end}}
 
-    {{with coding.CurrentFile }}
+    {{with content.CurrentFile }}
 
     {{if .IsDir}}
 
-    {{range coding.Files}}
+    {{range content.Files}}
 
     {{if .IsDir}}
     <li>

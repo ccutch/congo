@@ -15,7 +15,7 @@ type SettingsController struct {
 
 func (settings *SettingsController) Setup(app *congo.Application) {
 	settings.BaseController.Setup(app)
-	auth := app.Use("auth").(*congo_auth.Controller)
+	auth := app.Use("auth").(*congo_auth.AuthController)
 
 	app.HandleFunc("POST /_settings/theme", auth.ProtectFunc(settings.updateTheme))
 	app.HandleFunc("POST /_settings/token", auth.ProtectFunc(settings.updateToken))

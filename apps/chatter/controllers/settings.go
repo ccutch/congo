@@ -13,7 +13,7 @@ type SettingsController struct {
 
 func (settings *SettingsController) Setup(app *congo.Application) {
 	settings.BaseController.Setup(app)
-	auth := app.Use("auth").(*congo_auth.Controller)
+	auth := app.Use("auth").(*congo_auth.AuthController)
 
 	app.HandleFunc("POST /_settings/theme", auth.ProtectFunc(settings.updateTheme))
 }
@@ -38,8 +38,8 @@ func (settings *SettingsController) Get(id string) (val string) {
 }
 
 func (settings *SettingsController) MyTheme() string {
-	auth := settings.Use("auth").(*congo_auth.Controller)
-	i, _ := auth.Authenticate("user", settings.Request)
+	auth := settings.Use("auth").(*congo_auth.AuthController)
+	i, _ := auth.Authenticate(settings.Request, "user")
 	if i == nil {
 		return ""
 	}
@@ -59,8 +59,8 @@ func (settings *SettingsController) set(id, val string) error {
 }
 
 func (settings SettingsController) updateTheme(w http.ResponseWriter, r *http.Request) {
-	auth := settings.Use("auth").(*congo_auth.Controller)
-	i, _ := auth.Authenticate("user", r)
+	auth := settings.Use("auth").(*congo_auth.AuthController)
+	i, _ := auth.Authenticate(r, "user")
 	settings.set(i.ID+"-theme", r.FormValue("theme"))
 	w.WriteHeader(http.StatusNoContent)
 }

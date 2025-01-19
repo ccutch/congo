@@ -35,7 +35,7 @@
 {{define "hosts-manager/content"}}
 <div class="flex flex-col py-4 gap-4">
 
-  {{range hosting.List}}
+  {{range content.List}}
   <div class=" card bg-base-100 shadow p-3">
 
     <div class="flex justify-between p-3">
@@ -73,7 +73,8 @@
           Visit Host
         </a>
         {{else if .IpAddress}}
-        <button class="btn btn-sm btn-outline" onclick="document.querySelector('#host-input').value='{{.ID}}'; add_domain_modal.showModal()">
+        <button class="btn btn-sm btn-outline"
+                onclick="document.querySelector('#host-input').value='{{.ID}}'; add_domain_modal.showModal()">
           Add Domain Name
         </button>
         {{end}}
@@ -133,12 +134,16 @@
 {{define "server-menu"}}
 <div class="dropdown dropdown-end">
   <div tabindex="0" role="button" class="btn btn-ghost">
-    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 16 16" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
-      <path d="M3 9.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3m5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3m5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3"></path>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 16 16" height="1em" width="1em"
+         xmlns="http://www.w3.org/2000/svg">
+      <path
+            d="M3 9.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3m5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3m5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3">
+      </path>
     </svg>
   </div>
-  <ul tabindex="0" class="dropdown-content menu menu-sm bg-neutral text-neutral-content rounded-box z-[1] min-w-52 shadow">
-    <li><a hx-post="/_hosting/restart/{{.ID}}">Redeploy</a></li>
+  <ul tabindex="0"
+      class="dropdown-content menu menu-sm bg-neutral text-neutral-content rounded-box z-[1] min-w-52 shadow">
+    <li><a hx-post="/_content/restart/{{.ID}}">Redeploy</a></li>
   </ul>
 </div>
 {{end}}

@@ -33,8 +33,8 @@ func (hosts *HostsController) Searchhosts() ([]*models.Host, error) {
 }
 
 func (hosts HostsController) handleCreate(w http.ResponseWriter, r *http.Request) {
-	auth := hosts.Use("auth").(*congo_auth.Controller)
-	i, _ := auth.Authenticate("user", r)
+	auth := hosts.Use("auth").(*congo_auth.AuthController)
+	i, _ := auth.Authenticate(r, "user")
 	if i == nil {
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return

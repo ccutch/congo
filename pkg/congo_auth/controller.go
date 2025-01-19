@@ -12,16 +12,16 @@ import (
 //go:embed all:templates
 var Templates embed.FS
 
-type Controller struct {
+type AuthController struct {
 	congo.BaseController
 	*CongoAuth
 }
 
-func (auth *CongoAuth) Controller() (string, *Controller) {
-	return "auth", &Controller{CongoAuth: auth}
+func (auth *CongoAuth) Controller() (string, *AuthController) {
+	return "auth", &AuthController{CongoAuth: auth}
 }
 
-func (auth *Controller) Setup(app *congo.Application) {
+func (auth *AuthController) Setup(app *congo.Application) {
 	auth.BaseController.Setup(app)
 	app.WithTemplates(Templates)
 	app.HandleFunc("POST /_auth/signup/{role}", auth.handleSignup)
@@ -30,22 +30,22 @@ func (auth *Controller) Setup(app *congo.Application) {
 	app.HandleFunc("DELETE /_auth/session/{id}", auth.endSession)
 }
 
-func (auth Controller) Handle(r *http.Request) congo.Controller {
+func (auth AuthController) Handle(r *http.Request) congo.Controller {
 	auth.Request = r
 	return &auth
 }
 
-func (auth *Controller) Current(role string) *Identity {
-	identity, _ := auth.CongoAuth.Authenticate(role, auth.Request)
+func (auth *AuthController) Current(roles ...string) *Identity {
+	identity, _ := auth.CongoAuth.Authenticate(auth.Request, roles...)
 	return identity
 }
 
-func (auth *Controller) Usage() ([]*Usage, error) {
+func (auth *AuthController) Usage() ([]*Usage, error) {
 	identity := auth.Current(auth.PathValue("role"))
 	return identity.Usages()
 }
 
-func (auth *Controller) Identities() ([]*Identity, error) {
+func (auth *AuthController) Identities() ([]*Identity, error) {
 	role := auth.PathValue("role")
 	if role != "" {
 		return auth.SearchByRole(role, auth.URL.Query().Get("query"))
@@ -60,7 +60,7 @@ func (auth *Controller) Identities() ([]*Identity, error) {
 	return identities, err
 }
 
-func (auth Controller) handleSignup(w http.ResponseWriter, r *http.Request) {
+func (auth AuthController) handleSignup(w http.ResponseWriter, r *http.Request) {
 	email, username, password := r.FormValue("email"), r.FormValue("username"), r.FormValue("password")
 	if email == "" || username == "" || password == "" {
 		auth.Render(w, r, "error-message", fmt.Errorf("missing required fields"))
@@ -98,7 +98,7 @@ func (auth Controller) handleSignup(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (auth Controller) handleSignin(w http.ResponseWriter, r *http.Request) {
+func (auth AuthController) handleSignin(w http.ResponseWriter, r *http.Request) {
 	identity, err := auth.CongoAuth.Lookup(r.FormValue("username"))
 	if err != nil {
 		auth.Render(w, r, "error-message", fmt.Errorf("failed to find identity"))
@@ -132,9 +132,9 @@ func (auth Controller) handleSignin(w http.ResponseWriter, r *http.Request) {
 	auth.Refresh(w, r)
 }
 
-func (auth Controller) handleLogout(w http.ResponseWriter, r *http.Request) {
+func (auth AuthController) handleLogout(w http.ResponseWriter, r *http.Request) {
 	role := r.PathValue("role")
-	if _, s := auth.CongoAuth.Authenticate(role, r); s != nil {
+	if _, s := auth.CongoAuth.Authenticate(r, role); s != nil {
 		if err := s.Delete(); err != nil {
 			auth.Render(w, r, "error-message", err)
 			return
@@ -152,7 +152,7 @@ func (auth Controller) handleLogout(w http.ResponseWriter, r *http.Request) {
 	auth.Redirect(w, r, auth.CongoAuth.LogoutRedirect)
 }
 
-func (auth Controller) endSession(w http.ResponseWriter, r *http.Request) {
+func (auth AuthController) endSession(w http.ResponseWriter, r *http.Request) {
 	session, err := auth.CongoAuth.GetSession(r.PathValue("id"))
 	if err != nil {
 		auth.Render(w, r, "error-message", err)

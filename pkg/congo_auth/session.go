@@ -72,39 +72,47 @@ func (s *Session) Delete() error {
 	`, s.ID).Exec()
 }
 
-func (auth *CongoAuth) Authenticate(role string, r *http.Request) (*Identity, *Session) {
-	cookie, err := r.Cookie(auth.CookieName + "-" + role)
-	if err != nil {
-		return nil, nil
-	}
-	token, err := jwt.Parse(cookie.Value, func(token *jwt.Token) (any, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+func (auth *CongoAuth) Authenticate(r *http.Request, roles ...string) (*Identity, *Session) {
+	for _, role := range roles {
+		cookie, err := r.Cookie(auth.CookieName + "-" + role)
+		if err != nil {
+			continue
 		}
-		return []byte(os.Getenv("SECRET")), nil
-	})
-	if err != nil {
-		return nil, nil
-	} else if !token.Valid {
-		return nil, nil
+
+		token, err := jwt.Parse(cookie.Value, func(token *jwt.Token) (any, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			}
+			return []byte(os.Getenv("SECRET")), nil
+		})
+
+		if err != nil || !token.Valid {
+			continue
+		}
+
+		claims, valid := token.Claims.(jwt.MapClaims)
+		if !valid {
+			continue
+		}
+
+		sessionID, valid := claims["sub"].(string)
+		if !valid {
+			continue
+		}
+
+		session, err := auth.GetSession(sessionID)
+		if err != nil {
+			log.Printf("Failed to lookup session %s: %s", sessionID, err)
+			continue
+		}
+
+		identity, err := auth.Lookup(session.IdentID)
+		if err != nil {
+			log.Printf("Failed to lookup identity %s: %s", session.IdentID, err)
+			continue
+		}
+
+		return identity, session
 	}
-	claims, valid := token.Claims.(jwt.MapClaims)
-	if !valid {
-		return nil, nil
-	}
-	sessionID, valid := claims["sub"].(string)
-	if !valid {
-		return nil, nil
-	}
-	session, err := auth.GetSession(sessionID)
-	if err != nil {
-		log.Printf("Failed to lookup session %s: %s", sessionID, err)
-		return nil, nil
-	}
-	identity, err := auth.Lookup(session.IdentID)
-	if err != nil {
-		log.Printf("Failed to lookup identity %s: %s", session.IdentID, err)
-		return nil, nil
-	}
-	return identity, session
+	return nil, nil
 }
