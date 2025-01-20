@@ -47,6 +47,7 @@
       {{end}}
     </div>
 
+    {{if settings.Has "HOST_API_KEY"}}
     <hr class="opacity-40 my-4">
 
     <span class="text-base font-semibold">
@@ -60,6 +61,7 @@
         Save Host Settings
       </button>
     </form>
+    {{end}}
 
     <div class="error"></div>
   </div>

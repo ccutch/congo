@@ -32,7 +32,7 @@ var (
 		congo.WithController("settings", new(controllers.SettingsController)),
 		congo.WithController("content", new(controllers.ContentController)),
 		congo.WithHtmlTheme(cmp.Or(os.Getenv("DAISY_THEME"), "dark")),
-		congo.WithHostPrefix("/coder/proxy/5000"),
+		// congo.WithHostPrefix("/coder/proxy/5000"),
 		congo.WithTemplates(templates))
 )
 

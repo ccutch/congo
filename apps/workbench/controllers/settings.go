@@ -17,8 +17,8 @@ func (settings *SettingsController) Setup(app *congo.Application) {
 	settings.BaseController.Setup(app)
 	auth := app.Use("auth").(*congo_auth.AuthController)
 
-	app.HandleFunc("POST /_settings/theme", auth.ProtectFunc(settings.updateTheme))
-	app.HandleFunc("POST /_settings/token", auth.ProtectFunc(settings.updateToken))
+	app.HandleFunc("POST /_settings/theme", auth.ProtectFunc(settings.updateTheme, "developer"))
+	app.HandleFunc("POST /_settings/token", auth.ProtectFunc(settings.updateToken, "developer"))
 
 	if settings.Get("token") == "" {
 		settings.set("token", os.Getenv("DIGITAL_OCEAN_API_KEY"))

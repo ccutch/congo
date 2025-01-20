@@ -32,7 +32,7 @@ func (coding *CodingController) Setup(app *congo.Application) {
 
 	go func() {
 		var err error
-		coding.Workspace, err = coding.code.RunWorkspace(coding.host, "coder", 7000, coding.Repo)
+		coding.Workspace, err = coding.code.NewWorkspace(coding.host, "coder", 7000, coding.Repo)
 		if err != nil {
 			log.Println("Failed to setup workspace: ", err)
 			return
@@ -44,7 +44,7 @@ func (coding *CodingController) Setup(app *congo.Application) {
 		}
 	}()
 
-	app.HandleFunc("/_coding/download", auth.ProtectFunc(coding.handleDownload))
+	app.HandleFunc("/_coding/download", auth.ProtectFunc(coding.handleDownload, "developer"))
 }
 
 func (coding CodingController) Handle(req *http.Request) congo.Controller {

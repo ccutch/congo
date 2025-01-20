@@ -18,12 +18,11 @@ type Workspace struct {
 	code *CongoCode
 	congo.Model
 	*congo_host.Service
-	Port   int
 	Ready  bool
 	RepoID string
 }
 
-func (code *CongoCode) RunWorkspace(host *congo_host.CongoHost, name string, port int, repo *Repository, opts ...congo_host.ServiceOpt) (*Workspace, error) {
+func (code *CongoCode) NewWorkspace(host *congo_host.CongoHost, name string, port int, repo *Repository, opts ...congo_host.ServiceOpt) (*Workspace, error) {
 	repoID := ""
 	if repo != nil {
 		repoID = repo.ID
@@ -40,7 +39,7 @@ func (code *CongoCode) RunWorkspace(host *congo_host.CongoHost, name string, por
 	}, opts...)
 
 	id := fmt.Sprintf("workspace-%s", name)
-	w := Workspace{code, code.db.NewModel(id), host.Local().Service(id, opts...), port, false, repoID}
+	w := Workspace{code, code.db.NewModel(id), host.Local().Service(id, opts...), false, repoID}
 	return &w, code.db.Query(`
 	
 		INSERT INTO workspaces (id, name, port, image, tag, ready, repo_id)
@@ -60,7 +59,7 @@ func (code *CongoCode) GetWorkspace(id string) (*Workspace, error) {
 		FROM workspaces
 		WHERE id = ?
 
-	`, id).Scan(&w.ID, &w.Name, &w.Port, &w.Image, &w.Tag, &w.Ready, &w.RepoID, &w.CreatedAt, &w.UpdatedAt)
+	`, "workspace-"+id).Scan(&w.ID, &w.Name, &w.Port, &w.Image, &w.Tag, &w.Ready, &w.RepoID, &w.CreatedAt, &w.UpdatedAt)
 }
 
 func (code *CongoCode) AllWorkspaces() ([]*Workspace, error) {

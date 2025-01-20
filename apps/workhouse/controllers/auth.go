@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
@@ -75,7 +76,7 @@ func (auth AuthController) handleSignup(w http.ResponseWriter, r *http.Request) 
 	}
 
 	http.SetCookie(w, &http.Cookie{
-		Name:     auth.CongoAuth.CookieName + "-" + r.PathValue("role"),
+		Name:     auth.CongoAuth.CookieName + "-" + role,
 		Path:     "/",
 		Value:    s.Token(),
 		Expires:  time.Now().Add(24 * time.Hour),
@@ -90,7 +91,12 @@ func (auth AuthController) handleSignup(w http.ResponseWriter, r *http.Request) 
 	go func() {
 		devs, _ := auth.Developers()
 		c := auth.Use("content").(*ContentController)
-		c.Code.RunWorkspace(c.Host, i.Name+"-workspace", 7000+len(devs), c.Repo)
+		w, err := c.Code.NewWorkspace(c.Host, "workspace-"+i.ID, 7000+len(devs), c.Repo)
+		log.Println("New Workspace", w, err)
+		if err == nil {
+			err := w.Start()
+			log.Println("Start Workspace", err)
+		}
 	}()
 
 	auth.Redirect(w, r, "/code")

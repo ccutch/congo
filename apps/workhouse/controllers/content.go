@@ -96,8 +96,10 @@ func (c ContentController) downloadSource(w http.ResponseWriter, r *http.Request
 func (c ContentController) handleWorkspace(w http.ResponseWriter, r *http.Request) {
 	i, _ := c.Use("auth").(*AuthController).Authenticate(r, "developer")
 	if workspace, err := c.Code.GetWorkspace("workspace-" + i.ID); err == nil {
-		workspace.Proxy(r.URL.Path).ServeHTTP(w, r)
+		workspace.Proxy("/coder/").ServeHTTP(w, r)
 		return
+	} else {
+		log.Println("Failed to get workpsace", err)
 	}
 	c.Render(w, r, "not-found.html", nil)
 }
