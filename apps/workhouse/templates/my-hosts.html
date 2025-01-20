@@ -17,6 +17,11 @@
       {{template "post-feed"}}
     </div>
 
+    {{if settings.IsSetup}}
+    {{template "user-hosts"}}
+    {{else if eq auth.CurrentUser.Role "developer"}}
+    {{template "setup-steps"}}
+    {{end}}
   </div>
 </body>
 

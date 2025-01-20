@@ -1,9 +1,9 @@
-{{define "users-menu"}}
+{{define "user-menu"}}
 <div class="flex flex-col w-full max-w-xl">
   <input name="query" type="search" class="w-full input input-bordered" placeholder="Search Our Users"
          hx-get="" hx-select="#users-menu" hx-target="#users-menu" hx-trigger="input changed delay:500ms, search" hx-swap="innerHTML">
 
-  <ul id="users-menu" class="menu menu-lg w-full">
+  <ul hx-boost="true" id="users-menu" class="menu menu-lg w-full">
 
     {{range auth.Users}}
     <li>

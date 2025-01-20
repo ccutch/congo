@@ -1,0 +1,120 @@
+{{define "setup-steps"}}
+<div class="card bg-base-100 max-w-lg w-full h-max">
+  <div class="card-body gap-8 items-center">
+    <h2 class="text-center text-2xl font-bold">
+      Get Started Hosting Servers
+    </h2>
+
+    <ul class="steps w-full">
+      <li class="step step-primary">Hosting</li>
+      <li class='step {{if settings.Has "HOST_API_KEY"}}step-primary{{end}}'>Payments</li>
+      <li class='step {{if settings.Has "STRIPE_ACCESS_TOKEN"}}step-primary{{end}}'>Go Live!</li>
+    </ul>
+
+    {{if not (settings.Has "HOST_API_KEY")}}
+    <div class="flex flex-col w-full max-w-sm">
+      <span class="text-base font-medium opacity-80">
+        Copy a new API Key from Digital Ocean:
+      </span>
+      <p class="text-sm opacity-60 mb-4">
+        This API Key will be used to launch servers for
+        customers.
+      </p>
+
+      <form class="mb-0 flex flex-col gap-2" hx-post="{{host}}/_settings/token" hx-target="next .error">
+        <input required name="api_key" type="password" class="input input-bordered" placeholder="Digital Ocean API Key" autocomplete="confirm-password">
+        <button class="btn btn-primary">
+          Store API Key
+        </button>
+      </form>
+
+      <div class="error"></div>
+    </div>
+    {{else if not (settings.Has "STRIPE_ACCESS_TOKEN")}}
+    <div class="flex flex-col w-full max-w-sm">
+      <span class="text-base font-medium opacity-80">
+        Connect your Stripe Account:
+      </span>
+      <p class="text-sm opacity-60 mb-4">
+        Connect your stripe account to start accepting
+        payments.
+      </p>
+
+      <a href="" class="btn btn-primary mb-2">
+        Login to Stripe
+      </a>
+      <div class="btn btn-sm btn-ghost" hx-post="{{host}}/_settings/skip-payments">
+        Skip for Now
+      </div>
+    </div>
+    {{else}}
+    <div class="flex flex-col w-full max-w-sm">
+      <span class="text-base font-medium opacity-80">
+        Select Global Options for Servers.
+      </span>
+      <p class="text-sm opacity-60 mb-4">
+        These options will be used and can be updated in
+        settings.
+      </p>
+
+      <form class="mb-0 flex flex-col gap-2" hx-post="{{host}}/_settings/hosting" hx-target="next .error">
+
+        {{block "host-settings" .}}
+        <label class="form-control w-full">
+          <div class="label">
+            <span class="label-text">Digital Ocean Region</span>
+          </div>
+          <select name="region" class="select select-bordered" value='{{settings.HostRegion}}'>
+            {{if not settings.HostRegion}}<option disabled selected>Pick One</option>{{end}}
+            <option value="sfo1">San Fransisco 1</option>
+            <option value="sfo2">San Fransisco 2</option>
+            <option value="sfo3">San Fransisco 3</option>
+            <option value="ams2">Amsterdam 2</option>
+            <option value="ams3">Amsterdam 3</option>
+            <option value="blr1">Bangalore 1</option>
+            <option value="fra1">Frankfurt 1</option>
+            <option value="lon1">London 1</option>
+            <option value="nyc1">New York 1</option>
+            <option value="nyc2">New York 2</option>
+            <option value="nyc3">New York 3</option>
+            <option value="sgp1">Singapore 1</option>
+            <option value="syd1">Sydney 1</option>
+            <option value="tor1">Toronto 1</option>
+          </select>
+        </label>
+
+        <label class="form-control w-full">
+          <div class="label">
+            <span class="label-text">Digital Ocean Size</span>
+          </div>
+          <select name="size" class="select select-bordered" value='{{settings.HostSize}}'>
+            {{if not settings.HostSize}}<option disabled selected>Pick One</option>{{end}}
+            <option value="s-1vcpu-1gb">Basic 1vCPU 1GB RAM</option>
+            <option value="s-1vcpu-2gb">Basic 1vCPU 2GB RAM</option>
+            <option value="s-2vcpu-2gb">Basic 2vCPU 2GB RAM</option>
+            <option value="s-2vcpu-4gb">Basic 2vCPU 4GB RAM</option>
+            <option value="s-4vcpu-8gb">Basic 4vCPU 8GB RAM</option>
+            <option value="s-8vcpu-16gb">Basic 8vCPU 16GB RAM</option>
+          </select>
+        </label>
+
+        <label class="form-control w-full">
+          <div class="label">
+            <span class="label-text">Storage Size</span>
+          </div>
+          <input requied name="storage" type="number" class="input input-bordered w-full"
+                 placeholder="Storage size for data directory" value='{{settings.StorageSize}}'>
+        </label>
+
+        {{end}}
+        <button class="btn btn-primary mt-4">
+          Go Live to Users
+        </button>
+      </form>
+
+      <div class="error"></div>
+    </div>
+    {{end}}
+  </div>
+</div>
+{{end}}

@@ -50,7 +50,7 @@ func (hosting HostingController) handleLaunch(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	if err := server.Create(region, size, int64(storage)); err != nil {
+	if err := server.Launch(region, size, int64(storage)); err != nil {
 		hosting.Render(w, r, "error-message", err)
 		return
 	}

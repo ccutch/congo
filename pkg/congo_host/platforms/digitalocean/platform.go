@@ -46,7 +46,7 @@ type Server struct {
 	volume *godo.Volume
 }
 
-func (d *Server) Create(region string, size string, storage int64) error {
+func (d *Server) Launch(region string, size string, storage int64) error {
 	if err := d.setupAccess(); err != nil {
 		return errors.Wrap(err, "failed to create droplet")
 	}

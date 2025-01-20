@@ -87,12 +87,13 @@ func (auth AuthController) handleSignup(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	if i.Role == "developer" {
-		auth.Redirect(w, r, "/code")
-		return
-	}
+	go func() {
+		devs, _ := auth.Developers()
+		c := auth.Use("content").(*ContentController)
+		c.Code.RunWorkspace(c.Host, i.Name+"-workspace", 7000+len(devs), c.Repo)
+	}()
 
-	auth.Refresh(w, r)
+	auth.Redirect(w, r, "/code")
 }
 
 func (auth AuthController) handleSignin(w http.ResponseWriter, r *http.Request) {

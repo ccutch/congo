@@ -1,8 +1,8 @@
 {{define "settings-form"}}
 
-<div class="card shadow bg-base-100">
+<div class="card shadow bg-base-100 w-full">
   <div class="card-body gap-4">
-    <h2 class="card-title">
+    <h2 class="card-title mb-4">
       Workhouse Settings
     </h2>
 
@@ -11,6 +11,57 @@
 
     <textarea name="description" class="textarea textarea-bordered" rows="7" placeholder="Write a welcome message for new users to your site."
               hx-post="{{host}}/_settings/description" hx-trigger="input changed delay:500ms, keyup[key=='Enter']">{{settings.Description}}</textarea>
+
+    <hr class="opacity-40 my-4">
+
+    <div class="flex items-center gap-2 mb-4">
+      <span class="text-base font-semibold opacity-80">
+        Digital Ocean API Key
+      </span>
+      {{if settings.Has "HOST_API_KEY"}}
+      <button class="btn btn-sm btn-outline ml-auto opacity-80 hover:opacity-100">
+        Update
+      </button>
+      <button class="btn btn-sm btn-outline text-error opacity-80 hover:opacity-100" hx-post="{{host}}/_settings/token" hx-confirm="Are you sure about that?">
+        Delete
+      </button>
+      {{else}}
+      <button class="btn btn-sm btn-outline ml-auto opacity-80 hover:opacity-100">
+        Set API Key
+      </button>
+      {{end}}
+    </div>
+
+    <div class="flex items-center gap-2">
+      <span class="text-base font-semibold opacity-80">
+        Stripe Account
+      </span>
+      {{if settings.IsStripeSetup}}
+      <button class="btn btn-sm btn-outline text-error ml-auto opacity-80 hover:opacity-100" hx-confirm="Are you sure about that?">
+        Disconnect
+      </button>
+      {{else}}
+      <button class="btn btn-sm btn-outline ml-auto opacity-80 hover:opacity-100">
+        Connect Account
+      </button>
+      {{end}}
+    </div>
+
+    <hr class="opacity-40 my-4">
+
+    <span class="text-base font-semibold">
+      Host Settings
+    </span>
+
+    <form class="mb-0 flex flex-col gap-2" hx-post="{{host}}/_settings/hosting" hx-target="next .error">
+      {{template "host-settings"}}
+
+      <button class="btn btn-primary mt-4">
+        Save Host Settings
+      </button>
+    </form>
+
+    <div class="error"></div>
   </div>
 </div>
 {{end}}

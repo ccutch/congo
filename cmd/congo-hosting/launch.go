@@ -44,7 +44,7 @@ func launch(args ...string) (*congo_host.RemoteHost, error) {
 	}
 
 	log.Println("Creating server...")
-	if err = server.Create(*region, *size, *storage); err != nil {
+	if err = server.Launch(*region, *size, *storage); err != nil {
 		return nil, errors.Wrap(err, "failed to create server")
 	}
 

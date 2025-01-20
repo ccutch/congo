@@ -1,13 +1,12 @@
 {{define "dev-menu"}}
-<div class="flex flex-col w-full max-w-xl">
+<div class="flex flex-col gap-2 w-full max-w-xl">
   <input name="query" type="search" class="w-full input input-bordered" placeholder="Search Our Developers"
          hx-get="" hx-select="#dev-menu" hx-target="#dev-menu" hx-trigger="input changed delay:500ms, search" hx-swap="innerHTML">
 
-  <ul id="dev-menu" class="menu menu-lg w-full">
-
+  <ul hx-boost="true" id="dev-menu" class="menu menu-lg gap-2 w-full">
     {{range auth.Developers}}
     <li>
-      <a href="{{host}}/dev/{{.ID}}">
+      <a href="{{host}}/dev/{{.ID}}" class='{{if eq (req.PathValue "user") .ID}}bg-base-200{{end}}'>
         <div class="flex gap-4 items-center">
           <div class="avatar">
             <div class="h-12 w-12 rounded-full bg-base-100 p-0.5">
@@ -22,7 +21,6 @@
       </a>
     </li>
     {{end}}
-
   </ul>
 </div>
 {{end}}

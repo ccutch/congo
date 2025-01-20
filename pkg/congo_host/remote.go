@@ -46,7 +46,13 @@ func (host *CongoHost) NewServer(name, size, location string) (*RemoteHost, erro
 }
 
 func (host *CongoHost) GetServer(id string) (*RemoteHost, error) {
-	s := RemoteHost{Model: host.DB.Model(), Server: host.api.Server(id), host: host, Stdin: os.Stdin, Stdout: os.Stdout}
+	s := RemoteHost{
+		Model:  host.DB.Model(),
+		Server: host.api.Server(id),
+		host:   host,
+		Stdin:  os.Stdin,
+		Stdout: os.Stdout,
+	}
 	return &s, host.DB.Query(`
 
 		SELECT id, name, size, location, created_at, updated_at

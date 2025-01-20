@@ -2,14 +2,19 @@ package controllers
 
 import (
 	"cmp"
+	"fmt"
 	"log"
 	"net/http"
 	"path/filepath"
+	"strconv"
+	"strings"
 
 	"github.com/ccutch/congo/apps/workhouse/models"
 	"github.com/ccutch/congo/pkg/congo"
 	"github.com/ccutch/congo/pkg/congo_code"
 	"github.com/ccutch/congo/pkg/congo_host"
+	"github.com/ccutch/congo/pkg/congo_host/platforms/digitalocean"
+	"github.com/pkg/errors"
 )
 
 type ContentController struct {
@@ -32,6 +37,13 @@ func (c *ContentController) Setup(app *congo.Application) {
 	app.Handle("/coder/", auth.ProtectFunc(c.handleWorkspace, "developer"))
 	app.Handle("/download", auth.ProtectFunc(c.downloadSource, "developer"))
 	app.Handle("POST /_content/post", auth.ProtectFunc(c.publishPost, "developer"))
+	app.Handle("POST /_content/launch", auth.ProtectFunc(c.launchServer, "developer"))
+	app.Handle("DELETE /_content/host/{host}", auth.ProtectFunc(c.deleteHost, "developer"))
+
+	settings := app.Use("settings").(*SettingsController)
+	if key := settings.get("HOST_API_KEY"); key != "" {
+		c.Host.WithApi(digitalocean.NewClient(key))
+	}
 }
 
 func (c ContentController) Handle(req *http.Request) congo.Controller {
@@ -64,11 +76,9 @@ func (c *ContentController) Posts() ([]*models.Post, error) {
 	return models.AllPosts(c.DB)
 }
 
-func (c *ContentController) Hosts(ownerID string) []*congo_host.RemoteHost {
-	// TODO use ownership table to filter servers
-	hosts, err := c.Host.ListServers()
-	log.Println(hosts, err)
-	return nil
+func (c *ContentController) Hosts(ownerID string) ([]*models.Host, error) {
+	i, _ := c.Use("auth").(*AuthController).Authenticate(c.Request, "developer")
+	return models.HostsForOwner(c.DB, i.ID)
 }
 
 func (c ContentController) downloadSource(w http.ResponseWriter, r *http.Request) {
@@ -98,5 +108,96 @@ func (c ContentController) publishPost(w http.ResponseWriter, r *http.Request) {
 		c.Render(w, r, "error-message", err)
 		return
 	}
+	c.Refresh(w, r)
+}
+
+func (c ContentController) launchServer(w http.ResponseWriter, r *http.Request) {
+	settings := c.Use("settings").(*SettingsController)
+	i, _ := c.Use("auth").(*AuthController).Authenticate(r, "developer")
+	name := r.FormValue("name")
+	h, err := models.NewHost(c.DB, i.ID, "", name, "")
+	if err != nil {
+		c.Render(w, r, "error-message", err)
+		return
+	}
+	go func() {
+		h.ServerID = fmt.Sprintf("%s-%s", settings.Name(), h.ID)
+		h.ServerID = strings.ReplaceAll(strings.ToLower(h.ServerID), " ", "-")
+		defer h.Save()
+
+		size, region := settings.HostSize(), settings.HostRegion()
+		server, err := c.Host.NewServer(h.ServerID, size, region)
+		if err != nil {
+			h.Status = "failed"
+			h.Error = err.Error()
+			return
+		}
+
+		storage, _ := strconv.Atoi(settings.StorageSize())
+		if err = server.Launch(region, size, int64(storage)); err != nil {
+			h.Status = "failed"
+			h.Error = errors.Wrap(err, "failed to launch server").Error()
+			return
+		}
+
+		if err = server.Prepare(); err != nil {
+			h.Status = "failed"
+			h.Error = errors.Wrap(err, "failed to prepare server").Error()
+			return
+		}
+
+		out, err := c.Repo.Build("master", ".")
+		if err != nil {
+			h.Status = "failed"
+			h.Error = errors.Wrap(err, "failed to build binary").Error()
+			return
+		}
+
+		if err = server.Deploy(out); err != nil {
+			h.Status = "failed"
+			h.Error = errors.Wrap(err, "failed to deploy binary").Error()
+			return
+		}
+
+		if ns := settings.get("DOMAIN_ROOT"); ns != "" {
+			h.DomainName = strings.ReplaceAll(strings.ToLower(name), " ", "-")
+			h.DomainName = fmt.Sprintf("https://%s.%s", h.DomainName, ns)
+		} else {
+			h.DomainName = fmt.Sprintf("http://%s:8080", server.Addr())
+		}
+
+		h.Status = "ready"
+	}()
+	c.Refresh(w, r)
+}
+
+func (c ContentController) deleteHost(w http.ResponseWriter, r *http.Request) {
+	h, err := models.GetHost(c.DB, r.PathValue("host"))
+	if err != nil {
+		c.Render(w, r, "error-message", err)
+		return
+	}
+
+	server, err := c.Host.GetServer(h.ServerID)
+	if err != nil {
+		c.Render(w, r, "error-message", err)
+		return
+	}
+
+	if err = server.Reload(); err != nil {
+		c.Render(w, r, "error-message", err)
+		return
+	}
+
+	if err = server.Delete(true, false); err != nil {
+		c.Render(w, r, "error-message", err)
+		return
+	}
+
+	if err = h.Delete(); err != nil {
+		c.Render(w, r, "error-message", err)
+		return
+	}
+
 	c.Refresh(w, r)
 }
