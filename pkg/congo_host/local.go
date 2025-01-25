@@ -47,7 +47,7 @@ func (h *LocalHost) SetStdout(stdout io.Writer) {
 }
 
 func (h *LocalHost) Run(args ...string) error {
-	cmd := exec.Command("bash", append([]string{"-c"}, args...)...)
+	cmd := exec.Command(args[0], args[1:]...)
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 	cmd.Stdout = h.stdout

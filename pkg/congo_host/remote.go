@@ -130,8 +130,8 @@ func (h *RemoteHost) Restart() error {
 }
 
 func (h *RemoteHost) Deploy(source string) error {
-	if _, _, err := h.Copy(source, "/root/congo"); err != nil {
-		return errors.Wrap(err, "failed to copy source to server")
+	if _, out, err := h.Copy(source, "/root/congo"); err != nil {
+		return errors.Wrap(err, "failed to copy source to server: "+out.String())
 	}
 	return h.Restart()
 }
