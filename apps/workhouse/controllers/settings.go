@@ -47,6 +47,10 @@ func (settings *SettingsController) Name() string {
 	return cmp.Or(settings.get("name"), "Workhouse")
 }
 
+func (settings *SettingsController) DomainRoot() string {
+	return settings.get("DOMAIN_ROOT")
+}
+
 func (settings *SettingsController) Description() string {
 	return settings.get("description")
 }
@@ -93,21 +97,16 @@ func (settings SettingsController) updateDescription(w http.ResponseWriter, r *h
 }
 
 func (settings SettingsController) updateTheme(w http.ResponseWriter, r *http.Request) {
-	i, _ := settings.Use("auth").(*AuthController).Authenticate(r, "developer", "user")
+	auth := settings.Use("auth").(*AuthController)
+	i, _ := auth.Authenticate(r, "developer", "user")
 	settings.set(i.ID+":theme", r.FormValue("theme"))
 	w.WriteHeader(http.StatusNoContent)
 }
 
 func (settings SettingsController) updateToken(w http.ResponseWriter, r *http.Request) {
-	key := r.FormValue("api_key")
-	settings.set("HOST_API_KEY", key)
-	if key != "" {
-		content := settings.Use("content").(*ContentController)
-		content.Host.WithApi(digitalocean.NewClient(key))
-	} else {
-		content := settings.Use("content").(*ContentController)
-		content.Host.WithApi(nil)
-	}
+	settings.set("HOST_API_KEY", r.FormValue("api_key"))
+	content := settings.Use("content").(*ContentController)
+	content.Host.WithApi(digitalocean.NewClient(r.FormValue("api_key")))
 	settings.Refresh(w, r)
 }
 
@@ -117,13 +116,9 @@ func (settings SettingsController) skipPayments(w http.ResponseWriter, r *http.R
 }
 
 func (settings SettingsController) updateHosting(w http.ResponseWriter, r *http.Request) {
-	settings.set("HOST_SIZE", r.FormValue("size"))
-	settings.set("HOST_REGION", r.FormValue("region"))
-	settings.set("STORAGE_SIZE", r.FormValue("storage"))
-
-	settings.set("HOST_SIZE", r.FormValue("size"))
-	settings.set("HOST_REGION", r.FormValue("region"))
-	settings.set("STORAGE_SIZE", r.FormValue("storage"))
-
+	settings.set("DOMAIN_ROOT", cmp.Or(r.FormValue("domain"), settings.get("DOMAIN_ROOT")))
+	settings.set("HOST_SIZE", cmp.Or(r.FormValue("size"), settings.get("HOST_SIZE")))
+	settings.set("HOST_REGION", cmp.Or(r.FormValue("region"), settings.get("HOST_REGION")))
+	settings.set("STORAGE_SIZE", cmp.Or(r.FormValue("storage"), settings.get("STORAGE_SIZE")))
 	settings.Refresh(w, r)
 }

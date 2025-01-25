@@ -92,29 +92,41 @@ var setupWorkspace string
 var cloneRepository string
 
 func (w *Workspace) Start() error {
+	log.Println("Starting workspace")
 	if w.Running() {
 		log.Printf("Workspace %s already running", w.Name)
 		return nil
 	}
 
+	log.Println("Preparing workspace", w.Name, w.code.db)
 	var stdout bytes.Buffer
 	host := w.Host.Local()
 	if err := host.Run(fmt.Sprintf(prepareWorkspace, w.Name, w.code.db.Root)); err != nil {
 		return errors.Wrap(err, "failed to prepare workspace")
 	}
+
+	log.Println("Starting Docker Service")
 	if err := w.Service.Start(); err != nil {
 		return errors.Wrap(err, "failed to start workspace")
 	}
 
+	log.Println("Setting up workspace user space")
 	stdout.Reset()
 	if err := host.Run(setupWorkspace); err != nil {
 		return errors.Wrap(err, "failed to setup workspace: "+stdout.String())
 	}
 
+	log.Println("Cloning repo:", w.RepoID)
 	if repo, err := w.Repo(); repo != nil && err == nil {
 		if token, err := w.code.NewAccessToken(time.Now().Add(100_000 * time.Hour)); err == nil {
-			w.Run(fmt.Sprintf(cloneRepository, token.ID, token.Secret))
+			log.Println("Token = ", token)
+			output, err := w.Run(fmt.Sprintf(cloneRepository, token.ID, token.Secret, w.RepoID))
+			log.Println("Finished:", err, output.String())
+		} else {
+			log.Println("Failed to create access token:", err)
 		}
+	} else {
+		log.Println("Failed to load repo:", repo, err)
 	}
 
 	w.Ready = true
@@ -128,10 +140,12 @@ func (w *Workspace) Repo() (*Repository, error) {
 	return w.code.GetRepository(w.RepoID)
 }
 
-func (w *Workspace) Run(args ...string) (stdout bytes.Buffer, err error) {
+func (w *Workspace) Run(cmd string) (stdout bytes.Buffer, err error) {
 	s := w.Host.Local()
 	s.SetStdout(&stdout)
-	return stdout, s.Run("docker", "exec", w.Name, "sh", "-c", strings.Join(args, " "))
+	cmd = strings.ReplaceAll(cmd, "\n", "; ")
+	cmd = strings.ReplaceAll(cmd, "; ;", ";")
+	return stdout, s.Docker("exec", "-it", w.Name, "bash", "-c", cmd)
 }
 
 //go:embed resources/workspace/create-congo-app.sh

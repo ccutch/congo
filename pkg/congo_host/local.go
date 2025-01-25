@@ -26,6 +26,18 @@ func (host *CongoHost) Local() *LocalHost {
 	return &LocalHost{host, os.Stdin, os.Stdout}
 }
 
+func (h *LocalHost) Name() string {
+	return os.Getenv("CONGO_SERVER_NAME")
+}
+
+func (h *LocalHost) Size() string {
+	return os.Getenv("CONGO_SERVER_SIZE")
+}
+
+func (h *LocalHost) Region() string {
+	return os.Getenv("CONGO_HOST_REGION")
+}
+
 func (h *LocalHost) SetStdin(stdin io.Reader) {
 	h.stdin = stdin
 }
@@ -36,6 +48,15 @@ func (h *LocalHost) SetStdout(stdout io.Writer) {
 
 func (h *LocalHost) Run(args ...string) error {
 	cmd := exec.Command("bash", append([]string{"-c"}, args...)...)
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	cmd.Stdout = h.stdout
+	cmd.Stdin = h.stdin
+	return errors.Wrap(cmd.Run(), stderr.String())
+}
+
+func (h *LocalHost) Docker(args ...string) error {
+	cmd := exec.Command("docker", args...)
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 	cmd.Stdout = h.stdout

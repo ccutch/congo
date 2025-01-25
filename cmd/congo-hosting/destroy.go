@@ -34,7 +34,7 @@ func destroy(args ...string) error {
 		return errors.Wrap(err, "failed to get server")
 	}
 
-	if err := server.Reload(); err != nil {
+	if err := server.Reload(); !*force && err != nil {
 		return fmt.Errorf("failed to load server: %w", err)
 	}
 

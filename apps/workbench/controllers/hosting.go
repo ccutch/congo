@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/ccutch/congo/pkg/congo"
 	"github.com/ccutch/congo/pkg/congo_auth"
@@ -32,8 +33,20 @@ func (hosting HostingController) Handle(req *http.Request) congo.Controller {
 	return &hosting
 }
 
-func (hosting *HostingController) List() ([]*congo_host.RemoteHost, error) {
-	return hosting.host.ListServers()
+func (hosting *HostingController) LocalHost() *congo_host.LocalHost {
+	return hosting.host.Local()
+}
+
+func (hosting *HostingController) List() (res []*congo_host.RemoteHost, err error) {
+	query, res := hosting.Request.URL.Query().Get("query"), []*congo_host.RemoteHost{}
+	if hosts, err := hosting.host.ListServers(); err == nil {
+		for _, h := range hosts {
+			if strings.Contains(h.Name, query) {
+				res = append(res, h)
+			}
+		}
+	}
+	return res, err
 }
 
 func (hosting HostingController) handleLaunch(w http.ResponseWriter, r *http.Request) {

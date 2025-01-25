@@ -21,12 +21,14 @@ var (
 	data = cmp.Or(os.Getenv("DATA_PATH"), os.TempDir()+"/congo")
 
 	auth = congo_auth.InitCongoAuth(data,
+		congo_auth.WithCookieName("workbench-"),
 		congo_auth.WithSetupView("setup.html", "/"),
 		congo_auth.WithAccessView("developer", "login.html"))
 
 	app = congo.NewApplication(
 		congo.WithDatabase(congo.SetupDatabase(data, "workbench.db", migrations)),
 		congo.WithHtmlTheme(cmp.Or(os.Getenv("CONGO_THEME"), "dark")),
+		congo.WithHostPrefix(os.Getenv("CONGO_HOST_PREFIX")),
 		congo.WithTemplates(templates),
 		congo.WithController(auth.Controller()),
 		congo.WithController("coding", new(controllers.CodingController)),
@@ -40,7 +42,9 @@ func main() {
 
 	app.Handle("/", auth.Serve("workbench.html", "developer"))
 	app.Handle("/code/", coding.Repo.Serve(auth, "developer"))
-	app.Handle("/coder/", auth.Protect(coding.Workspace.Proxy("/coder/"), "developer"))
+	if coding.Workspace != nil {
+		app.Handle("/coder/", auth.Protect(coding.Workspace.Proxy("/coder/"), "developer"))
+	}
 
 	app.StartFromEnv()
 }

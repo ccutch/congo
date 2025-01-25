@@ -13,28 +13,28 @@ import (
 type RemoteHost struct {
 	Server
 	congo.Model
-	host     *CongoHost
-	Name     string
-	Size     string
-	Location string
+	host   *CongoHost
+	Name   string
+	Size   string
+	Region string
 
 	Stdin  io.Reader
 	Stdout io.Writer
 }
 
-func (host *CongoHost) NewServer(name, size, location string) (*RemoteHost, error) {
+func (host *CongoHost) NewServer(name, size, region string) (*RemoteHost, error) {
 	if host.api == nil {
 		return nil, errors.New("no platform provided")
 	}
 	s := RemoteHost{
-		Server:   host.api.Server(name),
-		Model:    host.DB.NewModel(name),
-		host:     host,
-		Name:     name,
-		Size:     size,
-		Location: location,
-		Stdin:    os.Stdin,
-		Stdout:   os.Stdout,
+		Server: host.api.Server(name),
+		Model:  host.DB.NewModel(name),
+		host:   host,
+		Name:   name,
+		Size:   size,
+		Region: region,
+		Stdin:  os.Stdin,
+		Stdout: os.Stdout,
 	}
 	return &s, host.DB.Query(`
 	
@@ -42,7 +42,7 @@ func (host *CongoHost) NewServer(name, size, location string) (*RemoteHost, erro
 		VALUES (?, ?, ?, ?)
 		RETURNING created_at, updated_at
 	
-	`, s.ID, s.Name, s.Size, s.Location).Scan(&s.CreatedAt, &s.UpdatedAt)
+	`, s.ID, s.Name, s.Size, s.Region).Scan(&s.CreatedAt, &s.UpdatedAt)
 }
 
 func (host *CongoHost) GetServer(id string) (*RemoteHost, error) {
@@ -59,7 +59,7 @@ func (host *CongoHost) GetServer(id string) (*RemoteHost, error) {
 		FROM servers
 		WHERE id = ?
 
-	`, id).Scan(&s.ID, &s.Name, &s.Size, &s.Location, &s.CreatedAt, &s.UpdatedAt)
+	`, id).Scan(&s.ID, &s.Name, &s.Size, &s.Region, &s.CreatedAt, &s.UpdatedAt)
 }
 
 func (host *CongoHost) ListServers() (servers []*RemoteHost, err error) {
@@ -71,7 +71,7 @@ func (host *CongoHost) ListServers() (servers []*RemoteHost, err error) {
 
 	`).All(func(scan congo.Scanner) error {
 		s := RemoteHost{Model: host.DB.Model(), host: host, Stdin: os.Stdin, Stdout: os.Stdout}
-		err = scan(&s.ID, &s.Name, &s.Size, &s.Location, &s.CreatedAt, &s.UpdatedAt)
+		err = scan(&s.ID, &s.Name, &s.Size, &s.Region, &s.CreatedAt, &s.UpdatedAt)
 		servers = append(servers, &s)
 		s.Server = host.api.Server(s.ID)
 		return err
@@ -89,7 +89,7 @@ func (h *RemoteHost) Save() error {
 		WHERE id = ?
 		RETURNING updated_at
 
-	`, h.Name, h.Size, h.Location, h.ID).Scan(&h.UpdatedAt)
+	`, h.Name, h.Size, h.Region, h.ID).Scan(&h.UpdatedAt)
 }
 
 func (h *RemoteHost) Delete(purge, force bool) error {
@@ -119,7 +119,7 @@ func (h *RemoteHost) Run(args ...string) error {
 var prepareServer string
 
 func (h *RemoteHost) Prepare() error {
-	return h.Run(fmt.Sprintf(prepareServer, h.Name+"-data"))
+	return h.Run(fmt.Sprintf(prepareServer, h.Name, h.Size, h.Region))
 }
 
 //go:embed resources/server/start-server.sh

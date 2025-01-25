@@ -23,11 +23,14 @@ type ContentController struct {
 	Code *congo_code.CongoCode
 	Host *congo_host.CongoHost
 	Repo *congo_code.Repository
+
+	proxies map[string]http.Handler
 }
 
 func (c *ContentController) Setup(app *congo.Application) {
 	c.BaseController.Setup(app)
 
+	c.proxies = map[string]http.Handler{}
 	c.Code = congo_code.InitCongoCode(app.DB.Root)
 	c.Host = congo_host.InitCongoHost(app.DB.Root, nil)
 	c.Repo, _ = c.Code.NewRepo("source", congo_code.WithName("Code"))
@@ -53,7 +56,7 @@ func (c ContentController) Handle(req *http.Request) congo.Controller {
 
 func (c *ContentController) Files() []*congo_code.Blob {
 	branch := cmp.Or(c.URL.Query().Get("branch"), "master")
-	blobs, _ := c.Repo.Blobs(branch, c.URL.Path)
+	blobs, _ := c.Repo.Blobs(branch, c.PathValue("path"))
 	return blobs
 }
 
@@ -95,13 +98,16 @@ func (c ContentController) downloadSource(w http.ResponseWriter, r *http.Request
 
 func (c ContentController) handleWorkspace(w http.ResponseWriter, r *http.Request) {
 	i, _ := c.Use("auth").(*AuthController).Authenticate(r, "developer")
-	if workspace, err := c.Code.GetWorkspace("workspace-" + i.ID); err == nil {
-		workspace.Proxy("/coder/").ServeHTTP(w, r)
+	if h, ok := c.proxies[i.ID]; ok {
+		h.ServeHTTP(w, r)
 		return
-	} else {
-		log.Println("Failed to get workpsace", err)
 	}
-	c.Render(w, r, "not-found.html", nil)
+	if workspace, err := c.Code.GetWorkspace("workspace-" + i.ID); err == nil {
+		c.proxies[i.ID] = workspace.Proxy("/coder/")
+		c.proxies[i.ID].ServeHTTP(w, r)
+	} else {
+		c.Render(w, r, "not-found.html", nil)
+	}
 }
 
 func (c ContentController) publishPost(w http.ResponseWriter, r *http.Request) {

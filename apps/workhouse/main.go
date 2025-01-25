@@ -28,22 +28,20 @@ var (
 
 	app = congo.NewApplication(
 		congo.WithDatabase(congo.SetupDatabase(data, "workhouse.db", migrations)),
+		congo.WithHtmlTheme(cmp.Or(os.Getenv("DAISY_THEME"), "dark")),
+		congo.WithHostPrefix(os.Getenv("CONGO_HOST_PREFIX")),
+		congo.WithTemplates(templates),
 		congo.WithController("auth", controllers.NewAuthController(auth)),
 		congo.WithController("settings", new(controllers.SettingsController)),
-		congo.WithController("content", new(controllers.ContentController)),
-		congo.WithHtmlTheme(cmp.Or(os.Getenv("DAISY_THEME"), "dark")),
-		// congo.WithHostPrefix("/coder/proxy/5000"),
-		congo.WithTemplates(templates))
+		congo.WithController("content", new(controllers.ContentController)))
 )
 
 func main() {
-	app.Handle("/", app.Serve("not-found.html"))
-	app.Handle("/signin", app.Serve("signin.html"))
-
 	auth := app.Use("auth").(*controllers.AuthController)
 
+	app.Handle("/", app.Serve("not-found.html"))
+	app.Handle("/signin", app.Serve("signin.html"))
 	app.Handle("/{$}", auth.Serve("my-hosts.html", "user", "developer"))
-	app.Handle("/code", auth.Serve("our-code.html", "developer"))
 	app.Handle("/code/{path...}", auth.Serve("our-code.html", "developer"))
 	app.Handle("/users", auth.Serve("our-users.html", "developer"))
 	app.Handle("/user/{user}", auth.Serve("our-users.html", "developer"))

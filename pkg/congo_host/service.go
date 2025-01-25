@@ -137,7 +137,6 @@ func (s *Service) Stop() error {
 }
 
 func (s *Service) Proxy(prefix string) http.Handler {
-	log.Println("proxying", s.Port)
 	url, err := url.Parse(fmt.Sprintf("http://localhost:%d", s.Port))
 	if err != nil {
 		log.Fatal("Failed to create reverse proxy: ", err)

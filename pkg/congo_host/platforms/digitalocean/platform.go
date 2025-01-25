@@ -78,13 +78,12 @@ func (d *Server) Delete(purge bool, force bool) error {
 	return nil
 }
 
-func (d *Server) Reload() error {
+func (d *Server) Reload() (err error) {
 	var (
 		droplet  *godo.Droplet
 		droplets []godo.Droplet
 		volumes  []godo.Volume
 		keys     []godo.Key
-		err      error
 	)
 
 	if droplets, _, err = d.client.Droplets.ListByName(context.TODO(), d.Name, nil); err != nil {
@@ -137,13 +136,11 @@ func (s *Server) Run(stdin io.Reader, stdout io.Writer, args ...string) error {
 	if err := s.Reload(); err != nil {
 		return errors.Wrap(err, "failed to reload server")
 	}
-
 	var stderr bytes.Buffer
 	_, priKey := s.keys()
 	cmd := exec.Command(
-		"ssh",
+		"ssh", "-i", priKey,
 		"-o", "StrictHostKeyChecking=no",
-		"-i", priKey,
 		fmt.Sprintf("root@%s", s.IP),
 		strings.Join(args, " "))
 	cmd.Stdin = stdin

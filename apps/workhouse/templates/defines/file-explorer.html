@@ -4,7 +4,7 @@
 
     {{if not (eq (req.PathValue "path") "")}}
     <li>
-      <a href='{{host}}/'>
+      <a href='{{host}}/code'>
         {{template "dir-icon" .}}
         ..
       </a>
@@ -19,7 +19,7 @@
 
     {{if .IsDir}}
     <li>
-      <a href='{{host}}/{{.Path}}'>
+      <a href='{{host}}/code/{{.Path}}?branch={{content.CurrentBranch}}'>
         {{template "dir-icon" .}}
         {{.Name}}
       </a>
@@ -27,7 +27,7 @@
     {{else}}
 
     <li>
-      <a href='{{host}}/{{.Path}}' {{if eq .Path (req.URL.Path)}}class="active" {{end}}>
+      <a href='{{host}}/code/{{.Path}}?branch={{content.CurrentBranch}}' {{if eq .Path (req.URL.Path)}}class="active" {{end}}>
         {{template "file-icon" .}}
         {{.Name}}
       </a>
