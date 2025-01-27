@@ -40,12 +40,12 @@ func (hosting HostingController) launchServer(w http.ResponseWriter, r *http.Req
 
 	server, err := hosting.Host.NewServer(name, size, region)
 	if err != nil {
-		hosting.Render(w, r, "error-message", errors.New("failed to init new server"))
+		hosting.Render(w, r, "error-message", errors.Wrap(err, "failed to init new server"))
 		return
 	}
 
 	if err = server.Launch(region, size, 5); err != nil {
-		hosting.Render(w, r, "error-message", errors.New("failed to launch new server"))
+		hosting.Render(w, r, "error-message", errors.Wrap(err, "failed to launch new server"))
 		return
 	}
 

@@ -13,7 +13,7 @@
 
       <form class="mb-0 w-full"
             hx-post="{{host}}/launch" hx-target="#error-message"
-            hx-on::before-request="launching_modal.showModal()">
+            hx-on::before-request="document.getElementById('error-message').innerHTML='';launching_modal.showModal()">
         <input type="hidden" name="server-type" value="workbench">
         <button class="mt-4 btn btn-primary opacity-80 w-full hover:opacity-100">
           Launch a Workbench
@@ -34,7 +34,7 @@
 
       <form class="mb-0 w-full"
             hx-post="{{host}}/launch" hx-target="#error-message"
-            hx-on::before-request="launching_modal.showModal()">
+            hx-on::before-request="document.getElementById('error-message').innerHTML='';launching_modal.showModal()">
         <input type="hidden" name="server-type" value="workhouse">
         <button class="mt-4 btn btn-primary opacity-80 w-full hover:opacity-100">
           Launch a Workhouse

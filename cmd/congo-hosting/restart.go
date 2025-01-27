@@ -19,8 +19,10 @@ func restart(args ...string) error {
 		name   = cmd.String("name", "congo-server", "Name of Digital Ocean droplet")
 		binary = cmd.String("binary", "", "Local binary to copy to Digital Ocean droplet")
 		app    = cmd.String("app", "", "Prototype to use for the server")
+		enVars stringArray
 	)
 
+	cmd.Var(&enVars, "env", "Environment variables to include in environment")
 	if err := cmd.Parse(args[1:]); err != nil {
 		return err
 	}

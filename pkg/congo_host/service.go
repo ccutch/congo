@@ -59,7 +59,7 @@ func WithArgs(args ...string) ServiceOpt {
 	return func(s *Service) { s.args = args }
 }
 
-func WithEnv(name string, value any) ServiceOpt {
+func WithEnv(name, value string) ServiceOpt {
 	env := fmt.Sprintf("%s=%s", name, value)
 	return func(s *Service) { s.envs = append(s.envs, env) }
 }
@@ -102,14 +102,14 @@ func (s *Service) Start() error {
 	}
 
 	args := strings.Join(s.args, " ")
-	return s.Run(fmt.Sprintf(startService, s.Name, s.Port, envs, volumes, s.Image, s.Tag, args))
+	return s.Run("bash", "-c", fmt.Sprintf(startService, s.Name, s.Port, envs, volumes, s.Image, s.Tag, args))
 }
 
 //go:embed resources/service/setup-service.sh
 var setupService string
 
 func (s *Service) setupService() error {
-	return s.Run(fmt.Sprintf(setupService, s.Host.DB.Root, s.Name))
+	return s.Run("bash", "-c", fmt.Sprintf(setupService, s.Host.DB.Root, s.Name))
 }
 
 func (s *Service) Restart() error {

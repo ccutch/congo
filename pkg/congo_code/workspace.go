@@ -101,7 +101,7 @@ func (w *Workspace) Start() error {
 	log.Println("Preparing workspace", w.Name, w.code.db)
 	var stdout bytes.Buffer
 	host := w.Host.Local()
-	if err := host.Run(fmt.Sprintf(prepareWorkspace, w.Name, w.code.db.Root)); err != nil {
+	if err := host.Run("bash", "-c", fmt.Sprintf(prepareWorkspace, w.Name, w.code.db.Root)); err != nil {
 		return errors.Wrap(err, "failed to prepare workspace")
 	}
 
@@ -112,7 +112,7 @@ func (w *Workspace) Start() error {
 
 	log.Println("Setting up workspace user space")
 	stdout.Reset()
-	if err := host.Run(setupWorkspace); err != nil {
+	if err := host.Run("bash", "-c", setupWorkspace); err != nil {
 		return errors.Wrap(err, "failed to setup workspace: "+stdout.String())
 	}
 
@@ -152,7 +152,7 @@ func (w *Workspace) Run(cmd string) (stdout bytes.Buffer, err error) {
 var createCongoApp string
 
 func (w *Workspace) CreateCongoApp(name, template string) error {
-	return w.Host.Local().Run(fmt.Sprintf(createCongoApp, name, template))
+	return w.Host.Local().Run("bash", "-c", fmt.Sprintf(createCongoApp, name, template))
 }
 
 func (w *Workspace) Save() error {

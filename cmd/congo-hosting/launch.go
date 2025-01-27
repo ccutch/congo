@@ -22,8 +22,10 @@ func launch(args ...string) (*congo_host.RemoteHost, error) {
 		size    = cmd.String("size", "s-1vcpu-2gb", "Size of Digital Ocean droplet")
 		storage = cmd.Int64("storage", 5, "Volume size of Digital Ocean droplet")
 		domain  = cmd.String("domain", "", "Domain name to generate cert for")
+		enVars  stringArray
 	)
 
+	cmd.Var(&enVars, "env", "Environment variables to include in environment")
 	if err := cmd.Parse(args[1:]); err != nil {
 		return nil, err
 	}
