@@ -21,16 +21,34 @@ func (s *Server) setupAccess() error {
 	if _, _, err := s.client.host.GenerateSSHKey(s.Name); err != nil {
 		return errors.Wrap(err, "failed to create access key")
 	}
+
 	pubKey, _ := s.keys()
 	data, err := os.ReadFile(pubKey)
 	if err != nil {
 		return errors.Wrap(err, "failed to read public key")
 	}
+
 	s.sshKey, _, err = s.client.Keys.Create(context.TODO(), &godo.KeyCreateRequest{
 		Name:      s.Name + "-admin-key",
 		PublicKey: string(data),
 	})
-	return errors.Wrap(err, "failed to create access key")
+	if err == nil {
+		return nil
+	}
+
+	keys, _, err := s.client.Keys.List(context.TODO(), nil)
+	if err != nil {
+		return errors.Wrap(err, "failed to list keys")
+	}
+
+	for _, key := range keys {
+		if key.Name == s.Name+"-admin-key" {
+			s.sshKey = &key
+			return nil
+		}
+	}
+
+	return errors.New("failed to create access key")
 }
 
 func (s *Server) deleteRemoteKeys() error {

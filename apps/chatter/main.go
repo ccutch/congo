@@ -1,14 +1,17 @@
 package main
 
 import (
+	"bytes"
 	"cmp"
 	"embed"
 	"fmt"
+	"html/template"
 	"net/http"
 	"os"
 
 	"github.com/ccutch/congo/pkg/congo"
 	"github.com/ccutch/congo/pkg/congo_auth"
+	"github.com/yuin/goldmark"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 
@@ -34,10 +37,15 @@ var (
 	app = congo.NewApplication(
 		congo.WithDatabase(congo.SetupDatabase(data, "chatter.db", migrations)),
 		congo.WithHtmlTheme(cmp.Or(os.Getenv("CONGO_PATH"), "forest")),
-		congo.WithTemplates(templates),
 		congo.WithController(auth.Controller()),
 		congo.WithController("chatting", new(controllers.ChattingController)),
-		congo.WithController("settings", new(controllers.SettingsController)))
+		congo.WithController("settings", new(controllers.SettingsController)),
+		congo.WithTemplates(templates),
+		congo.WithFunc("markdown", func(s string) template.HTML {
+			var buf bytes.Buffer
+			goldmark.Convert([]byte(s), &buf)
+			return template.HTML(cmp.Or(buf.String(), s))
+		}))
 )
 
 func main() {
@@ -46,7 +54,8 @@ func main() {
 	app.Handle("/{$}", app.Serve("homepage.html"))
 	app.Handle("/signin", app.Serve("signin.html"))
 	app.Handle("/signup", app.Serve("signup.html"))
-	app.Handle("/{user}", auth.Protect(app.Serve("messages.html")))
+	app.Handle("/{user}", auth.Protect(app.Serve("messages.html"), "user"))
+	app.Handle("/invite", auth.Protect(app.Serve("url-copied-toast"), "user"))
 
 	app.StartFromEnv()
 }

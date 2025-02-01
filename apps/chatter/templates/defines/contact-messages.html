@@ -5,36 +5,39 @@
        hx-ext="sse" sse-connect="{{host}}/chatting/{{chatting.Mailbox.ID}}" sse-swap="message" hx-swap="afterbegin">
     {{range chatting.Messages}}
     {{block "chat-message" .}}
-    <div class="flex items-center gap-3 py-2">
-      {{with .Owner}}
+    <div class="flex gap-3 py-2">
       <div class="avatar">
         <div class="h-8 w-8 rounded-full bg-base-100">
-          <img src="https://robohash.org/{{.ID}}" alt="{{.Name}}">
+          <img src="https://robohash.org/{{.Owner.ID}}">
         </div>
       </div>
 
       <div class="flex flex-col gap-0">
-        <div class="flex gap-2">
+        <div class="flex items-center gap-2">
+          {{with .Owner}}
           <div class="text-sm font-semibold">
             {{.Name}}
           </div>
+          {{if eq .Role "chatbot"}}
+          <div class="badge badge-neutral badge-sm">
+            AI Chatbot
+          </div>
+          {{end}}
           {{end}}
           <div class="text-sm opacity-80">
             {{.CreatedAt.Format "Jan 2, 3:04 pm"}}
           </div>
         </div>
-        <div class="text-base">
-          {{.Content}}
-        </div>
+        <div class="prose text-base whitespace-pre-wrap">{{markdown .Content}}</div>
       </div>
     </div>
     {{end}}
     {{end}}
   </div>
 
-  <form class="m-0 flex gap-2" hx-post="{{host}}/chatting/messages"
+  <form class="m-0 flex gap-2 h-12" hx-post="{{host}}/chatting/messages"
         hx-on::after-request="this.reset();this.querySelector('#messageInput').focus();">
-    <input type="hidden" name="mailbox" value='{{req.PathValue "user"}}'>
+    <input type="hidden" name="mailbox" value='{{ req.PathValue "user" }}'>
     <input type="text" name="message" class="input input-bordered w-full" placeholder="Your message" id="messageInput"
            autofocus required>
     <button class="btn btn-primary px-8">Send</button>

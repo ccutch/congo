@@ -14,6 +14,35 @@ type Message struct {
 	Content string
 }
 
+func (m *Message) Owner() *congo_auth.Identity {
+	mb, err := m.chat.GetMailbox(m.FromID)
+	if err != nil {
+		return &congo_auth.Identity{
+			Model: m.chat.db.NewModel(m.FromID),
+			Role:  "anon",
+			Name:  "unknown",
+		}
+	}
+
+	id, err := m.chat.auth.Lookup(mb.OwnerID)
+	if err != nil {
+		agent, err := m.chat.GetChatbot(mb.OwnerID)
+		if err != nil {
+			return &congo_auth.Identity{
+				Model: m.chat.db.NewModel(mb.OwnerID),
+				Role:  "anon",
+				Name:  "unknown",
+			}
+		}
+		return &congo_auth.Identity{
+			Model: m.chat.db.NewModel(mb.OwnerID),
+			Role:  "chatbot",
+			Name:  agent.Name,
+		}
+	}
+	return id
+}
+
 func (chat *CongoChat) GetMessage(id string) (*Message, error) {
 	m := Message{Model: chat.db.Model(), chat: chat}
 	return &m, chat.db.Query(`
@@ -37,7 +66,7 @@ func (mb *Mailbox) Send(to, content string) (*Message, error) {
 	if err != nil {
 		return nil, err
 	}
-	mb.chat.Notify(&m)
+	go mb.chat.Notify(&m)
 	return &m, err
 }
 
@@ -87,10 +116,6 @@ func (mb *Mailbox) Messages(from string) ([]*Message, error) {
 		messages = append(messages, &m)
 		return scan(&m.ID, &m.ToID, &m.FromID, &m.Content, &m.CreatedAt, &m.UpdatedAt)
 	})
-}
-
-func (m *Message) Owner() (*congo_auth.Identity, error) {
-	return m.chat.auth.Lookup(m.FromID)
 }
 
 func (m *Message) Save() error {

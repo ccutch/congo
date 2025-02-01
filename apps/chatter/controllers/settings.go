@@ -15,7 +15,7 @@ func (settings *SettingsController) Setup(app *congo.Application) {
 	settings.BaseController.Setup(app)
 	auth := app.Use("auth").(*congo_auth.AuthController)
 
-	app.HandleFunc("POST /_settings/theme", auth.ProtectFunc(settings.updateTheme))
+	app.HandleFunc("POST /_settings/theme", auth.ProtectFunc(settings.updateTheme, "user"))
 }
 
 func (settings SettingsController) Handle(req *http.Request) congo.Controller {

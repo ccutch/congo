@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -19,10 +20,21 @@ type ChattingController struct {
 func (chatting *ChattingController) Setup(app *congo.Application) {
 	chatting.BaseController.Setup(app)
 	chatting.auth = app.Use("auth").(*congo_auth.AuthController)
-	chatting.Chat = congo_chat.InitCongoChat(app.DB.Root, chatting.auth.CongoAuth)
-	app.Handle("GET /chatting/{user}", chatting.auth.ProtectFunc(chatting.handleMessages))
-	app.Handle("POST /chatting/messages", chatting.auth.ProtectFunc(chatting.sendMessage))
-	app.Handle("GET /chatting/invite", chatting.auth.Protect(app.Serve("url-copied-toast")))
+	chatting.Chat = congo_chat.InitCongoChat(app.DB.Root,
+		congo_chat.WithAuth(chatting.auth.CongoAuth),
+		congo_chat.WithModel("deepseek-r1:1.5b"))
+
+	app.Handle("GET /chatting/{user}", chatting.auth.ProtectFunc(chatting.handleMessages, "user"))
+	app.Handle("POST /chatting/messages", chatting.auth.ProtectFunc(chatting.sendMessage, "user"))
+	app.Handle("POST /chatting/new-agent", chatting.auth.ProtectFunc(chatting.newChatbot, "user"))
+
+	for _, chatbot := range chatting.Agents() {
+		log.Println("Starting agent", chatbot.Name)
+		go func(chatbot *congo_chat.Chatbot) {
+			err := chatting.Chat.Register(chatbot)
+			log.Println("Failed to listen for messages", err)
+		}(chatbot)
+	}
 }
 
 func (chatting ChattingController) Handle(req *http.Request) congo.Controller {
@@ -35,21 +47,23 @@ func (chatting *ChattingController) Mailbox() (*congo_chat.Mailbox, error) {
 	return chatting.Chat.GetMailboxForOwner(user.ID)
 }
 
-func (chatting *ChattingController) Contacts() (ids []*congo_auth.Identity, err error) {
-	users, err := chatting.auth.Search("")
+func (chatting *ChattingController) Agents() []*congo_chat.Chatbot {
+	agents, _ := chatting.Chat.AllChatbots()
+	return agents
+}
+
+func (chatting *ChattingController) Mailboxes() (res []*congo_chat.Mailbox, err error) {
+	mbs, err := chatting.Chat.AllMailboxes()
 	if err != nil {
 		return nil, err
 	}
-
 	i, _ := chatting.auth.Authenticate(chatting.Request, "user")
-	for _, user := range users["user"] {
-		if user.ID == i.ID {
-			continue
+	for _, mb := range mbs {
+		if mb.OwnerID != i.ID {
+			res = append(res, mb)
 		}
-		ids = append(ids, user)
 	}
-
-	return ids, nil
+	return res, err
 }
 
 func (chatting *ChattingController) Messages() ([]*congo_chat.Message, error) {
@@ -74,13 +88,19 @@ func (chatting ChattingController) handleMessages(w http.ResponseWriter, r *http
 		return
 	}
 
+	user, _ := chatting.auth.Authenticate(r, "user")
 	userID := r.PathValue("user")
 	if userID == "me" {
-		user, _ := chatting.auth.Authenticate(r, "user")
 		userID = user.ID
 	}
 
-	feed, close := chatting.Chat.Listen(userID)
+	mb, err := chatting.Chat.GetMailboxForOwner(userID)
+	if err != nil {
+		chatting.Render(w, r, "error-message", err)
+		return
+	}
+
+	feed, close := chatting.Chat.Listen(mb.ID)
 	defer close()
 
 	for {
@@ -88,6 +108,11 @@ func (chatting ChattingController) handleMessages(w http.ResponseWriter, r *http
 		case <-r.Context().Done():
 			return
 		case m := <-feed.Messages:
+			log.Println("testing", userID, user.ID, m.FromID, m.ToID)
+			// if userID == user.ID && (m.FromID == userID && m.ToID == userID) {
+			// 	log.Println("Not sending message", userID, user.ID, m.FromID, m.ToID)
+			// 	continue
+			// }
 			flush("chat-message", m)
 		}
 	}
@@ -112,16 +137,49 @@ func (chatting ChattingController) sendMessage(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	mailbox := r.FormValue("mailbox")
-	if mailbox == "me" {
-		mailbox = user.ID
+	userID := r.FormValue("mailbox")
+	if userID == "me" {
+		userID = user.ID
 	}
 
-	log.Println("Sending message", r.FormValue("mailbox"), user.ID, message)
-	if _, err := mb.Send(mailbox, message); err != nil {
+	// log.Println("Sending message", r.FormValue("mailbox"), user.ID, message)
+	if _, err := mb.Send(userID, message); err != nil {
 		chatting.Render(w, r, "error-message", err)
 		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (chatting *ChattingController) newChatbot(w http.ResponseWriter, r *http.Request) {
+	name := r.FormValue("name")
+	if name == "" {
+		chatting.Render(w, r, "error-message", errors.New("missing name"))
+		return
+	}
+
+	prompt := r.FormValue("prompt")
+	if prompt == "" {
+		chatting.Render(w, r, "error-message", errors.New("missing prompt"))
+		return
+	}
+
+	chatbot, err := chatting.Chat.NewChatbot(name, prompt)
+	if err != nil {
+		chatting.Render(w, r, "error-message", err)
+		return
+	}
+
+	go func() {
+		err := chatting.Chat.Register(chatbot)
+		log.Println("Failed to listen for messages", err)
+	}()
+
+	mb, err := chatbot.Mailbox()
+	if err != nil {
+		chatting.Render(w, r, "error-message", err)
+		return
+	}
+
+	chatting.Redirect(w, r, fmt.Sprintf("/%s", mb.ID))
 }

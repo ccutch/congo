@@ -169,6 +169,13 @@ func WithHtmlTheme(theme string) ApplicationOpt {
 	}
 }
 
+func WithFunc(name string, fn any) ApplicationOpt {
+	return func(app *Application) error {
+		app.templates.Funcs(template.FuncMap{name: fn})
+		return nil
+	}
+}
+
 func (app *Application) PrepareTemplates() {
 	funcs := template.FuncMap{
 		"db":   func() *Database { return app.DB },
@@ -196,6 +203,8 @@ func (app *Application) PrepareTemplates() {
 
 		if tmpl, err := app.templates.ParseFS(source, "templates/**/*.html"); err == nil {
 			app.templates = tmpl
+		} else {
+			log.Println("Failed to parse templates:", err)
 		}
 	}
 }
