@@ -1,0 +1,47 @@
+{{define "launcher"}}
+<div class="flex md:flex-row flex-col items-center justify-center gap-12 py-12 w-full">
+
+  <div class="card bg-base-100 shadow-lg w-full max-w-xs h-max">
+    <div class="card-body">
+      <h2 class="card-title text-2xl">Workbench</h2>
+      <ul class="list-disc py-2 px-6">
+        <li>Solo Developers</li>
+        <li>Local Git Storage</li>
+        <li>Local Code Editor</li>
+        <li>Launch Remote Servers</li>
+      </ul>
+
+      <form class="mb-0 w-full"
+            hx-post="{{host}}/launch" hx-target="#error-message"
+            hx-on::before-request="document.getElementById('error-message').innerHTML='';launching_modal.showModal()">
+        <input type="hidden" name="server-type" value="workbench">
+        <button class="mt-4 btn btn-primary opacity-80 w-full hover:opacity-100">
+          Launch a Workbench
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div class="card bg-base-100 shadow-lg w-full max-w-xs h-max">
+    <div class="card-body">
+      <h2 class="card-title text-2xl">Workhouse</h2>
+      <ul class="list-disc py-2 px-6">
+        <li>Team of Developers</li>
+        <li>Single Git Repository</li>
+        <li>Multiple Code Editors</li>
+        <li>Launch Remote Servers</li>
+      </ul>
+
+      <form class="mb-0 w-full"
+            hx-post="{{host}}/launch" hx-target="#error-message"
+            hx-on::before-request="document.getElementById('error-message').innerHTML='';launching_modal.showModal()">
+        <input type="hidden" name="server-type" value="workhouse">
+        <button class="mt-4 btn btn-primary opacity-80 w-full hover:opacity-100">
+          Launch a Workhouse
+        </button>
+      </form>
+    </div>
+  </div>
+
+</div>
+{{end}}

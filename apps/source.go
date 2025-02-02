@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -21,17 +20,17 @@ var SourceFiles embed.FS
 var ResourceFiles embed.FS
 
 func Build(app string) (string, error) {
-	var host congo_host.LocalHost
 	dir, err := os.MkdirTemp("", "congo-app-build-*")
-	log.Println("dir", dir, err)
 	if err != nil {
 		return "", err
 	}
+
 	if err := GenerateApp(app, dir, app); err != nil {
 		return "", err
 	}
 	dest := filepath.Join(dir, "congo")
 
+	var host congo_host.LocalHost
 	host.SetStdin(os.Stdin)
 	host.SetStdout(os.Stdout)
 

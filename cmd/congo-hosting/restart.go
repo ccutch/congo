@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -19,6 +20,7 @@ func restart(args ...string) error {
 		name   = cmd.String("name", "congo-server", "Name of Digital Ocean droplet")
 		binary = cmd.String("binary", "", "Local binary to copy to Digital Ocean droplet")
 		app    = cmd.String("app", "", "Prototype to use for the server")
+		web    = cmd.String("web", "", "Website we are deploying")
 		enVars stringArray
 	)
 
@@ -41,8 +43,19 @@ func restart(args ...string) error {
 		return err
 	}
 
-	if *app != "" && *binary == "" {
-		exec.Command("go", "build", "-o", "congo", "./apps/"+*app).Run()
+	if *app != "" {
+		log.Println("Building binary...")
+		if err = exec.Command("go", "build", "-o", "congo", "./apps/"+*app).Run(); err != nil {
+			log.Println("Failed to build binary: ", err)
+			return errors.Wrap(err, "failed to build binary")
+		}
+		*binary = "./congo"
+	} else if *web != "" {
+		log.Println("Building website...")
+		if err = exec.Command("go", "build", "-o", "congo", "./web/"+*web).Run(); err != nil {
+			log.Println("Failed to build website: ", err)
+			return errors.Wrap(err, "failed to build website")
+		}
 		*binary = "./congo"
 	}
 
