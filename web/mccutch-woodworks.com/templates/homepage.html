@@ -1,0 +1,89 @@
+<html data-theme="{{theme}}">
+
+<head>
+  <title>McCutch Woodworks</title>
+  <meta name="description" content="McCutch Woodworks">
+  {{template "includes"}}
+</head>
+
+<body hx-boost="true">
+  <div class="sticky z-30 left-0 right-0 top-0 navbar bg-base-100">
+    <div class="flex-1"> </div>
+    <div class="flex-none">
+      <ul class="menu menu-horizontal gap-1" hx-boost="true">
+        <li><a href="/" class="active">Home</a></li>
+        <li><a target="_blank" href="https://www.airbnb.com/experiences/1075259?s=67&shared_item_type=2&virality_entry_point=2">Airbnb Experience</a></li>
+        <li><a target="_blank" href="https://www.etsy.com/shop/McCutchwoodworks">My Etsy Shop</a></li>
+        <!-- <li><a href="/images">Gallery</a></li>
+        <li><a href="/videos">Videos</a></li> -->
+      </ul>
+    </div>
+  </div>
+
+  <div class="relative hero h-[50vh] lg:h-[85vh] bg-[url('{{host}}/public/images/shopfront.jpg')] bg-cover bg-center shadow-inset">
+    <div class="absolute z-10 inset-0 bg-black opacity-30"></div>
+    <div class="relative z-20 hero-content h-full w-full max-w-screen-2xl flex justify-start items-end p-6 lg:p-12">
+      <div class="flex flex-col gap-2 lg:gap-6 fade-in">
+        <h1 class="text-3xl lg:text-8xl font-bold">
+          McCutch <br> Woodworks
+        </h1>
+        <div class="badge p-4 lg:badge-lg lg:text-2xl lg:py-6 lg:px-8 font-semibold" data-theme="fantasy">
+          <div class="animate-pulse h-3 w-3 rounded-full mr-1 lg:mr-3 bg-success"></div>
+          Open for Business
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero">
+    <div class="hero-content h-full w-full max-w-screen-2xl p-8 lg:p-16 flex flex-col lg:flex-row gap-8 justify-between items-start">
+      <div class="flex flex-col gap-2 w-full max-w-lg">
+        <h1 class="text-xl lg:text-4xl font-bold tracking-wide">
+          Hi! I'm Sean McCutcheon,
+        </h1>
+        <p class="text-base lg:text-xl font-semibold opacity-90 leading-normal tracking-wide">
+          owner and artisan at McCutch Woodworks. I am a 2nd generation woodworker,
+          born and raised in Pleasanton, California. My hope is that you find something
+          here at my shop that will reach out and grab you, either for it's usefulness,
+          as a special gift, or to add to your home decor. I love finding local pieces
+          to turn on my lathe. A rustic discarded barbwire fence post, a lichen covered
+          pine branch found on a hike in the woods and that downed neighbor's tree are
+          all things that inspire me and my work. My other passions include everything
+          wine barrel stave inspired. Repurposing a wine barrel into something unique is awesome!
+        </p>
+      </div>
+
+      <div class="flex flex-col lg:flex-row justify-between gap-4 w-full max-w-screen-md lg:px-4">
+        <a target="_blank" href="https://www.airbnb.com/experiences/1075259?s=67&shared_item_type=2&virality_entry_point=2" class="card bg-base-200 shadow h-max">
+          <figure class="h-64 bg-base-300">
+            <img src="{{host}}/public/images/lessons.jpg" alt="Shoes" class="opacity-80">
+          </figure>
+          <div class="card-body">
+            <h2 class="card-title">
+              Woodworking Classes
+            </h2>
+            <p>
+              I have a wide variety of woodworking lessons for all levels.
+            </p>
+          </div>
+        </a>
+
+        <a target="_blank" href="https://www.etsy.com/shop/McCutchwoodworks" class="card bg-base-200 shadow h-max">
+          <figure class="h-64">
+            <img src="{{host}}/public/images/goods.jpg" alt="Shoes" class="opacity-80">
+          </figure>
+          <div class="card-body">
+            <h2 class="card-title">
+              Checkout my Etsy Shop
+            </h2>
+            <p>
+              You can find a variety of unique and handmade items here.
+            </p>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>

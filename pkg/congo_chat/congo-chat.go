@@ -5,6 +5,7 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"time"
@@ -76,6 +77,9 @@ func WithModel(name string) CongoChatOptions {
 				log.Fatal("Failed to pull ollama model:", resp.Status)
 			}
 
+			var buf bytes.Buffer
+			_, err = io.Copy(&buf, resp.Body)
+			log.Println(buf.String(), err)
 			log.Printf("Pulled ollama model %s", name)
 		}()
 	}
