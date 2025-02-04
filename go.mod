@@ -10,6 +10,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.24
 	github.com/pkg/errors v0.9.1
 	github.com/sosedoff/gitkit v0.4.0
+	github.com/stripe/stripe-go/v81 v81.3.1
 	github.com/yuin/goldmark v1.7.8
 	golang.org/x/crypto v0.31.0
 	golang.org/x/oauth2 v0.23.0

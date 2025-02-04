@@ -25,7 +25,7 @@ func (settings *SettingsController) Setup(app *congo.Application) {
 	}
 
 	hosting := app.Use("hosting").(*HostingController)
-	hosting.host.WithApi(digitalocean.NewClient(settings.Get("token")))
+	hosting.host.WithAPI(digitalocean.NewClient(settings.Get("token")))
 }
 
 func (settings SettingsController) Handle(req *http.Request) congo.Controller {
@@ -70,6 +70,6 @@ func (settings SettingsController) updateToken(w http.ResponseWriter, r *http.Re
 	settings.Refresh(w, r)
 
 	if hosting, ok := settings.Use("hosting").(*HostingController); ok {
-		hosting.host.WithApi(digitalocean.NewClient(settings.Get("token")))
+		hosting.host.WithAPI(digitalocean.NewClient(settings.Get("token")))
 	}
 }

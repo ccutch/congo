@@ -27,10 +27,9 @@ var (
 		congo_auth.WithAccessView("user", "login-user.html"),
 		congo_auth.WithAccessView("admin", "login-admin.html"))
 
-	app = congo.NewApplication(
+	app = congo.NewApplication(templates,
 		congo.WithDatabase(congo.SetupDatabase(data, "launchpad.db", migrations)),
-		congo.WithTemplates(templates),
-		congo.WithHtmlTheme(cmp.Or(os.Getenv("CONGO_THEME"), "wireframe")),
+		congo.WithTheme(cmp.Or(os.Getenv("CONGO_THEME"), "wireframe")),
 		congo.WithController(auth.Controller()),
 		congo.WithController("apps", new(controllers.AppsController)),
 		congo.WithController("hosts", new(controllers.HostsController)))

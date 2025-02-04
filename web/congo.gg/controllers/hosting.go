@@ -3,12 +3,11 @@ package controllers
 import (
 	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/ccutch/congo/apps"
 	"github.com/ccutch/congo/pkg/congo"
 	"github.com/ccutch/congo/pkg/congo_host"
-	"github.com/ccutch/congo/pkg/congo_host/platforms/digitalocean"
+	"github.com/ccutch/congo/pkg/congo_sell"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 )
@@ -16,12 +15,11 @@ import (
 type HostingController struct {
 	congo.BaseController
 	Host *congo_host.CongoHost
+	Sell *congo_sell.CongoSell
 }
 
 func (hosting *HostingController) Setup(app *congo.Application) {
 	hosting.BaseController.Setup(app)
-	hosting.Host = congo_host.InitCongoHost(app.DB.Root,
-		digitalocean.NewClient(os.Getenv("DIGITAL_OCEAN_API_KEY")))
 	app.HandleFunc("POST /launch", hosting.launchServer)
 }
 

@@ -25,10 +25,9 @@ var (
 		congo_auth.WithAccessView("admin", "admin-login.html"),
 		congo_auth.WithAccessView("writer", "writer-login.html"))
 
-	app = congo.NewApplication(
+	app = congo.NewApplication(templates,
+		congo.WithTheme(cmp.Or(os.Getenv("CONGO_THEME"), "dim")),
 		congo.WithDatabase(congo.SetupDatabase(path, "blog.db", migrations)),
-		congo.WithTemplates(templates),
-		congo.WithHtmlTheme(cmp.Or(os.Getenv("CONGO_THEME"), "dim")),
 		congo.WithController(auth.Controller()),
 		congo.WithController("posts", new(controllers.PostController)))
 )

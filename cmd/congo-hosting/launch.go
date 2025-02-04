@@ -36,7 +36,8 @@ func launch(args ...string) (*congo_host.RemoteHost, error) {
 	}
 
 	log.Println("Recording record...")
-	host := congo_host.InitCongoHost(*path, digitalocean.NewClient(*apiKey))
+	host := congo_host.InitCongoHost(*path,
+		congo_host.WithAPI(digitalocean.NewClient(*apiKey)))
 	server, err := host.NewServer(*name, *size, *region)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create server")

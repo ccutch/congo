@@ -47,17 +47,8 @@ func (h *LocalHost) SetStdout(stdout io.Writer) {
 }
 
 func (h *LocalHost) Run(args ...string) error {
+	var stderr bytes.Buffer
 	cmd := exec.Command(args[0], args[1:]...)
-	var stderr bytes.Buffer
-	cmd.Stderr = &stderr
-	cmd.Stdout = h.stdout
-	cmd.Stdin = h.stdin
-	return errors.Wrap(cmd.Run(), stderr.String())
-}
-
-func (h *LocalHost) Docker(args ...string) error {
-	cmd := exec.Command("docker", args...)
-	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 	cmd.Stdout = h.stdout
 	cmd.Stdin = h.stdin

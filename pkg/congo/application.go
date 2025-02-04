@@ -14,7 +14,7 @@ import (
 )
 
 //go:embed all:templates
-var templates embed.FS
+var congoTemplates embed.FS
 
 type Application struct {
 	router      *http.ServeMux
@@ -33,11 +33,11 @@ type Credentials struct {
 
 type ApplicationOpt func(*Application) error
 
-func NewApplication(opts ...ApplicationOpt) *Application {
+func NewApplication(templates fs.FS, opts ...ApplicationOpt) *Application {
 	app := Application{
 		router:      http.NewServeMux(),
 		controllers: map[string]Controller{},
-		sources:     []fs.FS{templates},
+		sources:     []fs.FS{congoTemplates, templates},
 	}
 	for _, opt := range opts {
 		if err := opt(&app); err != nil {
@@ -150,14 +150,14 @@ func (app *Application) WithCredentials(cert, key string) {
 	app.creds = &Credentials{cert, key}
 }
 
-func WithHostPrefix(prefix string) ApplicationOpt {
+func WithHost(prefix string) ApplicationOpt {
 	return func(app *Application) error {
 		app.hostPrefix = prefix
 		return nil
 	}
 }
 
-func WithHtmlTheme(theme string) ApplicationOpt {
+func WithTheme(theme string) ApplicationOpt {
 	return func(app *Application) error {
 		if app.templates == nil {
 			app.templates = template.New("")

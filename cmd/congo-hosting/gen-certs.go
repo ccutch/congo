@@ -31,7 +31,8 @@ func genCerts(args ...string) error {
 		log.Fatal("Missing domain name")
 	}
 
-	host := congo_host.InitCongoHost(*path, digitalocean.NewClient(*apiKey))
+	host := congo_host.InitCongoHost(*path,
+		congo_host.WithAPI(digitalocean.NewClient(*apiKey)))
 	server, err := host.GetServer(*name)
 	if err != nil {
 		return errors.Wrap(err, "failed to get server")

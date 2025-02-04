@@ -25,11 +25,10 @@ var (
 		congo_auth.WithSetupView("setup.html", "/"),
 		congo_auth.WithAccessView("developer", "login.html"))
 
-	app = congo.NewApplication(
+	app = congo.NewApplication(templates,
 		congo.WithDatabase(congo.SetupDatabase(data, "workbench.db", migrations)),
-		congo.WithHtmlTheme(cmp.Or(os.Getenv("CONGO_THEME"), "dark")),
-		congo.WithHostPrefix(os.Getenv("CONGO_HOST_PREFIX")),
-		congo.WithTemplates(templates),
+		congo.WithTheme(cmp.Or(os.Getenv("CONGO_THEME"), "dark")),
+		congo.WithHost(os.Getenv("CONGO_HOST_PREFIX")),
 		congo.WithController(auth.Controller()),
 		congo.WithController("coding", new(controllers.CodingController)),
 		congo.WithController("hosting", new(controllers.HostingController)),

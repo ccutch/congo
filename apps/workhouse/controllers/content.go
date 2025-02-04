@@ -45,7 +45,7 @@ func (c *ContentController) Setup(app *congo.Application) {
 
 	settings := app.Use("settings").(*SettingsController)
 	if key := settings.get("HOST_API_KEY"); key != "" {
-		c.Host.WithApi(digitalocean.NewClient(key))
+		c.Host.WithAPI(digitalocean.NewClient(key))
 	}
 }
 

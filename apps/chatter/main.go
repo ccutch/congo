@@ -34,18 +34,13 @@ var (
 		congo_auth.WithSigninDest("/me"),
 		congo_auth.WithSignupCallback(signup))
 
-	app = congo.NewApplication(
+	app = congo.NewApplication(templates,
+		congo.WithTheme(cmp.Or(os.Getenv("CONGO_PATH"), "forest")),
+		congo.WithFunc("markdown", markdown),
 		congo.WithDatabase(congo.SetupDatabase(data, "chatter.db", migrations)),
-		congo.WithHtmlTheme(cmp.Or(os.Getenv("CONGO_PATH"), "forest")),
 		congo.WithController(auth.Controller()),
 		congo.WithController("chatting", new(controllers.ChattingController)),
-		congo.WithController("settings", new(controllers.SettingsController)),
-		congo.WithTemplates(templates),
-		congo.WithFunc("markdown", func(s string) template.HTML {
-			var buf bytes.Buffer
-			goldmark.Convert([]byte(s), &buf)
-			return template.HTML(cmp.Or(buf.String(), s))
-		}))
+		congo.WithController("settings", new(controllers.SettingsController)))
 )
 
 func main() {
@@ -62,7 +57,6 @@ func main() {
 
 func signup(auth *congo_auth.AuthController, user *congo_auth.Identity) http.HandlerFunc {
 	chatting := auth.Use("chatting").(*controllers.ChattingController)
-
 	return func(w http.ResponseWriter, r *http.Request) {
 		name := fmt.Sprintf("%s's Mailbox", cases.Title(language.English).String(user.Name))
 		if _, err := chatting.Chat.NewMailboxWithID(user.ID, user.ID, name, 100); err != nil {
@@ -71,4 +65,10 @@ func signup(auth *congo_auth.AuthController, user *congo_auth.Identity) http.Han
 		}
 		auth.Redirect(w, r, "/me")
 	}
+}
+
+func markdown(s string) template.HTML {
+	var buf bytes.Buffer
+	goldmark.Convert([]byte(s), &buf)
+	return template.HTML(cmp.Or(buf.String(), s))
 }

@@ -23,18 +23,23 @@ type CongoHost struct {
 	api Platform
 }
 
-func InitCongoHost(root string, api Platform) *CongoHost {
-	host := CongoHost{congo.SetupDatabase(root, "host.db", migrations), api}
+func InitCongoHost(root string, opts ...CongoHostOpts) *CongoHost {
+	host := CongoHost{congo.SetupDatabase(root, "host.db", migrations), nil}
 	if err := host.DB.MigrateUp(); err != nil {
 		log.Fatal("Failed to setup host db:", err)
-	}
-	if api != nil {
-		api.Init(&host)
 	}
 	return &host
 }
 
-func (host *CongoHost) WithApi(api Platform) {
+type CongoHostOpts func(*CongoHost)
+
+func WithAPI(api Platform) CongoHostOpts {
+	return func(host *CongoHost) {
+		host.WithAPI(api)
+	}
+}
+
+func (host *CongoHost) WithAPI(api Platform) {
 	if host.api = api; api != nil {
 		host.api.Init(host)
 	}

@@ -145,7 +145,7 @@ func (w *Workspace) Run(cmd string) (stdout bytes.Buffer, err error) {
 	s.SetStdout(&stdout)
 	cmd = strings.ReplaceAll(cmd, "\n", "; ")
 	cmd = strings.ReplaceAll(cmd, "; ;", ";")
-	return stdout, s.Docker("exec", "-it", w.Name, "bash", "-c", cmd)
+	return stdout, s.Run("docker", "exec", "-it", w.Name, "bash", "-c", cmd)
 }
 
 //go:embed resources/workspace/create-congo-app.sh

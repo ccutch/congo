@@ -106,7 +106,7 @@ func (settings SettingsController) updateTheme(w http.ResponseWriter, r *http.Re
 func (settings SettingsController) updateToken(w http.ResponseWriter, r *http.Request) {
 	settings.set("HOST_API_KEY", r.FormValue("api_key"))
 	content := settings.Use("content").(*ContentController)
-	content.Host.WithApi(digitalocean.NewClient(r.FormValue("api_key")))
+	content.Host.WithAPI(digitalocean.NewClient(r.FormValue("api_key")))
 	settings.Refresh(w, r)
 }
 

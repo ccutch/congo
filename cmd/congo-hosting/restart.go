@@ -33,7 +33,8 @@ func restart(args ...string) error {
 		*apiKey = os.Getenv("DIGITAL_OCEAN_API_KEY")
 	}
 
-	host := congo_host.InitCongoHost(*path, digitalocean.NewClient(*apiKey))
+	host := congo_host.InitCongoHost(*path,
+		congo_host.WithAPI(digitalocean.NewClient(*apiKey)))
 	server, err := host.GetServer(*name)
 	if err != nil {
 		return err
