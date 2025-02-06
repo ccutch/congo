@@ -33,7 +33,7 @@ func InitCongoHost(root string, opts ...CongoHostOpts) *CongoHost {
 
 type CongoHostOpts func(*CongoHost)
 
-func WithAPI(api Platform) CongoHostOpts {
+func WithPlatform(api Platform) CongoHostOpts {
 	return func(host *CongoHost) {
 		host.WithAPI(api)
 	}

@@ -10,7 +10,15 @@ type Product interface {
 	ID() string
 	Name() string
 	Description() string
-	SetPrice(int) error
 	Update(name, description string) error
 	Delete() error
+	Price() (Price, error)
+	SetPrice(int) (Price, error)
+}
+
+type Price interface {
+	ID() string
+	Amount() int
+	Currency() string
+	CheckoutURL(string) (string, error)
 }

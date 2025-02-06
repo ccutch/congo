@@ -13,6 +13,9 @@ type Client struct {
 }
 
 func NewClient(key string) *Client {
+	if key == "" {
+		return nil
+	}
 	stripe.Key = key
 	return &Client{key}
 }

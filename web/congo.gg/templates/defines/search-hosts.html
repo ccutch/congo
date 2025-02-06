@@ -1,0 +1,41 @@
+{{define "search-hosts"}}
+<div class="flex w-full gap-4">
+  <input name="query" type="search" class="input input-bordered w-full" placeholder="Search your host"
+         hx-get="{{host}}/" hx-trigger="input changed delay:500ms, search"
+         hx-select="#host-results" hx-target="#host-results" hx-swap="outerHTML">
+  <a target="_blank" href="{{host}}/checkout" class="btn btn-primary">
+    Purchase a New Host
+  </a>
+</div>
+{{with hosting.MyHosts}}
+<table id="host-results" class="table">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{range .}}
+    <tr>
+      <td>{{.Name}}</td>
+      <td hx-boost="true">
+        <a href="{{host}}/{{.ID}}" class="btn btn-sm btn-error">
+          View Details
+        </a>
+        <a target="_blank" href="https://google.com" class="btn btn-sm btn-success">
+          Visit Site
+        </a>
+      </td>
+    </tr>
+    {{end}}
+  </tbody>
+</table>
+{{else}}
+<div id="host-details" class="w-full flex items-center justify-center p-20">
+  <h2 class="text-4xl font-bold text-center opacity-80">
+    No Hosts Found
+  </h2>
+</div>
+{{end}}
+{{end}}

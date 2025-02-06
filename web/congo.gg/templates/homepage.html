@@ -8,15 +8,36 @@
 
 <body class="bg-base-200">
   <div class="hero min-h-screen">
-    <div class="hero-content flex-col w-full">
-      <h1 class="text-4xl font-bold">
-        Welcome to Congo.GG
-      </h1>
-      <p class="text-xl font-semibold opacity-80">
-        Build Your Next Great Idea.
-      </p>
+    <div class="hero-content w-full justify-between">
+      <div class="flex flex-col gap-1">
+        <h1 class="text-4xl font-bold">
+          Welcome to Congo.GG
+        </h1>
+        <p class="text-2xl font-semibold opacity-80">
+          Build Your Next Great Idea.
+        </p>
 
-      {{template "launcher"}}
+        <div class="mockup-browser border-base-100 mt-6" data-theme="dark">
+          <div class="mockup-browser-toolbar">
+            <div class="input border-base-100 border">https://congo.gg</div>
+          </div>
+          <div class="border-base-300 flex justify-center border-t">
+            <img src="{{host}}/public/images/mockup.png" class="-mb-1 w-full max-w-lg">
+          </div>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-4 items-center justify-center max-w-sm w-full">
+        <div class="card bg-base-100 shadow w-full">
+          <div class="card-body">
+            <h1 class="card-title">Create an Account</h1>
+            {{template "congo-auth/signup-form" "user"}}
+          </div>
+        </div>
+        <a hx-boost="true" href="{{host}}/login" class="button btn btn-ghost">
+          Already have an account?
+        </a>
+      </div>
     </div>
   </div>
 

@@ -26,7 +26,7 @@ func connect(args ...string) error {
 	}
 
 	host := congo_host.InitCongoHost(*path,
-		congo_host.WithAPI(digitalocean.NewClient(*apiKey)))
+		congo_host.WithPlatform(digitalocean.NewClient(*apiKey)))
 
 	server, err := host.GetServer(*name)
 	if err != nil {

@@ -1,0 +1,40 @@
+{{define "search-users"}}
+<input name="query" type="search" class="input input-bordered w-full" placeholder="Search your host"
+       hx-get="{{host}}/admin" hx-trigger="input changed delay:200ms, search"
+       hx-select="#admin-results" hx-target="#admin-results" hx-swap="outerHTML">
+
+<div class="grid grid-cols-3 gap-4 w-full" id="admin-results">
+  {{range hosting.UserGrid 3}}
+  <div class="grid gap-4">
+    {{range .}}
+    <div class="card bg-base-100 shadow w-full">
+      <div class="card-body">
+        <h3 class="card-title">{{.Name}}</h3>
+        {{with hosting.HostsFor .ID}}
+        <ul class="menu">
+          {{range .}}
+          <li>
+            <a href="{{host}}/{{.ID}}" class="btn btn-sm btn-error">
+              Host: {{.Name}}
+            </a>
+          </li>
+          {{end}}
+        </ul>
+        {{else}}
+        <p class="mt-4 font-semibold text-lg text-center">
+          No Hosts
+        </p>
+        {{end}}
+      </div>
+    </div>
+    {{end}}
+  </div>
+  {{else}}
+  <div class="w-full flex items-center justify-center p-20 col-span-3">
+    <h2 class="text-4xl font-bold text-center opacity-80">
+      No Users Found
+    </h2>
+  </div>
+  {{end}}
+</div>
+{{end}}
