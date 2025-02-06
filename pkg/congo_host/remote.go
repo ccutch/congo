@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"fmt"
 	"io"
+	"log"
 	"os"
 
 	"github.com/ccutch/congo/pkg/congo"
@@ -46,6 +47,7 @@ func (host *CongoHost) NewServer(name, size, region string) (*RemoteHost, error)
 }
 
 func (host *CongoHost) GetServer(id string) (*RemoteHost, error) {
+	log.Println("api", host.api)
 	s := RemoteHost{
 		Model:  host.DB.Model(),
 		Server: host.api.Server(id),

@@ -28,6 +28,9 @@ func InitCongoHost(root string, opts ...CongoHostOpts) *CongoHost {
 	if err := host.DB.MigrateUp(); err != nil {
 		log.Fatal("Failed to setup host db:", err)
 	}
+	for _, opt := range opts {
+		opt(&host)
+	}
 	return &host
 }
 

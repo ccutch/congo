@@ -44,7 +44,7 @@ func WithProduct(name, description string, price int) CongoSellOpts {
 		var p Product
 		pi, err := c.Product(name)
 		if err != nil {
-			if p, err = c.backend.CreateProduct(name, description); err == nil {
+			if p, err = c.backend.CreateProduct(name, description); err != nil {
 				log.Fatalf("Failed to create product: %s", err)
 			}
 			if _, err = p.SetPrice(price); err != nil {

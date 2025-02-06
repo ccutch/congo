@@ -28,7 +28,7 @@ func (hosting *HostingController) Setup(app *congo.Application) {
 	hosting.BaseController.Setup(app)
 	app.HandleFunc("POST /launch", hosting.launchServer)
 	app.HandleFunc("GET /checkout", hosting.goToCheckout)
-	app.HandleFunc("GET /{host}/callback", hosting.callback)
+	app.HandleFunc("GET /callback/{host}", hosting.callback)
 }
 
 func (hosting HostingController) Handle(req *http.Request) congo.Controller {
@@ -80,7 +80,7 @@ func (hosting HostingController) goToCheckout(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	url := fmt.Sprintf("https://congo.gg/%s/checkout", host.ID)
+	url := fmt.Sprintf("https://congo.gg/callback/%s?session_id={CHECKOUT_SESSION_ID}", host.ID)
 	url, err = products[0].Checkout(url)
 	if err != nil {
 		hosting.Render(w, r, "error-message", err)
@@ -95,7 +95,7 @@ func (hosting HostingController) callback(w http.ResponseWriter, r *http.Request
 		hosting.Render(w, r, "error-message", errors.New("no session id found"))
 		return
 	}
-	// TODO: track payment
+
 	host, err := hosting.host.GetServer(r.PathValue("host"))
 	if err != nil {
 		hosting.Render(w, r, "error-message", err)
@@ -109,7 +109,7 @@ func (hosting HostingController) callback(w http.ResponseWriter, r *http.Request
 		host.Deploy(out)
 	}()
 
-	http.Redirect(w, r, "/", http.StatusFound)
+	http.Redirect(w, r, "/"+host.ID, http.StatusFound)
 }
 
 func (hosting HostingController) launchServer(w http.ResponseWriter, r *http.Request) {
