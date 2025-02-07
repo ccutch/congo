@@ -45,6 +45,7 @@ func (p *Product) Delete() error {
 func (p *Product) Price() (congo_sell.Price, error) {
 	prices := price.List(&stripe.PriceListParams{
 		Product: stripe.String(p.ID()),
+		Active:  stripe.Bool(true),
 	})
 	if prices.Next() {
 		return &Price{p.client, prices.Price()}, nil
@@ -54,11 +55,12 @@ func (p *Product) Price() (congo_sell.Price, error) {
 
 func (p *Product) SetPrice(amount int) (congo_sell.Price, error) {
 	if old, err := p.Price(); err == nil {
-		pr, err := price.Update(old.ID(), &stripe.PriceParams{
-			Currency:   stripe.String("usd"),
-			UnitAmount: stripe.Int64(int64(amount)),
+		_, err := price.Update(old.ID(), &stripe.PriceParams{
+			Active: stripe.Bool(false),
 		})
-		return &Price{p.client, pr}, err
+		if err != nil {
+			return nil, err
+		}
 	}
 	pr, err := price.New(&stripe.PriceParams{
 		Product:    stripe.String(p.ID()),

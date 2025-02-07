@@ -11,8 +11,8 @@ type PostController struct{ congo.BaseController }
 
 func (posts *PostController) Setup(app *congo.Application) {
 	posts.Application = app
-	app.HandleFunc("POST /blog", posts.handleCreate)
-	app.HandleFunc("PUT /blog/{post}", posts.handleUpdate)
+	http.HandleFunc("POST /blog", posts.handleCreate)
+	http.HandleFunc("PUT /blog/{post}", posts.handleUpdate)
 }
 
 func (posts PostController) Handle(r *http.Request) congo.Controller {

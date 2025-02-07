@@ -21,7 +21,7 @@ type CodingController struct {
 
 func (coding *CodingController) Setup(app *congo.Application) {
 	coding.BaseController.Setup(app)
-	coding.host = congo_host.InitCongoHost(app.DB.Root, nil)
+	coding.host = congo_host.InitCongoHost(app.DB.Root)
 	coding.code = congo_code.InitCongoCode(app.DB.Root)
 	coding.Repo, _ = coding.code.NewRepo("code", congo_code.WithName("Code"))
 
@@ -44,7 +44,7 @@ func (coding *CodingController) Setup(app *congo.Application) {
 		}
 	}()
 
-	app.HandleFunc("/_coding/download", auth.ProtectFunc(coding.handleDownload, "developer"))
+	http.HandleFunc("/_coding/download", auth.ProtectFunc(coding.handleDownload, "developer"))
 }
 
 func (coding CodingController) Handle(req *http.Request) congo.Controller {

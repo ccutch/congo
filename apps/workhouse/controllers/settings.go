@@ -17,12 +17,12 @@ func (settings *SettingsController) Setup(app *congo.Application) {
 	settings.BaseController.Setup(app)
 
 	auth := app.Use("auth").(*AuthController)
-	app.Handle("POST /_settings/name", auth.ProtectFunc(settings.updateName, "developer"))
-	app.Handle("POST /_settings/description", auth.ProtectFunc(settings.updateDescription, "developer"))
-	app.Handle("POST /_settings/theme", auth.ProtectFunc(settings.updateTheme, "developer"))
-	app.Handle("POST /_settings/token", auth.ProtectFunc(settings.updateToken, "developer"))
-	app.Handle("POST /_settings/skip-payments", auth.ProtectFunc(settings.skipPayments, "developer"))
-	app.Handle("POST /_settings/hosting", auth.ProtectFunc(settings.updateHosting, "developer"))
+	http.Handle("POST /_settings/name", auth.ProtectFunc(settings.updateName, "developer"))
+	http.Handle("POST /_settings/description", auth.ProtectFunc(settings.updateDescription, "developer"))
+	http.Handle("POST /_settings/theme", auth.ProtectFunc(settings.updateTheme, "developer"))
+	http.Handle("POST /_settings/token", auth.ProtectFunc(settings.updateToken, "developer"))
+	http.Handle("POST /_settings/skip-payments", auth.ProtectFunc(settings.skipPayments, "developer"))
+	http.Handle("POST /_settings/hosting", auth.ProtectFunc(settings.updateHosting, "developer"))
 }
 
 func (settings SettingsController) Handle(req *http.Request) congo.Controller {

@@ -20,9 +20,9 @@ func NewAuthController(auth *congo_auth.CongoAuth) *AuthController {
 
 func (auth *AuthController) Setup(app *congo.Application) {
 	auth.BaseController.Setup(app)
-	app.HandleFunc("POST /_auth/signup", auth.handleSignup)
-	app.HandleFunc("POST /_auth/signin", auth.handleSignin)
-	app.HandleFunc("POST /_auth/signout", auth.handleSignout)
+	http.HandleFunc("POST /_auth/signup", auth.handleSignup)
+	http.HandleFunc("POST /_auth/signin", auth.handleSignin)
+	http.HandleFunc("POST /_auth/signout", auth.handleSignout)
 }
 
 func (auth AuthController) Handle(req *http.Request) congo.Controller {

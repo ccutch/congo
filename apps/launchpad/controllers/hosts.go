@@ -15,7 +15,7 @@ type HostsController struct {
 
 func (hosts *HostsController) Setup(app *congo.Application) {
 	hosts.Application = app
-	app.HandleFunc("POST /hosts", hosts.handleCreate)
+	http.HandleFunc("POST /hosts", hosts.handleCreate)
 
 }
 

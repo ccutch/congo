@@ -24,9 +24,9 @@ func (chatting *ChattingController) Setup(app *congo.Application) {
 		congo_chat.WithAuth(chatting.auth.CongoAuth),
 		congo_chat.WithModel("deepseek-r1:1.5b"))
 
-	app.Handle("GET /chatting/{user}", chatting.auth.ProtectFunc(chatting.handleMessages, "user"))
-	app.Handle("POST /chatting/messages", chatting.auth.ProtectFunc(chatting.sendMessage, "user"))
-	app.Handle("POST /chatting/new-agent", chatting.auth.ProtectFunc(chatting.newChatbot, "user"))
+	http.Handle("GET /chatting/{user}", chatting.auth.ProtectFunc(chatting.handleMessages, "user"))
+	http.Handle("POST /chatting/messages", chatting.auth.ProtectFunc(chatting.sendMessage, "user"))
+	http.Handle("POST /chatting/new-agent", chatting.auth.ProtectFunc(chatting.newChatbot, "user"))
 
 	for _, chatbot := range chatting.Agents() {
 		log.Println("Starting agent", chatbot.Name)

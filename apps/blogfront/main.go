@@ -3,6 +3,7 @@ package main
 import (
 	"cmp"
 	"embed"
+	"net/http"
 	"os"
 
 	"github.com/ccutch/congo/apps/blogfront/controllers"
@@ -35,12 +36,12 @@ var (
 func main() {
 	auth := app.Use("auth").(*congo_auth.AuthController)
 
-	app.Handle("GET /{$}", app.Serve("homepage.html"))
-	app.Handle("GET /admin", auth.Protect(app.Serve("admin.html"), "admin"))
-	app.Handle("GET /blog", app.Serve("blog-posts.html"))
-	app.Handle("GET /{post}", app.Serve("read-post.html"))
-	app.Handle("GET /blog/write", auth.Protect(app.Serve("write-post.html"), "writer", "admin"))
-	app.Handle("GET /blog/{post}/edit", auth.Protect(app.Serve("edit-post.html"), "writer", "admin"))
+	http.Handle("GET /{$}", app.Serve("homepage.html"))
+	http.Handle("GET /admin", auth.Protect(app.Serve("admin.html"), "admin"))
+	http.Handle("GET /blog", app.Serve("blog-posts.html"))
+	http.Handle("GET /{post}", app.Serve("read-post.html"))
+	http.Handle("GET /blog/write", auth.Protect(app.Serve("write-post.html"), "writer", "admin"))
+	http.Handle("GET /blog/{post}/edit", auth.Protect(app.Serve("edit-post.html"), "writer", "admin"))
 
 	app.StartFromEnv()
 }

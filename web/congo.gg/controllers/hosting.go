@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/ccutch/congo/apps"
@@ -9,8 +10,10 @@ import (
 	"github.com/ccutch/congo/pkg/congo_auth"
 	"github.com/ccutch/congo/pkg/congo_host"
 	"github.com/ccutch/congo/pkg/congo_sell"
+	"github.com/ccutch/congo/web/congo.gg/models"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+	"github.com/stripe/stripe-go/v81/checkout/session"
 )
 
 type HostingController struct {
@@ -26,9 +29,9 @@ func Hosting(auth *congo_auth.CongoAuth, host *congo_host.CongoHost, sell *congo
 
 func (hosting *HostingController) Setup(app *congo.Application) {
 	hosting.BaseController.Setup(app)
-	app.HandleFunc("POST /launch", hosting.launchServer)
-	app.HandleFunc("GET /checkout", hosting.goToCheckout)
-	app.HandleFunc("GET /callback/{host}", hosting.callback)
+	http.HandleFunc("POST /launch", hosting.launchServer)
+	http.HandleFunc("GET /checkout", hosting.goToCheckout)
+	http.HandleFunc("GET /callback/{host}", hosting.callback)
 }
 
 func (hosting HostingController) Handle(req *http.Request) congo.Controller {
@@ -36,7 +39,7 @@ func (hosting HostingController) Handle(req *http.Request) congo.Controller {
 	return &hosting
 }
 
-func (hosting *HostingController) MyHosts() ([]*congo_host.RemoteHost, error) {
+func (hosting *HostingController) MyHosts() ([]*models.Server, error) {
 	i, _ := hosting.auth.Authenticate(hosting.Request, "user", "admin")
 	if i == nil {
 		return nil, errors.New("identity not found")
@@ -44,8 +47,8 @@ func (hosting *HostingController) MyHosts() ([]*congo_host.RemoteHost, error) {
 	return hosting.HostsFor(i.ID)
 }
 
-func (hosting *HostingController) HostsFor(id string) ([]*congo_host.RemoteHost, error) {
-	return hosting.host.ListServers()
+func (hosting *HostingController) HostsFor(id string) ([]*models.Server, error) {
+	return models.ServersForUser(hosting.DB, id)
 }
 
 func (hosting *HostingController) CurrentHost() (*congo_host.RemoteHost, error) {
@@ -70,33 +73,61 @@ func (hosting *HostingController) UserGrid(size int) ([][]*congo_auth.Identity, 
 func (hosting HostingController) goToCheckout(w http.ResponseWriter, r *http.Request) {
 	products, err := hosting.sell.Products()
 	if err != nil || len(products) == 0 {
+		log.Println("failed to get products:", err)
 		hosting.Render(w, r, "error-message", err)
 		return
 	}
 
 	host, err := hosting.host.NewServer("congo-"+uuid.NewString(), "s-1vcpu-2gb", "sfo2")
 	if err != nil {
+		log.Println("failed to create new host:", err)
 		hosting.Render(w, r, "error-message", err)
 		return
 	}
 
-	url := fmt.Sprintf("https://congo.gg/callback/%s?session_id={CHECKOUT_SESSION_ID}", host.ID)
-	url, err = products[0].Checkout(url)
+	i, _ := hosting.auth.Authenticate(r, "user", "admin")
+	server, err := models.NewServer(hosting.DB, i.ID, host.ID, host.Name, host.Size)
+	if err != nil {
+		log.Println("failed to create new server:", err)
+		hosting.Render(w, r, "error-message", err)
+		return
+	}
+
+	server.CheckoutURL = fmt.Sprintf("https://congo.gg/callback/%s?checkout_id={CHECKOUT_SESSION_ID}", server.ID)
+	server.CheckoutURL, err = products[0].Checkout(server.CheckoutURL)
+	if err != nil {
+		log.Println("failed to checkout:", err)
+		hosting.Render(w, r, "error-message", err)
+		return
+	}
+
+	server.Save()
+	log.Println("checkout url:", server.CheckoutURL)
+	http.Redirect(w, r, server.CheckoutURL, http.StatusFound)
+}
+
+func (hosting HostingController) callback(w http.ResponseWriter, r *http.Request) {
+	server, err := models.GetServer(hosting.DB, r.PathValue("host"))
 	if err != nil {
 		hosting.Render(w, r, "error-message", err)
 		return
 	}
-	http.Redirect(w, r, url, http.StatusFound)
-}
 
-func (hosting HostingController) callback(w http.ResponseWriter, r *http.Request) {
-	id := r.URL.Query().Get("session_id")
-	if id == "" {
+	server.CheckoutID = r.URL.Query().Get("checkout_id")
+	if server.CheckoutID == "" {
 		hosting.Render(w, r, "error-message", errors.New("no session id found"))
 		return
 	}
 
-	host, err := hosting.host.GetServer(r.PathValue("host"))
+	if _, err := session.Get(server.CheckoutID, nil); err != nil {
+		hosting.Render(w, r, "error-message", fmt.Errorf("failed to get session: %s", err))
+		return
+	}
+
+	server.Status = "paid"
+	server.Save()
+
+	host, err := hosting.host.GetServer(server.HostID)
 	if err != nil {
 		hosting.Render(w, r, "error-message", err)
 		return
@@ -104,12 +135,38 @@ func (hosting HostingController) callback(w http.ResponseWriter, r *http.Request
 
 	go func() {
 		host.Launch(host.Region, host.Size, 5)
-		host.Prepare()
-		out, _ := apps.Build("workbench")
-		host.Deploy(out)
+
+		server.Status = "launched"
+		server.Save()
+
+		if err = host.Prepare(); err != nil {
+			server.Error = err.Error()
+			server.Save()
+			return
+		}
+
+		server.Status = "prepared"
+		server.Save()
+
+		out, err := apps.Build("workbench")
+		if err != nil {
+			server.Error = err.Error()
+			server.Save()
+			return
+		}
+
+		if err = host.Deploy(out); err != nil {
+			server.Error = err.Error()
+			server.Save()
+			return
+		}
+
+		server.IpAddr = host.Addr()
+		server.Status = "ready"
+		server.Save()
 	}()
 
-	http.Redirect(w, r, "/"+host.ID, http.StatusFound)
+	http.Redirect(w, r, "/host/"+host.ID, http.StatusFound)
 }
 
 func (hosting HostingController) launchServer(w http.ResponseWriter, r *http.Request) {

@@ -20,12 +20,12 @@ func (hosting *HostingController) Setup(app *congo.Application) {
 	hosting.BaseController.Setup(app)
 
 	auth := app.Use("auth").(*congo_auth.AuthController)
-	hosting.host = congo_host.InitCongoHost(app.DB.Root, nil)
+	hosting.host = congo_host.InitCongoHost(app.DB.Root)
 
-	app.HandleFunc("POST /_hosting/launch", auth.ProtectFunc(hosting.handleLaunch, "developer"))
-	app.HandleFunc("POST /_hosting/restart/{server}", auth.ProtectFunc(hosting.handleRestart, "developer"))
-	app.HandleFunc("POST /_hosting/domain", auth.ProtectFunc(hosting.handleDomain, "developer"))
-	app.HandleFunc("POST /_hosting/verify/{domain}", auth.ProtectFunc(hosting.handleVerify, "developer"))
+	http.HandleFunc("POST /_hosting/launch", auth.ProtectFunc(hosting.handleLaunch, "developer"))
+	http.HandleFunc("POST /_hosting/restart/{server}", auth.ProtectFunc(hosting.handleRestart, "developer"))
+	http.HandleFunc("POST /_hosting/domain", auth.ProtectFunc(hosting.handleDomain, "developer"))
+	http.HandleFunc("POST /_hosting/verify/{domain}", auth.ProtectFunc(hosting.handleVerify, "developer"))
 }
 
 func (hosting HostingController) Handle(req *http.Request) congo.Controller {

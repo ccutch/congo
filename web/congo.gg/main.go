@@ -3,7 +3,6 @@ package main
 import (
 	"cmp"
 	"embed"
-	"log"
 	"net/http"
 	"os"
 
@@ -26,6 +25,9 @@ var (
 	//go:embed all:templates
 	templates embed.FS
 
+	//go:embed all:migrations
+	migrations embed.FS
+
 	auth = congo_auth.InitCongoAuth(data,
 		congo_auth.WithCookieName("congo-gg"),
 		congo_auth.WithSetupView("setup.html", "/admin"),
@@ -38,10 +40,10 @@ var (
 
 	sell = congo_sell.InitCongoSell(data,
 		congo_sell.WithBackend(stripe.NewClient(os.Getenv("STRIPE_KEY"))),
-		congo_sell.WithProduct("Congo Workbench", "A Git driven development environment by Congo", 100_00))
+		congo_sell.WithProduct("Congo Workbench", "A cloud hosted coding environment by Congo", 2_00))
 
 	app = congo.NewApplication(templates,
-		congo.WithDatabase(congo.SetupDatabase(data, "congo.db", nil)),
+		congo.WithDatabase(congo.SetupDatabase(data, "congo.db", migrations)),
 		congo.WithTheme(cmp.Or(os.Getenv("CONGO_THEME"), "synthwave")),
 		congo.WithHost(os.Getenv("CONGO_HOST")),
 		congo.WithController(auth.Controller()),
@@ -49,18 +51,14 @@ var (
 )
 
 func main() {
-	if os.Getenv("STRIPE_KEY") == "" {
-		log.Fatal("STRIPE_KEY is required")
-	}
-
 	auth := app.Use("auth").(*congo_auth.AuthController)
 
-	app.Handle("/", app.Serve("not-found.html"))
-	app.Handle("/public/", http.FileServerFS(public))
-	app.Handle("/login", app.Serve("user-login.html"))
-	app.Handle("/admin", auth.Serve("admin.html", "admin"))
-	app.Handle("/{$}", auth.Serve("dashboard.html", "user", "admin"))
-	app.Handle("/{host}", auth.Serve("dashboard.html", "user", "admin"))
+	http.Handle("/", app.Serve("not-found.html"))
+	http.Handle("/public/", http.FileServerFS(public))
+	http.Handle("/login", app.Serve("user-login.html"))
+	http.Handle("/admin", auth.Serve("admin.html", "admin"))
+	http.Handle("/{$}", auth.Serve("dashboard.html", "user", "admin"))
+	http.Handle("/host/{host}", auth.Serve("dashboard.html", "user", "admin"))
 
 	app.StartFromEnv()
 }

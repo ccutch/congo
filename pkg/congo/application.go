@@ -17,7 +17,6 @@ import (
 var congoTemplates embed.FS
 
 type Application struct {
-	router      *http.ServeMux
 	DB          *Database
 	controllers map[string]Controller
 	creds       *Credentials
@@ -35,7 +34,6 @@ type ApplicationOpt func(*Application) error
 
 func NewApplication(templates fs.FS, opts ...ApplicationOpt) *Application {
 	app := Application{
-		router:      http.NewServeMux(),
 		controllers: map[string]Controller{},
 		sources:     []fs.FS{congoTemplates, templates},
 	}
@@ -58,16 +56,12 @@ func (app *Application) Serve(name string) http.Handler {
 	})
 }
 
-func (app Application) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	app.router.ServeHTTP(w, r)
-}
-
 // Start runs the application HTTP server and SSL server
 func (app *Application) Start() error {
 	go app.sslServer()
 	addr := "0.0.0.0:" + cmp.Or(os.Getenv("PORT"), "5000")
 	log.Print("Serving Unsecure Congo @ http://" + addr)
-	return http.ListenAndServe(addr, app.router)
+	return http.ListenAndServe(addr, nil)
 }
 
 // sslServer starts the HTTPS server
@@ -77,7 +71,7 @@ func (app *Application) sslServer() {
 	}
 	cert, key := app.creds.fullchain, app.creds.privkey
 	log.Print("Serving Secure Congo @ https://localhost:443")
-	err := http.ListenAndServeTLS("0.0.0.0:443", cert, key, app.router)
+	err := http.ListenAndServeTLS("0.0.0.0:443", cert, key, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -130,17 +124,9 @@ func (app *Application) WithTemplates(source fs.FS) error {
 
 func WithEndpoint(path string, fn http.HandlerFunc) ApplicationOpt {
 	return func(app *Application) error {
-		app.HandleFunc(path, fn)
+		http.HandleFunc(path, fn)
 		return nil
 	}
-}
-
-func (app *Application) Handle(path string, fn http.Handler) {
-	app.router.Handle(path, fn)
-}
-
-func (app *Application) HandleFunc(path string, fn http.HandlerFunc) {
-	app.router.HandleFunc(path, fn)
 }
 
 func (app *Application) WithCredentials(cert, key string) {

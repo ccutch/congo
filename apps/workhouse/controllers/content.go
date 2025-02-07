@@ -32,16 +32,16 @@ func (c *ContentController) Setup(app *congo.Application) {
 
 	c.proxies = map[string]http.Handler{}
 	c.Code = congo_code.InitCongoCode(app.DB.Root)
-	c.Host = congo_host.InitCongoHost(app.DB.Root, nil)
+	c.Host = congo_host.InitCongoHost(app.DB.Root)
 	c.Repo, _ = c.Code.NewRepo("source", congo_code.WithName("Code"))
 
 	auth := app.Use("auth").(*AuthController)
-	app.Handle("/source/", c.Repo.Serve(auth.AuthController, "developer"))
-	app.Handle("/coder/", auth.ProtectFunc(c.handleWorkspace, "developer"))
-	app.Handle("/download", auth.ProtectFunc(c.downloadSource, "developer"))
-	app.Handle("POST /_content/post", auth.ProtectFunc(c.publishPost, "developer"))
-	app.Handle("POST /_content/launch", auth.ProtectFunc(c.launchServer, "developer"))
-	app.Handle("DELETE /_content/host/{host}", auth.ProtectFunc(c.deleteHost, "developer"))
+	http.Handle("/source/", c.Repo.Serve(auth.AuthController, "developer"))
+	http.Handle("/coder/", auth.ProtectFunc(c.handleWorkspace, "developer"))
+	http.Handle("/download", auth.ProtectFunc(c.downloadSource, "developer"))
+	http.Handle("POST /_content/post", auth.ProtectFunc(c.publishPost, "developer"))
+	http.Handle("POST /_content/launch", auth.ProtectFunc(c.launchServer, "developer"))
+	http.Handle("DELETE /_content/host/{host}", auth.ProtectFunc(c.deleteHost, "developer"))
 
 	settings := app.Use("settings").(*SettingsController)
 	if key := settings.get("HOST_API_KEY"); key != "" {

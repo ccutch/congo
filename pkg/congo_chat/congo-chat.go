@@ -51,7 +51,7 @@ func WithModel(name string) CongoChatOptions {
 	return func(chat *CongoChat) {
 		log.Println("Loading ollama model", name)
 		chat.Model = name
-		host := congo_host.InitCongoHost(chat.db.Root, nil)
+		host := congo_host.InitCongoHost(chat.db.Root)
 		service := host.Local().Service("ollama",
 			congo_host.WithImage("ollama/ollama"),
 			congo_host.WithTag("latest"),

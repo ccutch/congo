@@ -23,9 +23,9 @@ var (
 )
 
 func main() {
-	app.Handle("GET /", app.Serve("homepage.html"))
-	app.Handle("GET /gallery", app.Serve("gallery.html"))
-	app.Handle("GET /public/", http.FileServerFS(public))
+	http.Handle("GET /", app.Serve("homepage.html"))
+	http.Handle("GET /gallery", app.Serve("gallery.html"))
+	http.Handle("GET /public/", http.FileServerFS(public))
 
 	app.StartFromEnv()
 }

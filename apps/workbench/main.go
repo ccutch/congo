@@ -3,6 +3,7 @@ package main
 import (
 	"cmp"
 	"embed"
+	"net/http"
 	"os"
 
 	"github.com/ccutch/congo/pkg/congo"
@@ -39,10 +40,10 @@ func main() {
 	auth := app.Use("auth").(*congo_auth.AuthController)
 	coding := app.Use("coding").(*controllers.CodingController)
 
-	app.Handle("/", auth.Serve("workbench.html", "developer"))
-	app.Handle("/code/", coding.Repo.Serve(auth, "developer"))
+	http.Handle("/", auth.Serve("workbench.html", "developer"))
+	http.Handle("/code/", coding.Repo.Serve(auth, "developer"))
 	if coding.Workspace != nil {
-		app.Handle("/coder/", auth.Protect(coding.Workspace.Proxy("/coder/"), "developer"))
+		http.Handle("/coder/", auth.Protect(coding.Workspace.Proxy("/coder/"), "developer"))
 	}
 
 	app.StartFromEnv()

@@ -46,11 +46,11 @@ var (
 func main() {
 	auth := app.Use("auth").(*congo_auth.AuthController)
 
-	app.Handle("/{$}", app.Serve("homepage.html"))
-	app.Handle("/signin", app.Serve("signin.html"))
-	app.Handle("/signup", app.Serve("signup.html"))
-	app.Handle("/{user}", auth.Protect(app.Serve("messages.html"), "user"))
-	app.Handle("/invite", auth.Protect(app.Serve("url-copied-toast"), "user"))
+	http.Handle("/{$}", app.Serve("homepage.html"))
+	http.Handle("/signin", app.Serve("signin.html"))
+	http.Handle("/signup", app.Serve("signup.html"))
+	http.Handle("/{user}", auth.Protect(app.Serve("messages.html"), "user"))
+	http.Handle("/invite", auth.Protect(app.Serve("url-copied-toast"), "user"))
 
 	app.StartFromEnv()
 }

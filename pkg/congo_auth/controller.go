@@ -24,10 +24,10 @@ func (auth *CongoAuth) Controller() (string, *AuthController) {
 func (auth *AuthController) Setup(app *congo.Application) {
 	auth.BaseController.Setup(app)
 	app.WithTemplates(Templates)
-	app.HandleFunc("POST /_auth/signup/{role}", auth.handleSignup)
-	app.HandleFunc("POST /_auth/signin/{role}", auth.handleSignin)
-	app.HandleFunc("POST /_auth/logout/{role}", auth.handleLogout)
-	app.HandleFunc("DELETE /_auth/session/{id}", auth.endSession)
+	http.HandleFunc("POST /_auth/signup/{role}", auth.handleSignup)
+	http.HandleFunc("POST /_auth/signin/{role}", auth.handleSignin)
+	http.HandleFunc("POST /_auth/logout/{role}", auth.handleLogout)
+	http.HandleFunc("DELETE /_auth/session/{id}", auth.endSession)
 }
 
 func (auth AuthController) Handle(r *http.Request) congo.Controller {

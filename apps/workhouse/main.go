@@ -3,6 +3,7 @@ package main
 import (
 	"cmp"
 	"embed"
+	"net/http"
 	"os"
 
 	"github.com/ccutch/congo/pkg/congo"
@@ -38,14 +39,14 @@ var (
 func main() {
 	auth := app.Use("auth").(*controllers.AuthController)
 
-	app.Handle("/", app.Serve("not-found.html"))
-	app.Handle("/signin", app.Serve("signin.html"))
-	app.Handle("/{$}", auth.Serve("my-hosts.html", "user", "developer"))
-	app.Handle("/code/{path...}", auth.Serve("our-code.html", "developer"))
-	app.Handle("/users", auth.Serve("our-users.html", "developer"))
-	app.Handle("/user/{user}", auth.Serve("our-users.html", "developer"))
-	app.Handle("/settings", auth.Serve("settings.html", "developer"))
-	app.Handle("/dev/{user}", auth.Serve("settings.html", "developer"))
+	http.Handle("/", app.Serve("not-found.html"))
+	http.Handle("/signin", app.Serve("signin.html"))
+	http.Handle("/{$}", auth.Serve("my-hosts.html", "user", "developer"))
+	http.Handle("/code/{path...}", auth.Serve("our-code.html", "developer"))
+	http.Handle("/users", auth.Serve("our-users.html", "developer"))
+	http.Handle("/user/{user}", auth.Serve("our-users.html", "developer"))
+	http.Handle("/settings", auth.Serve("settings.html", "developer"))
+	http.Handle("/dev/{user}", auth.Serve("settings.html", "developer"))
 
 	app.StartFromEnv()
 }
