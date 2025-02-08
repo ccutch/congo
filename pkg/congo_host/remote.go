@@ -95,7 +95,7 @@ func (h *RemoteHost) Save() error {
 }
 
 func (h *RemoteHost) Delete(purge, force bool) error {
-	if err := h.Server.Delete(purge, force); !force && err != nil {
+	if err := h.Server.Delete(purge, force); err != nil {
 		return errors.Wrap(err, "failed to delete server")
 	}
 	return h.host.DB.Query(`

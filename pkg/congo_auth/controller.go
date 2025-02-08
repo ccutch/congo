@@ -91,7 +91,7 @@ func (auth AuthController) handleSignup(w http.ResponseWriter, r *http.Request) 
 		auth.CongoAuth.SignupCallback(&auth, identity).ServeHTTP(w, r)
 	} else {
 		if auth.CongoAuth.SetupRedirect != "" {
-			http.Redirect(w, r, auth.CongoAuth.SetupRedirect, http.StatusFound)
+			auth.Redirect(w, r, auth.CongoAuth.SetupRedirect)
 			return
 		}
 		auth.Refresh(w, r)
@@ -139,7 +139,6 @@ func (auth AuthController) handleLogout(w http.ResponseWriter, r *http.Request) 
 			auth.Render(w, r, "error-message", err)
 			return
 		}
-
 		http.SetCookie(w, &http.Cookie{
 			Name:     auth.CongoAuth.CookieName + "-" + role,
 			Path:     "/",

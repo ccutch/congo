@@ -32,6 +32,7 @@ func (hosting *HostingController) Setup(app *congo.Application) {
 	http.HandleFunc("POST /launch", hosting.launchServer)
 	http.HandleFunc("GET /checkout", hosting.goToCheckout)
 	http.HandleFunc("GET /callback/{host}", hosting.callback)
+	http.HandleFunc("DELETE /host/{host}", hosting.deleteHost)
 }
 
 func (hosting HostingController) Handle(req *http.Request) congo.Controller {
@@ -51,11 +52,11 @@ func (hosting *HostingController) HostsFor(id string) ([]*models.Server, error) 
 	return models.ServersForUser(hosting.DB, id)
 }
 
-func (hosting *HostingController) CurrentHost() (*congo_host.RemoteHost, error) {
+func (hosting *HostingController) CurrentHost() (*models.Server, error) {
 	if hosting.PathValue("host") == "" {
 		return nil, nil
 	}
-	return hosting.host.GetServer(hosting.PathValue("host"))
+	return models.GetServer(hosting.DB, hosting.PathValue("host"))
 }
 
 func (hosting *HostingController) UserGrid(size int) ([][]*congo_auth.Identity, error) {
@@ -124,7 +125,7 @@ func (hosting HostingController) callback(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	server.Status = "paid"
+	server.Status = models.Paid
 	server.Save()
 
 	host, err := hosting.host.GetServer(server.HostID)
@@ -136,7 +137,7 @@ func (hosting HostingController) callback(w http.ResponseWriter, r *http.Request
 	go func() {
 		host.Launch(host.Region, host.Size, 5)
 
-		server.Status = "launched"
+		server.Status = models.Launched
 		server.Save()
 
 		if err = host.Prepare(); err != nil {
@@ -145,7 +146,7 @@ func (hosting HostingController) callback(w http.ResponseWriter, r *http.Request
 			return
 		}
 
-		server.Status = "prepared"
+		server.Status = models.Prepared
 		server.Save()
 
 		out, err := apps.Build("workbench")
@@ -162,7 +163,7 @@ func (hosting HostingController) callback(w http.ResponseWriter, r *http.Request
 		}
 
 		server.IpAddr = host.Addr()
-		server.Status = "ready"
+		server.Status = models.Ready
 		server.Save()
 	}()
 
@@ -208,4 +209,35 @@ func (hosting HostingController) launchServer(w http.ResponseWriter, r *http.Req
 		Server *congo_host.RemoteHost
 		Name   string
 	}{server, app})
+}
+
+func (hosting HostingController) deleteHost(w http.ResponseWriter, r *http.Request) {
+	server, err := models.GetServer(hosting.DB, r.PathValue("host"))
+	if err != nil {
+		hosting.Render(w, r, "error-message", err)
+		return
+	}
+
+	host, err := hosting.host.GetServer(server.HostID)
+	if err != nil {
+		hosting.Render(w, r, "error-message", err)
+		return
+	}
+
+	go func() {
+		if err = host.Reload(); err != nil {
+			return
+		}
+
+		if err = host.Delete(true, false); err != nil {
+			return
+		}
+	}()
+
+	if err = server.Delete(); err != nil {
+		hosting.Render(w, r, "error-message", err)
+		return
+	}
+
+	hosting.Redirect(w, r, "/")
 }

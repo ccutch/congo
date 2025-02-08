@@ -37,6 +37,7 @@ func Build(app string) (string, error) {
 	return dest, host.Run("bash", "-c", fmt.Sprintf(`
 		cd %s
 		go mod init %s
+		go clean -modcache
 		go mod tidy
 		go build -o %s %s
 	`, dir, app, dest, dir))

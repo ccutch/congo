@@ -1,2 +1,107 @@
 {{define "host-details"}}
+
+{{with hosting.CurrentHost}}
+<div class="flex flex-col gap-4 w-full max-w-screen-xl">
+  <div class="card bg-base-100 shadow">
+    <div class="card-body flex-row justify-between">
+      <div class="flex flex-col">
+        <h2 class="card-title">
+          {{.Name}}
+        </h2>
+        <p class="card-subtitle">
+          {{.Size}}
+        </p>
+      </div>
+
+
+      <div class="flex items-center gap-4">
+        {{with .IpAddr}}
+        <a target="_blank" href="http://{{.}}:8080" class="btn btn-secondary">
+          Visit Site
+        </a>
+        {{else}}
+        <div class="loading loading-bars"></div>
+        {{end}}
+
+        <div class="dropdown">
+          <label tabindex="0" class="btn btn-ghost btn-circle">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </label>
+          <ul tabindex="0" class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52">
+            <li>
+              <a hx-delete="{{host}}/host/{{.ID}}" hx-confirm="Are you sure you want to delete this host?">
+                Delete
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card bg-base-100 shadow" id="host-status"
+       {{if lt .StatusInt 4}}
+       hx-get="{{host}}/host/{{.ID}}" hx-trigger="load delay:2s"
+       hx-select="#host-status" hx-target="#host-status" hx-swap="outerHTML"
+       {{end}}>
+    <div class="card-body">
+      <ul class="steps">
+        <li class="step {{if gt .StatusInt 0}}step-primary{{end}}">Paid</li>
+        <li class="step {{if gt .StatusInt 1}}step-primary{{end}}">Launched</li>
+        <li class="step {{if gt .StatusInt 2}}step-primary{{end}}">Prepared</li>
+        <li class="step {{if gt .StatusInt 3}}step-primary{{end}}">Ready</li>
+      </ul>
+      {{if eq .StatusInt 0}}
+      <div class="flex flex-col items-center gap-4 py-8 animate-pulse">
+        <a href="{{.CheckoutURL}}" class="btn btn-primary">
+          Purchase Hosting to Get Started
+        </a>
+      </div>
+      {{else if eq .StatusInt 1}}
+      <div class="flex flex-col items-center gap-4 py-8 animate-pulse">
+        <h1 class="text-4xl font-bold">
+          Launching
+        </h1>
+        <p class="text-xl">
+          This may take a few minutes to launch your server.
+        </p>
+      </div>
+      {{else if eq .StatusInt 2}}
+      <div class="flex flex-col items-center gap-4 py-8 animate-pulse">
+        <h1 class="text-4xl font-bold">
+          Preparing Dependencies
+        </h1>
+        <p class="text-xl">
+          Installing dependencies and installing Congo.
+        </p>
+      </div>
+      {{else if eq .StatusInt 3}}
+      <div class="flex flex-col items-center gap-4 py-8 animate-pulse">
+        <h1 class="text-4xl font-bold">
+          Deploying Workbench
+        </h1>
+        <p class="text-xl">
+          Deploying a new instance of Congo Workbench.
+        </p>
+      </div>
+      {{else if eq .StatusInt 4}}
+      <div class="flex flex-col items-center gap-4 py-8">
+        <h1 class="text-4xl font-bold">
+          Ready to Go
+        </h1>
+        <p class="text-xl">
+          Your Workbench is ready!
+        </p>
+        <a target="_blank" href="http://{{.IpAddr}}:8080" class="btn btn-primary">
+          Setup Your Admin Account
+        </a>
+      </div>
+      {{end}}
+    </div>
+  </div>
+</div>
+{{end}}
+
 {{end}}

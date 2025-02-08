@@ -23,6 +23,28 @@ type Server struct {
 	UpdatedAt   time.Time
 }
 
+const (
+	Paid     = "paid"
+	Launched = "launched"
+	Prepared = "prepared"
+	Ready    = "ready"
+)
+
+func (s *Server) StatusInt() int {
+	switch s.Status {
+	case Paid:
+		return 1
+	case Launched:
+		return 2
+	case Prepared:
+		return 3
+	case Ready:
+		return 4
+	default:
+		return 0
+	}
+}
+
 func NewServer(db *congo.Database, userID, hostID, name, size string) (*Server, error) {
 	s := Server{Model: db.NewModel(strings.ReplaceAll(strings.ToLower(name), " ", "-"))}
 	return &s, db.Query(`
