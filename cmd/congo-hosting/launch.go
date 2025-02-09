@@ -73,9 +73,14 @@ func launch(args ...string) (*congo_host.RemoteHost, error) {
 	}
 
 	if *domain != "" {
-		if err = server.Domain(*domain).Verify(); err != nil {
+		domain := server.Domain(*domain)
+		if err := server.Assign(domain); err != nil {
+			return nil, errors.Wrap(err, "failed to assign domain")
+		}
+		if err = domain.Verify(); err != nil {
 			return nil, errors.Wrap(err, "failed to verify domain")
 		}
+		return server, server.Restart()
 	}
 
 	return server, err

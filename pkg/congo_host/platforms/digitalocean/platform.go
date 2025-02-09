@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"os/exec"
 	"strings"
 	"time"
@@ -160,4 +161,93 @@ func (s *Server) Copy(source, dest string) (stdout bytes.Buffer, stderr bytes.Bu
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	return stdout, stderr, cmd.Run()
+}
+
+func (s *Server) Assign(domain *congo_host.Domain) error {
+	ctx, parts := context.Background(), strings.SplitN(domain.ID, ".", 2)
+	if len(parts) < 2 {
+		return fmt.Errorf("invalid domain, expecting subdomain.topleveldomain.extension")
+	}
+
+	subdomain, rootDomain := parts[0], parts[1]
+	records, _, err := s.client.Domains.Records(ctx, rootDomain, &godo.ListOptions{})
+	if err != nil {
+		return err
+	}
+
+	dnsRecordExists := false
+	for _, record := range records {
+		if record.Type == "A" && record.Name == subdomain && record.Data == s.IP {
+			log.Println("DNS record already exists for domain:", domain.ID)
+			dnsRecordExists = true
+			break
+		}
+	}
+
+	if !dnsRecordExists {
+		_, _, err = s.client.Domains.CreateRecord(ctx, rootDomain, &godo.DomainRecordEditRequest{
+			Type: "A",
+			Name: subdomain,
+			Data: s.IP,
+			TTL:  3600,
+		})
+
+		if err != nil {
+			return err
+		}
+
+		_, _, err = s.client.Domains.CreateRecord(ctx, rootDomain, &godo.DomainRecordEditRequest{
+			Type: "A",
+			Name: "*." + subdomain,
+			Data: s.IP,
+			TTL:  3600,
+		})
+
+		if err != nil {
+			return err
+		}
+
+		log.Println("Created A record for domain:", domain.ID, "with IP:", s.IP)
+		log.Println("Created A record for domain:", "*."+domain.ID, "with IP:", s.IP)
+	}
+
+	return nil
+}
+
+func (s *Server) Remove(domain *congo_host.Domain) error {
+	ctx, parts := context.Background(), strings.SplitN(domain.ID, ".", 2)
+	if len(parts) < 2 {
+		return fmt.Errorf("invalid domain, expecting subdomain.topleveldomain.extension")
+	}
+
+	subdomain, rootDomain := parts[0], parts[1]
+	records, _, err := s.client.Domains.Records(ctx, rootDomain, &godo.ListOptions{})
+	if err != nil {
+		return err
+	}
+
+	dnsRecordExists := false
+	for _, record := range records {
+		if record.Type == "A" && record.Name == subdomain && record.Data == s.IP {
+			dnsRecordExists = true
+			break
+		}
+	}
+
+	if !dnsRecordExists {
+		return nil
+	}
+
+	if _, err = s.client.Domains.Delete(ctx, domain.ID); err != nil {
+		return err
+	}
+
+	if _, err = s.client.Domains.Delete(ctx, "*."+domain.ID); err != nil {
+		return err
+	}
+
+	log.Println("Deleted A record for domain:", domain.ID, "with IP:", s.IP)
+	log.Println("Deleted A record for domain:", "*."+domain.ID, "with IP:", s.IP)
+
+	return nil
 }

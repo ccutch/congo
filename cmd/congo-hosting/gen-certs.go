@@ -38,7 +38,16 @@ func genCerts(args ...string) error {
 		return errors.Wrap(err, "failed to get server")
 	}
 
-	if err := server.Domain(*domainName).Verify(); err != nil {
+	if err := server.Reload(); err != nil {
+		return errors.Wrap(err, "failed to reload server")
+	}
+
+	domain := server.Domain(*domainName)
+	if err := server.Assign(domain); err != nil {
+		log.Println("Failed to assign domain: ", err)
+	}
+
+	if err := domain.Verify(); err != nil {
 		return errors.Wrap(err, "failed to verify domain")
 	} else {
 		return server.Restart()

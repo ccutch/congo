@@ -131,19 +131,17 @@ func (chatting ChattingController) sendMessage(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	mb, err := chatting.Chat.GetMailbox(user.ID)
+	fromMailbox, err := chatting.Chat.GetMailbox(user.ID)
 	if err != nil {
-		chatting.Render(w, r, "error-message", err)
-		return
+		fromMailbox, _ = chatting.Chat.NewMailboxWithID(user.ID, user.ID, user.Name)
 	}
 
-	userID := r.FormValue("mailbox")
-	if userID == "me" {
-		userID = user.ID
+	toMailbox := r.FormValue("mailbox")
+	if toMailbox == "me" {
+		toMailbox = user.ID
 	}
 
-	// log.Println("Sending message", r.FormValue("mailbox"), user.ID, message)
-	if _, err := mb.Send(userID, message); err != nil {
+	if _, err := fromMailbox.Send(toMailbox, message); err != nil {
 		chatting.Render(w, r, "error-message", err)
 		return
 	}

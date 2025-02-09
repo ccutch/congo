@@ -17,4 +17,6 @@ type Server interface {
 	Reload() error
 	Run(io.Reader, io.Writer, ...string) error
 	Copy(source, dest string) (stdout, stderr bytes.Buffer, _ error)
+	Assign(domain *Domain) error
+	Remove(domain *Domain) error
 }

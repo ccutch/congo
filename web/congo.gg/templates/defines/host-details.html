@@ -13,10 +13,9 @@
         </p>
       </div>
 
-
       <div class="flex items-center gap-4">
-        {{with .IpAddr}}
-        <a target="_blank" href="http://{{.}}:8080" class="btn btn-secondary">
+        {{with .Domain}}
+        <a target="_blank" href="https://{{.}}" class="btn btn-secondary">
           Visit Site
         </a>
         {{else}}
@@ -42,7 +41,7 @@
   </div>
 
   <div class="card bg-base-100 shadow" id="host-status"
-       {{if lt .StatusInt 4}}
+       {{if lt .StatusInt 5}}
        hx-get="{{host}}/host/{{.ID}}" hx-trigger="load delay:2s"
        hx-select="#host-status" hx-target="#host-status" hx-swap="outerHTML"
        {{end}}>
@@ -51,7 +50,8 @@
         <li class="step {{if gt .StatusInt 0}}step-primary{{end}}">Paid</li>
         <li class="step {{if gt .StatusInt 1}}step-primary{{end}}">Launched</li>
         <li class="step {{if gt .StatusInt 2}}step-primary{{end}}">Prepared</li>
-        <li class="step {{if gt .StatusInt 3}}step-primary{{end}}">Ready</li>
+        <li class="step {{if gt .StatusInt 3}}step-primary{{end}}">Assign URL</li>
+        <li class="step {{if gt .StatusInt 4}}step-primary{{end}}">Ready</li>
       </ul>
       {{if eq .StatusInt 0}}
       <div class="flex flex-col items-center gap-4 py-8 animate-pulse">
@@ -87,6 +87,15 @@
         </p>
       </div>
       {{else if eq .StatusInt 4}}
+      <div class="flex flex-col items-center gap-4 py-8 animate-pulse">
+        <h1 class="text-4xl font-bold">
+          Assigning Domain Name
+        </h1>
+        <p class="text-xl">
+          Assigning a domain name to your server.
+        </p>
+      </div>
+      {{else if eq .StatusInt 5}}
       <div class="flex flex-col items-center gap-4 py-8">
         <h1 class="text-4xl font-bold">
           Ready to Go
@@ -94,7 +103,7 @@
         <p class="text-xl">
           Your Workbench is ready!
         </p>
-        <a target="_blank" href="http://{{.IpAddr}}:8080" class="btn btn-primary">
+        <a target="_blank" href="https://{{.Domain}}" class="btn btn-primary">
           Setup Your Admin Account
         </a>
       </div>

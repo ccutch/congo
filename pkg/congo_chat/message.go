@@ -74,7 +74,7 @@ func (mb *Mailbox) Contacts() ([]*Mailbox, error) {
 	var contacts []*Mailbox
 	return contacts, mb.chat.db.Query(`
 
-		SELECT id, owner_id, name, max_size, created_at, updated_at
+		SELECT id, owner_id, name, created_at, updated_at
 		FROM mailboxes
 		WHERE id IN (
 			SELECT from_mailbox
@@ -86,7 +86,7 @@ func (mb *Mailbox) Contacts() ([]*Mailbox, error) {
 	`, mb.ID).All(func(scan congo.Scanner) error {
 		m := Mailbox{Model: mb.chat.db.Model(), chat: mb.chat}
 		contacts = append(contacts, &m)
-		return scan(&m.ID, &m.OwnerID, &m.Name, &m.MaxSize, &m.CreatedAt, &m.UpdatedAt)
+		return scan(&m.ID, &m.OwnerID, &m.Name, &m.CreatedAt, &m.UpdatedAt)
 	})
 }
 

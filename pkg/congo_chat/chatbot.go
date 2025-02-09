@@ -140,7 +140,7 @@ func (chatbot *Chatbot) Mailbox() (*Mailbox, error) {
 	mailbox, err := chatbot.chat.GetMailboxForOwner(chatbot.ID)
 	if err != nil {
 		log.Println("Creating new mailbox")
-		mailbox, err = chatbot.chat.NewMailboxWithID(chatbot.ID, chatbot.ID, chatbot.Name, 10000)
+		mailbox, err = chatbot.chat.NewMailboxWithID(chatbot.ID, chatbot.ID, chatbot.Name)
 	}
 	return mailbox, err
 }

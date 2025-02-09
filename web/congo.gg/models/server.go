@@ -28,6 +28,7 @@ const (
 	Launched = "launched"
 	Prepared = "prepared"
 	Ready    = "ready"
+	Deployed = "deployed"
 )
 
 func (s *Server) StatusInt() int {
@@ -40,6 +41,8 @@ func (s *Server) StatusInt() int {
 		return 3
 	case Ready:
 		return 4
+	case Deployed:
+		return 5
 	default:
 		return 0
 	}

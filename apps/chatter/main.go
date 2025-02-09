@@ -59,7 +59,7 @@ func signup(auth *congo_auth.AuthController, user *congo_auth.Identity) http.Han
 	chatting := auth.Use("chatting").(*controllers.ChattingController)
 	return func(w http.ResponseWriter, r *http.Request) {
 		name := fmt.Sprintf("%s's Mailbox", cases.Title(language.English).String(user.Name))
-		if _, err := chatting.Chat.NewMailboxWithID(user.ID, user.ID, name, 100); err != nil {
+		if _, err := chatting.Chat.NewMailboxWithID(user.ID, user.ID, name); err != nil {
 			auth.Render(w, r, "error-message", err)
 			return
 		}

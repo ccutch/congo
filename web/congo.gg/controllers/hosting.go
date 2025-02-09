@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/ccutch/congo/apps"
 	"github.com/ccutch/congo/pkg/congo"
@@ -29,7 +30,6 @@ func Hosting(auth *congo_auth.CongoAuth, host *congo_host.CongoHost, sell *congo
 
 func (hosting *HostingController) Setup(app *congo.Application) {
 	hosting.BaseController.Setup(app)
-	http.HandleFunc("POST /launch", hosting.launchServer)
 	http.HandleFunc("GET /checkout", hosting.goToCheckout)
 	http.HandleFunc("GET /callback/{host}", hosting.callback)
 	http.HandleFunc("DELETE /host/{host}", hosting.deleteHost)
@@ -146,6 +146,7 @@ func (hosting HostingController) callback(w http.ResponseWriter, r *http.Request
 			return
 		}
 
+		server.IpAddr = host.Addr()
 		server.Status = models.Prepared
 		server.Save()
 
@@ -162,53 +163,30 @@ func (hosting HostingController) callback(w http.ResponseWriter, r *http.Request
 			return
 		}
 
-		server.IpAddr = host.Addr()
+		server.Domain = fmt.Sprintf("%s.gitpost.cloud", server.ID)
+		server.Status = models.Deployed
+		server.Save()
+
+		domain := host.Domain(server.Domain)
+		if err = host.Assign(domain); err != nil {
+			server.Error = err.Error()
+			server.Save()
+			return
+		}
+
+		time.Sleep(15 * time.Second)
+		if err = domain.Verify(); err != nil {
+			server.Error = err.Error()
+			server.Save()
+			return
+		}
+
+		host.Restart()
 		server.Status = models.Ready
 		server.Save()
 	}()
 
 	http.Redirect(w, r, "/host/"+host.ID, http.StatusFound)
-}
-
-func (hosting HostingController) launchServer(w http.ResponseWriter, r *http.Request) {
-	var (
-		app    = r.FormValue("server-type")
-		name   = fmt.Sprintf("demo-%s-%s", app, uuid.NewString())
-		size   = "s-1vcpu-2gb"
-		region = "sfo2"
-	)
-
-	server, err := hosting.host.NewServer(name, size, region)
-	if err != nil {
-		hosting.Render(w, r, "error-message", errors.Wrap(err, "failed to init new server"))
-		return
-	}
-
-	if err = server.Launch(region, size, 5); err != nil {
-		hosting.Render(w, r, "error-message", errors.Wrap(err, "failed to launch new server"))
-		return
-	}
-
-	if err = server.Prepare(); err != nil {
-		hosting.Render(w, r, "error-message", errors.New("failed to prepare server"))
-		return
-	}
-
-	dest, err := apps.Build(app)
-	if err != nil {
-		hosting.Render(w, r, "error-message", errors.Wrap(err, "failed to build source code"))
-		return
-	}
-
-	if err = server.Deploy(dest); err != nil {
-		hosting.Render(w, r, "error-message", err)
-		return
-	}
-
-	hosting.Render(w, r, "success-link", struct {
-		Server *congo_host.RemoteHost
-		Name   string
-	}{server, app})
 }
 
 func (hosting HostingController) deleteHost(w http.ResponseWriter, r *http.Request) {
@@ -227,6 +205,12 @@ func (hosting HostingController) deleteHost(w http.ResponseWriter, r *http.Reque
 	go func() {
 		if err = host.Reload(); err != nil {
 			return
+		}
+
+		if server.Domain != "" {
+			if err = host.Remove(host.Domain(server.Domain)); err != nil {
+				return
+			}
 		}
 
 		if err = host.Delete(true, false); err != nil {
