@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/ccutch/congo/apps"
 	"github.com/ccutch/congo/pkg/congo"
@@ -174,7 +173,7 @@ func (hosting HostingController) callback(w http.ResponseWriter, r *http.Request
 			return
 		}
 
-		time.Sleep(15 * time.Second)
+		domain.Save()
 		if err = domain.Verify(); err != nil {
 			server.Error = err.Error()
 			server.Save()
@@ -204,24 +203,34 @@ func (hosting HostingController) deleteHost(w http.ResponseWriter, r *http.Reque
 
 	go func() {
 		if err = host.Reload(); err != nil {
+			server.Error = err.Error()
+			server.Save()
 			return
 		}
 
 		if server.Domain != "" {
 			if err = host.Remove(host.Domain(server.Domain)); err != nil {
+				server.Error = err.Error()
+				server.Save()
 				return
 			}
 		}
 
 		if err = host.Delete(true, false); err != nil {
+			server.Error = err.Error()
+			server.Save()
+			return
+		}
+
+		if err = server.Delete(); err != nil {
+			server.Error = err.Error()
+			server.Save()
 			return
 		}
 	}()
 
-	if err = server.Delete(); err != nil {
-		hosting.Render(w, r, "error-message", err)
-		return
-	}
+	server.Status = models.Destroyed
+	server.Save()
 
 	hosting.Redirect(w, r, "/")
 }

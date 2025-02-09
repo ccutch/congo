@@ -94,7 +94,7 @@ func (chatting ChattingController) handleMessages(w http.ResponseWriter, r *http
 		userID = user.ID
 	}
 
-	mb, err := chatting.Chat.GetMailboxForOwner(userID)
+	mb, err := chatting.Chat.GetMailbox(userID)
 	if err != nil {
 		chatting.Render(w, r, "error-message", err)
 		return

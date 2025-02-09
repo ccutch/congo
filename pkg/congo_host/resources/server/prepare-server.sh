@@ -5,7 +5,7 @@ mount -o defaults,nofail,discard,noatime /dev/disk/by-id/scsi-0DO_Volume_%[1]s-d
 
 # Installing dependencies
 sudo apt-get update
-sudo apt-get install -y apt-transport-https ca-certificates curl gnupg wget lsb-release tmux certbot gcc sqlite3
+sudo apt-get install -y apt-transport-https ca-certificates curl gnupg wget lsb-release tmux gcc sqlite3
 
 # Installing golang from source
 wget https://go.dev/dl/go1.23.2.linux-amd64.tar.gz && \

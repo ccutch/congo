@@ -24,11 +24,12 @@ type Server struct {
 }
 
 const (
-	Paid     = "paid"
-	Launched = "launched"
-	Prepared = "prepared"
-	Ready    = "ready"
-	Deployed = "deployed"
+	Paid      = "paid"
+	Launched  = "launched"
+	Prepared  = "prepared"
+	Ready     = "ready"
+	Deployed  = "deployed"
+	Destroyed = "destroyed"
 )
 
 func (s *Server) StatusInt() int {
@@ -39,10 +40,12 @@ func (s *Server) StatusInt() int {
 		return 2
 	case Prepared:
 		return 3
-	case Ready:
-		return 4
 	case Deployed:
+		return 4
+	case Ready:
 		return 5
+	case Destroyed:
+		return 6
 	default:
 		return 0
 	}

@@ -16,11 +16,11 @@ type Domain struct {
 	Verified   bool
 }
 
-func (host *RemoteHost) Domain(name string) *Domain {
+func (server *RemoteHost) Domain(name string) *Domain {
 	return &Domain{
-		host:       host.host,
-		Model:      host.host.DB.NewModel(name),
-		ServerID:   host.ID,
+		host:       server.host,
+		Model:      server.host.DB.NewModel(name),
+		ServerID:   server.ID,
 		DomainName: name,
 	}
 }

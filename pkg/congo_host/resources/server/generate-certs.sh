@@ -1,3 +1,5 @@
+apt-get install -y certbot
+
 certbot certonly --standalone -d %[1]s %[2]s --non-interactive --agree-tos --email connormccutcheon95@gmail.com --expand
 exit_code=$?
 
