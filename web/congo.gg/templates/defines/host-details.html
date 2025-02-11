@@ -19,7 +19,16 @@
           Visit Site
         </a>
         {{else}}
-        <div class="loading loading-bars"></div>
+        <div class="flex items-center gap-4">
+          <div class="loading loading-sm"></div>
+          <span class="font-medium animate-pulse">
+            {{if eq .StatusInt 6}}
+            Deleting Server
+            {{else}}
+            Checking For Updates
+            {{end}}
+          </span>
+        </div>
         {{end}}
 
         <div class="dropdown">
@@ -28,8 +37,16 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </label>
-          <ul tabindex="0" class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52">
+          <ul tabindex="0" class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52 relative z-20">
             <li>
+              <a hx-post="{{host}}/host/{{.ID}}/restart" hx-confirm="Are you sure you want to restart this host?">
+                Restart
+              </a>
+              {{if ne .Status "ready"}}
+              <a hx-post="{{host}}/host/{{.ID}}/retry-deployment">
+                Reboot
+              </a>
+              {{end}}
               <a hx-delete="{{host}}/host/{{.ID}}" hx-confirm="Are you sure you want to delete this host?">
                 Delete
               </a>
@@ -40,10 +57,10 @@
     </div>
   </div>
 
-  <div class="card bg-base-100 shadow" id="host-status"
-       {{if lt .StatusInt 5}}
+  <div class="card bg-base-100 shadow" id="host-content"
+       {{if ne .StatusInt 5}}
        hx-get="{{host}}/host/{{.ID}}" hx-trigger="load delay:2s"
-       hx-select="#host-status" hx-target="#host-status" hx-swap="outerHTML"
+       hx-select="#host-content" hx-target="#host-content" hx-swap="outerHTML"
        {{end}}>
     <div class="card-body">
       <ul class="steps">
@@ -53,7 +70,13 @@
         <li class="step {{if gt .StatusInt 3}}step-primary{{end}}">Assign URL</li>
         <li class="step {{if gt .StatusInt 4}}step-primary{{end}}">Ready</li>
       </ul>
-      {{if eq .StatusInt 0}}
+
+      {{if .Error}}
+      {{template "error-message" .}}
+      <a hx-post="{{host}}/host/{{.ID}}/retry-deployment" class="btn btn-primary mx-auto my-4">
+        Try Again
+      </a>
+      {{else if eq .StatusInt 0}}
       <div class="flex flex-col items-center gap-4 py-8 animate-pulse">
         <a href="{{.CheckoutURL}}" class="btn btn-primary">
           Purchase Hosting to Get Started
@@ -107,10 +130,34 @@
           Setup Your Admin Account
         </a>
       </div>
+      {{else if eq .StatusInt 6}}
+      <div class="flex flex-col items-center gap-4 py-8 animate-pulse">
+        <h1 class="text-4xl font-bold">
+          Deleting Server
+        </h1>
+        <p class="text-xl">
+          Deleting your server.
+        </p>
+      </div>
       {{end}}
     </div>
   </div>
 </div>
+{{else}}
+
+<!-- Host not found; go back to my hosts-->
+<div class="w-full flex items-center justify-center p-20">
+  <h1 class="text-4xl font-bold text-center opacity-80">
+    Host Not Found
+  </h1>
+  <p class=" text-xl text-center opacity-80">
+    This host does not exist, or has been deleted.
+  </p>
+  <a hx-boost="true" href="{{host}}/" class="btn btn-primary">
+    Go Back to My Hosts
+  </a>
+</div>
+
 {{end}}
 
 {{end}}

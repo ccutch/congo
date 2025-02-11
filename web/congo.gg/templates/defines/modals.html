@@ -1,12 +1,21 @@
-{{define "launching-modal"}}
-<dialog id="launching_modal" class="modal" o>
+{{define "launch-modal"}}
+<dialog id="launch_modal" class="modal" o>
   <div class="modal-box">
-    <h3 class="text-lg font-bold">Launching...</h3>
-    <p class="py-4">
-      Please wait to be redirected to your new server. This might take a
-      2-3 minutes.
-    </p>
-    <div id="error-message" class="capitalize"></div>
+    <h3 class="text-lg font-bold">
+      Launch a New Server
+    </h3>
+    <div class="error"></div>
+    <form class="w-full flex flex-col gap-4 pt-2 mb-0" action="{{host}}/checkout" method="POST">
+      <label class="form-control w-full">
+        <div class="label">
+          <span class="label-text">Name of your new server</span>
+        </div>
+        <input required name="name" type="text" placeholder="Server Name" class="input input-bordered w-full">
+      </label>
+      <button class="btn btn-primary">
+        Purchase Hosting
+      </button>
+    </form>
   </div>
 </dialog>
 {{end}}

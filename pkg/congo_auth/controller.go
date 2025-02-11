@@ -36,6 +36,11 @@ func (auth AuthController) Handle(r *http.Request) congo.Controller {
 }
 
 func (auth *AuthController) Current(roles ...string) *Identity {
+	if len(roles) == 0 {
+		for role := range auth.SigninViews {
+			roles = append(roles, role)
+		}
+	}
 	identity, _ := auth.CongoAuth.Authenticate(auth.Request, roles...)
 	return identity
 }
@@ -79,6 +84,16 @@ func (auth AuthController) handleSignup(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	for role := range auth.CongoAuth.SigninViews {
+		http.SetCookie(w, &http.Cookie{
+			Name:     auth.CongoAuth.CookieName + "-" + role,
+			Path:     "/",
+			Value:    "",
+			Expires:  time.Now().Add(-1 * time.Hour),
+			HttpOnly: true,
+		})
+	}
+
 	http.SetCookie(w, &http.Cookie{
 		Name:     auth.CongoAuth.CookieName + "-" + r.PathValue("role"),
 		Path:     "/",
@@ -105,6 +120,11 @@ func (auth AuthController) handleSignin(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	if identity.Role != r.PathValue("role") {
+		auth.Render(w, r, "error-message", fmt.Errorf("failed to find identity"))
+		return
+	}
+
 	if !identity.Verify(r.FormValue("password")) {
 		auth.Render(w, r, "error-message", fmt.Errorf("failed to find identity"))
 		return
@@ -116,8 +136,18 @@ func (auth AuthController) handleSignin(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	for role := range auth.CongoAuth.SigninViews {
+		http.SetCookie(w, &http.Cookie{
+			Name:     auth.CongoAuth.CookieName + "-" + role,
+			Path:     "/",
+			Value:    "",
+			Expires:  time.Now().Add(-1 * time.Hour),
+			HttpOnly: true,
+		})
+	}
+
 	http.SetCookie(w, &http.Cookie{
-		Name:     auth.CongoAuth.CookieName + "-" + r.PathValue("role"),
+		Name:     auth.CongoAuth.CookieName + "-" + identity.Role,
 		Path:     "/",
 		Value:    session.Token(),
 		Expires:  time.Now().Add(24 * time.Hour),

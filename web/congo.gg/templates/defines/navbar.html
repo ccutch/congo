@@ -1,0 +1,22 @@
+{{define "navbar"}}
+<div class="navbar bg-base-100 shadow-lg">
+  <div class="flex-1" hx-boost="true">
+    <a href="{{host}}/" class="btn btn-ghost normal-case text-xl">
+      Congo Workbench
+    </a>
+    {{if auth.Current "admin"}}
+    <a href="{{host}}/admin" class="btn btn-ghost normal-case text-xl">
+      Admin
+    </a>
+    {{end}}
+  </div>
+
+  <div class="flex-none">
+    {{with auth.Current "user" "admin"}}
+    <a hx-post="{{host}}/_auth/logout/{{.Role}}" class="btn btn-ghost normal-case text-xl">
+      Logout
+    </a>
+    {{end}}
+  </div>
+</div>
+{{end}}

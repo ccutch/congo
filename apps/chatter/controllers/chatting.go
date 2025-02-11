@@ -109,10 +109,10 @@ func (chatting ChattingController) handleMessages(w http.ResponseWriter, r *http
 			return
 		case m := <-feed.Messages:
 			log.Println("testing", userID, user.ID, m.FromID, m.ToID)
-			// if userID == user.ID && (m.FromID == userID && m.ToID == userID) {
-			// 	log.Println("Not sending message", userID, user.ID, m.FromID, m.ToID)
-			// 	continue
-			// }
+			if m.FromID == userID || m.ToID == userID {
+				log.Println("Not sending message", userID, user.ID, m.FromID, m.ToID)
+				continue
+			}
 			flush("chat-message", m)
 		}
 	}

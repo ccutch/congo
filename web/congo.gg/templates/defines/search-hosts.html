@@ -3,9 +3,9 @@
   <input name="query" type="search" class="input input-bordered w-full" placeholder="Search your host"
          hx-get="{{host}}/" hx-trigger="input changed delay:500ms, search"
          hx-select="#host-results" hx-target="#host-results" hx-swap="outerHTML">
-  <a target="_blank" href="{{host}}/checkout" class="btn btn-primary">
+  <button class="btn btn-primary" onclick="launch_modal.showModal()">
     Purchase a New Host
-  </a>
+  </button>
 </div>
 {{with hosting.MyHosts}}
 <table id="host-results" class="table">

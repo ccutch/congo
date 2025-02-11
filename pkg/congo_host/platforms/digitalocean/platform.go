@@ -226,28 +226,23 @@ func (s *Server) Remove(domain *congo_host.Domain) error {
 		return err
 	}
 
-	dnsRecordExists := false
 	for _, record := range records {
 		if record.Type == "A" && record.Name == subdomain && record.Data == s.IP {
-			dnsRecordExists = true
-			break
+			log.Println("Deleting A record for domain:", domain.ID, "with IP:", s.IP)
+			if _, err = s.client.Domains.DeleteRecord(ctx, rootDomain, record.ID); err != nil {
+				return err
+			}
 		}
 	}
 
-	if !dnsRecordExists {
-		return nil
+	for _, record := range records {
+		if record.Type == "A" && record.Name == "*."+subdomain && record.Data == s.IP {
+			log.Println("Deleting A record for domain:", "*."+domain.ID, "with IP:", s.IP)
+			if _, err = s.client.Domains.DeleteRecord(ctx, rootDomain, record.ID); err != nil {
+				return err
+			}
+		}
 	}
-
-	if _, err = s.client.Domains.Delete(ctx, domain.ID); err != nil {
-		return err
-	}
-
-	if _, err = s.client.Domains.Delete(ctx, "*."+domain.ID); err != nil {
-		return err
-	}
-
-	log.Println("Deleted A record for domain:", domain.ID, "with IP:", s.IP)
-	log.Println("Deleted A record for domain:", "*."+domain.ID, "with IP:", s.IP)
 
 	return nil
 }

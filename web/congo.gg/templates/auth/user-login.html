@@ -6,10 +6,14 @@
 </head>
 
 <body class="bg-base-200">
+  {{template "navbar" .}}
   <div class="hero min-h-screen">
-    <div class="hero-content">
-      <div class="card bg-base-100 shadow">
+    <div class="hero-content w-full">
+      <div class="card bg-base-100 shadow w-full max-w-sm">
         <div class="card-body">
+          <h2 class="card-title">
+            User Signin
+          </h2>
           {{template "congo-auth/signin-form" "user"}}
         </div>
       </div>

@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/ccutch/congo/pkg/congo"
 	"github.com/pkg/errors"
@@ -27,9 +28,10 @@ func (host *CongoHost) NewServer(name, size, region string) (*RemoteHost, error)
 	if host.api == nil {
 		return nil, errors.New("no platform provided")
 	}
+	id := strings.ToLower(strings.Replace(name, " ", "-", -1))
 	s := RemoteHost{
 		Server: host.api.Server(name),
-		Model:  host.DB.NewModel(name),
+		Model:  host.DB.NewModel(id),
 		host:   host,
 		Name:   name,
 		Size:   size,

@@ -7,6 +7,7 @@
 </head>
 
 <body class="bg-base-200">
+  {{template "navbar" .}}
   <div class="hero min-h-screen">
     <div class="hero-content w-full justify-between">
       <div class="flex flex-col gap-1">
@@ -17,12 +18,12 @@
           Build Your Next Great Idea.
         </p>
 
-        <div class="mockup-browser border-base-100 mt-6" data-theme="dark">
+        <div class="mockup-browser border-base-100 shadow-xl mt-6" data-theme="dark">
           <div class="mockup-browser-toolbar">
-            <div class="input border-base-100 border">https://congo.gg</div>
+            <div class="input border-base-100 border">https://your.congo.gg</div>
           </div>
           <div class="border-base-300 flex justify-center border-t">
-            <img src="{{host}}/public/images/mockup.png" class="-mb-1 w-full max-w-lg">
+            <img src="{{host}}/public/images/mockup.png" class="-mb-1 w-full max-w-xl">
           </div>
         </div>
       </div>
@@ -40,8 +41,6 @@
       </div>
     </div>
   </div>
-
-  {{template "launching-modal"}}
 </body>
 
 </html>

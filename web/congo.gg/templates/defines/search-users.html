@@ -1,5 +1,5 @@
 {{define "search-users"}}
-<input name="query" type="search" class="input input-bordered w-full" placeholder="Search your host"
+<input name="query" type="search" class="input input-bordered w-full" placeholder="Search all non admin users"
        hx-get="{{host}}/admin" hx-trigger="input changed delay:200ms, search"
        hx-select="#admin-results" hx-target="#admin-results" hx-swap="outerHTML">
 
@@ -7,25 +7,34 @@
   {{range hosting.UserGrid 3}}
   <div class="grid gap-4">
     {{range .}}
-    <div class="card bg-base-100 shadow w-full">
+    <div class="card bg-base-300 shadow w-full h-min">
+      <div class="card-body pb-2">
+        <h3 class="card-title">
+          <div class="avatar">
+            <div class="w-8 p-1 rounded-full bg-base-100">
+              <img src="https://robohash.org/{{.ID}}">
+            </div>
+          </div>
+          {{.Name}}
+        </h3>
+      </div>
+      {{with hosting.HostsFor .ID}}
+      <ul class="menu">
+        {{range .}}
+        <li>
+          <a href="{{host}}/host/{{.ID}}">
+            {{.Name}}
+          </a>
+        </li>
+        {{end}}
+      </ul>
+      {{else}}
       <div class="card-body">
-        <h3 class="card-title">{{.Name}}</h3>
-        {{with hosting.HostsFor .ID}}
-        <ul class="menu">
-          {{range .}}
-          <li>
-            <a href="{{host}}/{{.ID}}" class="btn btn-sm btn-error">
-              Host: {{.Name}}
-            </a>
-          </li>
-          {{end}}
-        </ul>
-        {{else}}
-        <p class="mt-4 font-semibold text-lg text-center">
+        <p class="mt-2 font-semibold text-lg text-center">
           No Hosts
         </p>
-        {{end}}
       </div>
+      {{end}}
     </div>
     {{end}}
   </div>

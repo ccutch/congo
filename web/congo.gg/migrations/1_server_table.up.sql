@@ -4,7 +4,7 @@ CREATE TABLE servers (
   host_id      TEXT NOT NULL,
   checkout_id  TEXT DEFAULT '',
   checkout_url TEXT DEFAULT '',
-  name         TEXT NOT NULL UNIQUE,
+  name         TEXT NOT NULL,
   size         TEXT NOT NULL,
   status       TEXT DEFAULT 'created',
   ip_addr      TEXT DEFAULT '',
