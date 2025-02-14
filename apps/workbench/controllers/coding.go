@@ -11,6 +11,10 @@ import (
 	"github.com/ccutch/congo/pkg/congo_host"
 )
 
+func Coding(host *congo_host.CongoHost, code *congo_code.CongoCode) (string, *CodingController) {
+	return "coding", &CodingController{host: host, code: code}
+}
+
 type CodingController struct {
 	congo.BaseController
 	host      *congo_host.CongoHost
@@ -21,29 +25,17 @@ type CodingController struct {
 
 func (coding *CodingController) Setup(app *congo.Application) {
 	coding.BaseController.Setup(app)
-	coding.host = congo_host.InitCongoHost(app.DB.Root)
-	coding.code = congo_code.InitCongoCode(app.DB.Root)
 	coding.Repo, _ = coding.code.NewRepo("code", congo_code.WithName("Code"))
-
-	auth, ok := app.Use("auth").(*congo_auth.AuthController)
-	if !ok {
-		log.Fatal("Missing auth controller")
-	}
+	coding.Workspace, _ = coding.code.NewWorkspace(coding.host, "coder", 7000, coding.Repo)
 
 	go func() {
-		var err error
-		coding.Workspace, err = coding.code.NewWorkspace(coding.host, "coder", 7000, coding.Repo)
-		if err != nil {
-			log.Println("Failed to setup workspace: ", err)
-			return
-		}
-
-		if err = coding.Workspace.Start(); err != nil {
+		if err := coding.Workspace.Start(); err != nil {
 			log.Println("Failed to start workspace: ", err)
 			return
 		}
 	}()
 
+	auth := app.Use("auth").(*congo_auth.AuthController)
 	http.HandleFunc("/_coding/download", auth.ProtectFunc(coding.handleDownload, "developer"))
 }
 

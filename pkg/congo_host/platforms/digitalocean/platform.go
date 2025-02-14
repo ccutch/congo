@@ -3,9 +3,11 @@ package digitalocean
 import (
 	"bytes"
 	"context"
+	_ "embed"
 	"fmt"
 	"io"
 	"log"
+	"os"
 	"os/exec"
 	"strings"
 	"time"
@@ -18,7 +20,8 @@ import (
 
 type Client struct {
 	*godo.Client
-	host *congo_host.CongoHost
+	host  *congo_host.CongoHost
+	token string
 }
 
 func NewClient(token string) congo_host.Platform {
@@ -28,7 +31,7 @@ func NewClient(token string) congo_host.Platform {
 	return &Client{godo.NewClient(oauth2.NewClient(
 		context.Background(),
 		oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token}),
-	)), nil}
+	)), nil, token}
 }
 
 func (client *Client) Init(host *congo_host.CongoHost) {
@@ -217,7 +220,7 @@ func (s *Server) Assign(domain *congo_host.Domain) error {
 func (s *Server) Remove(domain *congo_host.Domain) error {
 	ctx, parts := context.Background(), strings.SplitN(domain.ID, ".", 2)
 	if len(parts) < 2 {
-		return fmt.Errorf("invalid domain, expecting subdomain.topleveldomain.extension")
+		return errors.New("invalid domain, expecting subdomain.topleveldomain.extension")
 	}
 
 	subdomain, rootDomain := parts[0], parts[1]
@@ -228,16 +231,14 @@ func (s *Server) Remove(domain *congo_host.Domain) error {
 
 	for _, record := range records {
 		if record.Type == "A" && record.Name == subdomain && record.Data == s.IP {
-			log.Println("Deleting A record for domain:", domain.ID, "with IP:", s.IP)
+			log.Println("Deleting A record for domain", domain.ID, "with IP", s.IP)
 			if _, err = s.client.Domains.DeleteRecord(ctx, rootDomain, record.ID); err != nil {
 				return err
 			}
 		}
-	}
 
-	for _, record := range records {
 		if record.Type == "A" && record.Name == "*."+subdomain && record.Data == s.IP {
-			log.Println("Deleting A record for domain:", "*."+domain.ID, "with IP:", s.IP)
+			log.Println("Deleting A record for domain", "*."+domain.ID, "with IP", s.IP)
 			if _, err = s.client.Domains.DeleteRecord(ctx, rootDomain, record.ID); err != nil {
 				return err
 			}
@@ -245,4 +246,18 @@ func (s *Server) Remove(domain *congo_host.Domain) error {
 	}
 
 	return nil
+}
+
+//go:embed resources/generate-certs.sh
+var generateCerts string
+
+func (s *Server) Verify(domains ...*congo_host.Domain) error {
+	domainNames := []string{}
+	for _, d := range domains {
+		domainNames = append(domainNames, d.DomainName)
+		domainNames = append(domainNames, "*."+d.DomainName)
+	}
+
+	cmd := fmt.Sprintf(generateCerts, domains[0].DomainName, strings.Join(domainNames, " -d "), s.client.token)
+	return s.Run(os.Stdout, os.Stdin, cmd)
 }

@@ -109,6 +109,9 @@ func (s *Service) Start() error {
 var setupService string
 
 func (s *Service) setupService() error {
+	log.Println("service", s)
+	log.Println("host", s.Host)
+	log.Println("db", s.Host.DB)
 	return s.Run("bash", "-c", fmt.Sprintf(setupService, s.Host.DB.Root, s.Name))
 }
 

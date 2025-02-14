@@ -1,0 +1,60 @@
+{{define "services-menu"}}
+<div class="flex flex-col gap-4 w-full max-w-screen-sm">
+  <div class="flex justify-between">
+    <h2 class="text-2xl font-medium">
+      Services
+    </h2>
+    <button class="btn btn-sm btn-ghost" onclick="launch_service_modal.showModal()">
+      Run App
+    </button>
+  </div>
+
+  <div class="flex flex-col gap-2 w-full">
+    {{range services.Services}}
+    <div class="card bg-base-100 shadow">
+      <div class="card-body flex-col">
+        <div class="flex flex-row items-center justify-between">
+          <div class="flex flex-col">
+            <h3 class="text-lg font-bold">
+              {{.Name}}
+            </h3>
+            <span class="text-sm font-semibold opacity-40">
+              Build Path: {{.Path}}
+            </span>
+          </div>
+
+          <div class="flex items-center gap-2">
+            {{if eq .Status "started"}}
+            <a target="_blank" href="https://{{.ID}}.{{services.HostName}}.congo.gg" class="btn btn-sm btn-primary">
+              Open Service
+            </a>
+            {{else}}
+            <div class="loading loading-xs loading-spinner"></div>
+            <span class="font-medium italic opacity-60">Starting...</span>
+            {{end}}
+            <div class="dropdown">
+              <div tabindex="0" role="button" class="btn btn-ghost">
+                <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 20 20" aria-hidden="true" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"></path>
+                </svg>
+              </div>
+              <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow">
+                <li><a hx-post="{{host}}/_services/{{.ID}}/restart">Restart</a></li>
+                <li><a hx-delete="{{host}}/_services/{{.ID}}">Delete</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        {{if .Error}}
+        {{template "error-message" .}}
+        {{end}}
+      </div>
+    </div>
+    {{end}}
+  </div>
+</div>
+
+
+{{template "modals/launch-service"}}
+{{end}}

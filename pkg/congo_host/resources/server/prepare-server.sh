@@ -14,12 +14,13 @@ wget https://go.dev/dl/go1.23.2.linux-amd64.tar.gz && \
 rm go1.23.2.linux-amd64.tar.gz
 
 # Updating Bash environment
-echo 'export PATH=$PATH:/usr/local/go/bin' >> $HOME/.bashrc
-echo 'export PATH=$PATH:$HOME/go/bin'      >> $HOME/.bashrc
-echo 'export CONGO_SERVER_NAME=%[1]s'      >> $HOME/.bashrc
-echo 'export CONGO_SERVER_SIZE=%[2]s'      >> $HOME/.bashrc
-echo 'export CONGO_HOST_REGION=%[3]s'      >> $HOME/.bashrc
+sed -i '1i export PATH=$PATH:/usr/local/go/bin' $HOME/.bashrc
+sed -i '1i export PATH=$PATH:$HOME/go/bin' $HOME/.bashrc
+sed -i '1i export CONGO_SERVER_NAME=%[1]s' $HOME/.bashrc
+sed -i '1i export CONGO_SERVER_SIZE=%[2]s' $HOME/.bashrc
+sed -i '1i export CONGO_HOST_REGION=%[3]s' $HOME/.bashrc
 source $HOME/.bashrc
+
 
 # Allow Firewall for 80 (Certbot) and 443 (SSL)
 ufw allow 22

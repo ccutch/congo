@@ -2,8 +2,6 @@ package congo_host
 
 import (
 	_ "embed"
-	"fmt"
-	"strings"
 
 	"github.com/ccutch/congo/pkg/congo"
 )
@@ -81,9 +79,6 @@ func (domain *Domain) Server() (*RemoteHost, error) {
 	return domain.host.GetServer(domain.ServerID)
 }
 
-//go:embed resources/server/generate-certs.sh
-var generateCerts string
-
 func (domain *Domain) Verify() error {
 	server, err := domain.Server()
 	if err != nil {
@@ -95,19 +90,14 @@ func (domain *Domain) Verify() error {
 		return err
 	}
 
-	var otherURL []string
+	otherDomains := []*Domain{domain}
 	for _, d := range domains {
 		if d.Verified {
-			otherURL = append(otherURL, d.DomainName)
+			otherDomains = append(otherDomains, d)
 		}
 	}
 
-	var rest string
-	if len(otherURL) > 0 {
-		rest = strings.Join(otherURL, " -d ")
-	}
-
-	if err = server.Run(fmt.Sprintf(generateCerts, domain.ID, rest)); err != nil {
+	if err = server.Server.Verify(otherDomains...); err != nil {
 		return err
 	}
 

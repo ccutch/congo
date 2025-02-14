@@ -9,7 +9,12 @@ import (
 	"github.com/ccutch/congo/pkg/congo"
 	"github.com/ccutch/congo/pkg/congo_auth"
 	"github.com/ccutch/congo/pkg/congo_host"
+	"github.com/ccutch/congo/pkg/congo_host/platforms/digitalocean"
 )
+
+func Hosting(host *congo_host.CongoHost) (string, *HostingController) {
+	return "hosting", &HostingController{host: host}
+}
 
 type HostingController struct {
 	congo.BaseController
@@ -18,14 +23,14 @@ type HostingController struct {
 
 func (hosting *HostingController) Setup(app *congo.Application) {
 	hosting.BaseController.Setup(app)
-
 	auth := app.Use("auth").(*congo_auth.AuthController)
-	hosting.host = congo_host.InitCongoHost(app.DB.Root)
-
 	http.HandleFunc("POST /_hosting/launch", auth.ProtectFunc(hosting.handleLaunch, "developer"))
 	http.HandleFunc("POST /_hosting/restart/{server}", auth.ProtectFunc(hosting.handleRestart, "developer"))
 	http.HandleFunc("POST /_hosting/domain", auth.ProtectFunc(hosting.handleDomain, "developer"))
 	http.HandleFunc("POST /_hosting/verify/{domain}", auth.ProtectFunc(hosting.handleVerify, "developer"))
+
+	settings := app.Use("settings").(*SettingsController)
+	hosting.host.WithAPI(digitalocean.NewClient(settings.Get("token")))
 }
 
 func (hosting HostingController) Handle(req *http.Request) congo.Controller {

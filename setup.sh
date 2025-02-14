@@ -1,6 +1,6 @@
 echo Installing global packages...
 sudo apt-get update
-sudo apt-get install -y apt-transport-https ca-certificates curl gnupg wget lsb-release tmux certbot build-essential
+sudo apt-get install -y apt-transport-https ca-certificates curl gnupg wget lsb-release tmux certbot build-essential npm
 
 echo Installing golang from source...
 wget https://go.dev/dl/go1.23.2.linux-amd64.tar.gz && \

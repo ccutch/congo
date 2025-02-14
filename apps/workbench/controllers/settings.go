@@ -9,6 +9,10 @@ import (
 	"github.com/ccutch/congo/pkg/congo_host/platforms/digitalocean"
 )
 
+func Settings() (string, *SettingsController) {
+	return "settings", &SettingsController{}
+}
+
 type SettingsController struct {
 	congo.BaseController
 }
@@ -23,9 +27,6 @@ func (settings *SettingsController) Setup(app *congo.Application) {
 	if settings.Get("token") == "" {
 		settings.set("token", os.Getenv("DIGITAL_OCEAN_API_KEY"))
 	}
-
-	hosting := app.Use("hosting").(*HostingController)
-	hosting.host.WithAPI(digitalocean.NewClient(settings.Get("token")))
 }
 
 func (settings SettingsController) Handle(req *http.Request) congo.Controller {
