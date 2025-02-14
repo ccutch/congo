@@ -50,6 +50,9 @@ type Server struct {
 	volume *godo.Volume
 }
 
+//go:embed resources/prepare-server.sh
+var prepareServer string
+
 func (d *Server) Launch(region string, size string, storage int64) error {
 	if err := d.setupAccess(); err != nil {
 		return errors.Wrap(err, "failed to create droplet")
@@ -60,7 +63,7 @@ func (d *Server) Launch(region string, size string, storage int64) error {
 	if err := d.createDroplet(region, size); err != nil {
 		return errors.Wrap(err, "failed to create droplet")
 	}
-	return nil
+	return d.Run(os.Stdout, os.Stdin, fmt.Sprintf(prepareServer, d.Name, size, region))
 }
 
 func (d *Server) Delete(purge bool, force bool) error {
@@ -251,13 +254,14 @@ func (s *Server) Remove(domain *congo_host.Domain) error {
 //go:embed resources/generate-certs.sh
 var generateCerts string
 
-func (s *Server) Verify(domains ...*congo_host.Domain) error {
+func (s *Server) Verify(admin string, domains ...*congo_host.Domain) error {
 	domainNames := []string{}
 	for _, d := range domains {
 		domainNames = append(domainNames, d.DomainName)
 		domainNames = append(domainNames, "*."+d.DomainName)
 	}
 
-	cmd := fmt.Sprintf(generateCerts, domains[0].DomainName, strings.Join(domainNames, " -d "), s.client.token)
+	log.Println("Domain Names:", domainNames)
+	cmd := fmt.Sprintf(generateCerts, domains[0].DomainName, strings.Join(domainNames, " -d "), s.client.token, admin)
 	return s.Run(os.Stdout, os.Stdin, cmd)
 }

@@ -18,13 +18,21 @@ import (
 
 type HostingController struct {
 	congo.BaseController
-	auth *congo_auth.CongoAuth
-	host *congo_host.CongoHost
-	sell *congo_sell.CongoSell
+	auth   *congo_auth.CongoAuth
+	host   *congo_host.CongoHost
+	sell   *congo_sell.CongoSell
+	binary string
 }
 
 func Hosting(auth *congo_auth.CongoAuth, host *congo_host.CongoHost, sell *congo_sell.CongoSell) (string, *HostingController) {
-	return "hosting", &HostingController{auth: auth, host: host, sell: sell}
+	hosting := HostingController{auth: auth, host: host, sell: sell}
+	go func() {
+		var err error
+		if hosting.binary, err = apps.Build("workbench"); err != nil {
+			log.Fatal("Failed to build workbench: ", err)
+		}
+	}()
+	return "hosting", &hosting
 }
 
 func (hosting *HostingController) Setup(app *congo.Application) {
@@ -149,30 +157,8 @@ func (hosting HostingController) callback(w http.ResponseWriter, r *http.Request
 		server.Status = models.Launched
 		server.Save()
 
-		if err = host.Prepare(); err != nil {
-			server.Error = err.Error()
-			server.Save()
-			return
-		}
-
 		server.IpAddr = host.Addr()
 		server.Status = models.Prepared
-		server.Save()
-
-		out, err := apps.Build("workbench")
-		if err != nil {
-			server.Error = err.Error()
-			server.Save()
-			return
-		}
-
-		if err = host.Deploy(out); err != nil {
-			server.Error = err.Error()
-			server.Save()
-			return
-		}
-
-		server.Status = models.Deployed
 		server.Save()
 
 		server.Domain = fmt.Sprintf("%s.congo.gg", server.ID)
@@ -184,14 +170,23 @@ func (hosting HostingController) callback(w http.ResponseWriter, r *http.Request
 		}
 
 		domain.Save()
-		if err = domain.Verify(); err != nil {
+		if err = domain.Verify("admin@" + domain.DomainName); err != nil {
 			server.Error = err.Error()
 			server.Save()
 			return
 		}
 
-		host.Restart()
+		server.Status = models.Assigned
+		server.Save()
+
+		if err = host.Deploy(hosting.binary); err != nil {
+			server.Error = err.Error()
+			server.Save()
+			return
+		}
+
 		server.Status = models.Ready
+
 		server.Save()
 	}()
 
@@ -316,12 +311,6 @@ func (hosting HostingController) retryDeployment(w http.ResponseWriter, r *http.
 			fallthrough
 
 		case models.Launched:
-			if err = host.Prepare(); err != nil {
-				server.Error = err.Error()
-				server.Save()
-				return
-			}
-
 			server.IpAddr = host.Addr()
 			server.Status = models.Prepared
 			server.Save()
@@ -341,11 +330,11 @@ func (hosting HostingController) retryDeployment(w http.ResponseWriter, r *http.
 				return
 			}
 
-			server.Status = models.Deployed
+			server.Status = models.Assigned
 			server.Save()
 			fallthrough
 
-		case models.Deployed:
+		case models.Assigned:
 			server.Domain = fmt.Sprintf("%s.congo.gg", server.ID)
 			domain := host.Domain(server.Domain)
 			if err = host.Assign(domain); err != nil {
@@ -355,7 +344,7 @@ func (hosting HostingController) retryDeployment(w http.ResponseWriter, r *http.
 			}
 
 			domain.Save()
-			if err = domain.Verify(); err != nil {
+			if err = domain.Verify("admin@" + domain.DomainName); err != nil {
 				server.Error = err.Error()
 				server.Save()
 				return

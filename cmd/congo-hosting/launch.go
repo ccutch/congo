@@ -5,7 +5,6 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"time"
 
 	"github.com/ccutch/congo/pkg/congo_host"
 	"github.com/ccutch/congo/pkg/congo_host/platforms/digitalocean"
@@ -44,14 +43,24 @@ func launch(args ...string) (*congo_host.RemoteHost, error) {
 		return nil, errors.Wrap(err, "failed to create server")
 	}
 
-	log.Println("Creating server...")
+	log.Println("Launching server...")
 	if err = server.Launch(*region, *size, *storage); err != nil {
 		return nil, errors.Wrap(err, "failed to create server")
 	}
 
-	log.Println("Preparing server...")
-	if err = server.Prepare(); err != nil {
-		return nil, errors.Wrap(err, "failed to prepare server")
+	if *domain != "" {
+		domain := server.Domain(*domain)
+		if err = server.Assign(domain); err != nil {
+			return nil, errors.Wrap(err, "failed to assign domain")
+		}
+
+		if err = domain.Save(); err != nil {
+			return nil, errors.Wrap(err, "failed to save domain")
+		}
+
+		if err = domain.Verify("admin@" + domain.DomainName); err != nil {
+			return nil, errors.Wrap(err, "failed to verify domain")
+		}
 	}
 
 	if *app != "" {
@@ -71,20 +80,6 @@ func launch(args ...string) (*congo_host.RemoteHost, error) {
 	log.Println("Deploying binary...")
 	if err = server.Deploy("congo"); err != nil {
 		return nil, errors.Wrap(err, "failed to deploy binary")
-	}
-
-	if *domain != "" {
-		domain := server.Domain(*domain)
-		if err := server.Assign(domain); err != nil {
-			return nil, errors.Wrap(err, "failed to assign domain")
-		}
-
-		domain.Save()
-		time.Sleep(15 * time.Second)
-		if err = domain.Verify(); err != nil {
-			return nil, errors.Wrap(err, "failed to verify domain")
-		}
-		return server, server.Restart()
 	}
 
 	return server, err

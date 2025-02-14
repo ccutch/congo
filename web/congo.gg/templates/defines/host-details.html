@@ -67,7 +67,7 @@
         <li class="step {{if gt .StatusInt 0}}step-primary{{end}}">Paid</li>
         <li class="step {{if gt .StatusInt 1}}step-primary{{end}}">Launched</li>
         <li class="step {{if gt .StatusInt 2}}step-primary{{end}}">Prepared</li>
-        <li class="step {{if gt .StatusInt 3}}step-primary{{end}}">Deployed</li>
+        <li class="step {{if gt .StatusInt 3}}step-primary{{end}}">Assigned</li>
         <li class="step {{if gt .StatusInt 4}}step-primary{{end}}">Ready</li>
       </ul>
 
@@ -103,19 +103,19 @@
       {{else if eq .StatusInt 3}}
       <div class="flex flex-col items-center gap-4 py-8 animate-pulse">
         <h1 class="text-4xl font-bold">
-          Deploying Workbench
+          Assigning Domain Name
         </h1>
         <p class="text-xl">
-          Deploying a new instance of Congo Workbench.
+          Assigning a domain name to your server.
         </p>
       </div>
       {{else if eq .StatusInt 4}}
       <div class="flex flex-col items-center gap-4 py-8 animate-pulse">
         <h1 class="text-4xl font-bold">
-          Assigning Domain Name
+          Deploying Workbench
         </h1>
         <p class="text-xl">
-          Assigning a domain name to your server.
+          Deploying a new instance of Congo Workbench.
         </p>
       </div>
       {{else if eq .StatusInt 5}}

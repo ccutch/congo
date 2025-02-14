@@ -40,7 +40,7 @@ var (
 
 	sell = congo_sell.InitCongoSell(data,
 		congo_sell.WithBackend(stripe.NewClient(os.Getenv("STRIPE_KEY"))),
-		congo_sell.WithProduct("Congo Workbench", "A cloud hosted coding environment by Congo", 2_00))
+		congo_sell.WithProduct("Congo Workbench", "A cloud hosted coding environment by Congo", 20_00))
 
 	app = congo.NewApplication(templates,
 		congo.WithDatabase(congo.SetupDatabase(data, "congo.db", migrations)),

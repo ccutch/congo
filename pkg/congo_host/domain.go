@@ -30,7 +30,7 @@ func (server *RemoteHost) Domains() ([]*Domain, error) {
 		SELECT id, server_id, domain_name, verified, created_at, updated_at
 		FROM domains
 		WHERE server_id = ?
-		ORDER BY created_at DESC
+		ORDER BY created_at
 
 	`, server.ID).All(func(scan congo.Scanner) error {
 		d := Domain{host: server.host, Model: server.host.DB.Model()}
@@ -79,7 +79,7 @@ func (domain *Domain) Server() (*RemoteHost, error) {
 	return domain.host.GetServer(domain.ServerID)
 }
 
-func (domain *Domain) Verify() error {
+func (domain *Domain) Verify(admin string) error {
 	server, err := domain.Server()
 	if err != nil {
 		return err
@@ -97,7 +97,7 @@ func (domain *Domain) Verify() error {
 		}
 	}
 
-	if err = server.Server.Verify(otherDomains...); err != nil {
+	if err = server.Server.Verify(admin, otherDomains...); err != nil {
 		return err
 	}
 

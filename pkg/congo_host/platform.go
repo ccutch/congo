@@ -18,6 +18,6 @@ type Server interface {
 	Run(io.Reader, io.Writer, ...string) error
 	Copy(source, dest string) (stdout, stderr bytes.Buffer, _ error)
 	Assign(domain *Domain) error
-	Verify(domains ...*Domain) error
+	Verify(admin string, domains ...*Domain) error
 	Remove(domain *Domain) error
 }

@@ -74,11 +74,6 @@ func (hosting HostingController) handleLaunch(w http.ResponseWriter, r *http.Req
 	}
 
 	go func() {
-		if err := server.Prepare(); err != nil {
-			// TODO: record error
-			return
-		}
-
 		coding := hosting.Use("coding").(*CodingController)
 		if source, err := coding.Repo.Build("master", "."); err != nil {
 			log.Println("Failed to build binary: ", err)
@@ -104,7 +99,7 @@ func (hosting HostingController) handleDomain(w http.ResponseWriter, r *http.Req
 
 	if domain := r.FormValue("domain"); domain != "" {
 		d := server.Domain(domain)
-		if err = d.Verify(); err == nil {
+		if err = d.Verify("admin@" + d.DomainName); err == nil {
 			hosting.Render(w, r, "error-message", err)
 			return
 		}
@@ -149,7 +144,7 @@ func (hosting HostingController) handleVerify(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	if err = domain.Verify(); err == nil {
+	if err = domain.Verify("admin@" + domain.DomainName); err == nil {
 		domain.Verified = true
 		domain.Save()
 	}

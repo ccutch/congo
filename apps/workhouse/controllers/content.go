@@ -148,12 +148,6 @@ func (c ContentController) launchServer(w http.ResponseWriter, r *http.Request) 
 			return
 		}
 
-		if err = server.Prepare(); err != nil {
-			h.Status = "failed"
-			h.Error = errors.Wrap(err, "failed to prepare server").Error()
-			return
-		}
-
 		out, err := c.Repo.Build("master", ".")
 		if err != nil {
 			h.Status = "failed"

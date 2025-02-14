@@ -16,7 +16,7 @@ type Server struct {
 	CheckoutURL string
 	Name        string
 	Size        string
-	Status      string
+	Status      serverStatus
 	IpAddr      string
 	Domain      string
 	Error       string
@@ -24,13 +24,15 @@ type Server struct {
 	UpdatedAt   time.Time
 }
 
+type serverStatus string
+
 const (
-	Paid      = "paid"
-	Launched  = "launched"
-	Prepared  = "prepared"
-	Ready     = "ready"
-	Deployed  = "deployed"
-	Destroyed = "destroyed"
+	Paid      serverStatus = "paid"
+	Launched  serverStatus = "launched"
+	Prepared  serverStatus = "prepared"
+	Assigned  serverStatus = "assigned"
+	Ready     serverStatus = "ready"
+	Destroyed serverStatus = "destroyed"
 )
 
 func (s *Server) StatusInt() int {
@@ -41,7 +43,7 @@ func (s *Server) StatusInt() int {
 		return 2
 	case Prepared:
 		return 3
-	case Deployed:
+	case Assigned:
 		return 4
 	case Ready:
 		return 5

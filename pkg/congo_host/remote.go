@@ -105,23 +105,18 @@ func (h *RemoteHost) Delete(purge, force bool) error {
 	`, h.ID).Exec()
 }
 
+// SetStdin sets the stdin for the host.
 func (h *RemoteHost) SetStdin(stdin io.Reader) {
 	h.Stdin = stdin
 }
 
+// SetStdout sets the stdout for the host.
 func (h *RemoteHost) SetStdout(stdout io.Writer) {
 	h.Stdout = stdout
 }
 
 func (h *RemoteHost) Run(args ...string) error {
 	return h.Server.Run(h.Stdin, h.Stdout, args...)
-}
-
-//go:embed resources/server/prepare-server.sh
-var prepareServer string
-
-func (h *RemoteHost) Prepare() error {
-	return h.Run(fmt.Sprintf(prepareServer, h.Name, h.Size, h.Region))
 }
 
 //go:embed resources/server/start-server.sh

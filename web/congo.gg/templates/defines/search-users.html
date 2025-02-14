@@ -1,5 +1,5 @@
 {{define "search-users"}}
-<input name="query" type="search" class="input input-bordered w-full" placeholder="Search all non admin users"
+<input name="query" type="search" class="input input-bordered w-full" placeholder="Search All Users"
        hx-get="{{host}}/admin" hx-trigger="input changed delay:200ms, search"
        hx-select="#admin-results" hx-target="#admin-results" hx-swap="outerHTML">
 

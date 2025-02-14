@@ -1,8 +1,8 @@
 package main
 
 import (
+	"cmp"
 	"flag"
-	"log"
 	"os"
 
 	"github.com/ccutch/congo/pkg/congo_host"
@@ -17,6 +17,8 @@ func genCerts(args ...string) error {
 		path       = cmd.String("data-path", "/tmp/congo", "Local storage for SSH Keys")
 		name       = cmd.String("name", "congo-server", "Name of Digital Ocean droplet")
 		domainName = cmd.String("domain", "", "Domain name to generate cert for")
+		admin      = cmd.String("admin", "", "admin email")
+		assign     = cmd.Bool("assign", false, "Assign domain to server")
 	)
 
 	if err := cmd.Parse(args[1:]); err != nil {
@@ -25,10 +27,6 @@ func genCerts(args ...string) error {
 
 	if *apiKey == "$DIGITAL_OCEAN_API_KEY" {
 		*apiKey = os.Getenv("DIGITAL_OCEAN_API_KEY")
-	}
-
-	if *domainName == "" {
-		log.Fatal("Missing domain name")
 	}
 
 	host := congo_host.InitCongoHost(*path,
@@ -42,14 +40,39 @@ func genCerts(args ...string) error {
 		return errors.Wrap(err, "failed to reload server")
 	}
 
-	domain := server.Domain(*domainName)
-	if err := server.Assign(domain); err != nil {
-		log.Println("Failed to assign domain: ", err)
+	*admin = cmp.Or(*admin, "admin@testing.com")
+	if *domainName != "" {
+		domain := server.Domain(*domainName)
+		if err = domain.Save(); err != nil {
+			return errors.Wrap(err, "failed to save domain")
+		}
+
+		if *assign {
+			if err := server.Assign(domain); err != nil {
+				return errors.Wrap(err, "failed to assign domain")
+			}
+		}
+
+		if err := domain.Verify(*admin); err != nil {
+			return errors.Wrap(err, "failed to verify domain")
+		}
+	} else {
+		domains, err := server.Domains()
+		if err != nil {
+			return errors.Wrap(err, "failed to get domains")
+		}
+
+		otherDomains := []*congo_host.Domain{}
+		for _, d := range domains {
+			if d.Verified {
+				otherDomains = append(otherDomains, d)
+			}
+		}
+
+		if err := server.Verify(*admin, otherDomains...); err != nil {
+			return errors.Wrap(err, "failed to verify domain")
+		}
 	}
 
-	if err := domain.Verify(); err != nil {
-		return errors.Wrap(err, "failed to verify domain")
-	} else {
-		return server.Restart()
-	}
+	return server.Restart()
 }
