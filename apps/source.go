@@ -20,6 +20,10 @@ var SourceFiles embed.FS
 var ResourceFiles embed.FS
 
 func Build(app string) (string, error) {
+	var host congo_host.LocalHost
+	host.SetStdin(os.Stdin)
+	host.SetStdout(os.Stdout)
+
 	dir, err := os.MkdirTemp("", "congo-app-build-*")
 	if err != nil {
 		return "", err
@@ -28,19 +32,15 @@ func Build(app string) (string, error) {
 	if err := GenerateApp(app, dir, app); err != nil {
 		return "", err
 	}
+
 	dest := filepath.Join(dir, "congo")
-
-	var host congo_host.LocalHost
-	host.SetStdin(os.Stdin)
-	host.SetStdout(os.Stdout)
-
 	return dest, host.Run("bash", "-c", fmt.Sprintf(`
-		cd %s
-		go mod init %s
+		cd %[1]s
+		go mod init %[2]s
 		go clean -modcache
 		go mod tidy
-		go build -o %s %s
-	`, dir, app, dest, dir))
+		go build -o %[3]s %[1]s
+	`, dir, app, dest))
 }
 
 func GenerateApp(name, dest, tmpl string) error {

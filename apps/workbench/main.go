@@ -1,10 +1,8 @@
 package main
 
 import (
-	"bytes"
 	"cmp"
 	"embed"
-	"log"
 	"net/http"
 	"os"
 
@@ -22,6 +20,12 @@ var (
 
 	//go:embed all:migrations
 	migrations embed.FS
+
+	//go:embed all:public
+	public embed.FS
+
+	//go:embed resources/install-nixpack.sh
+	installNixpack string
 
 	home, _ = os.UserHomeDir()
 	data    = cmp.Or(os.Getenv("DATA_PATH"), home+"/congo")
@@ -46,27 +50,18 @@ var (
 )
 
 func init() {
-	go func() {
-		var buf bytes.Buffer
-
-		host := host.Local()
-		host.SetStdout(&buf)
-		if err := host.Run("curl", "-sSL", "https://nixpacks.com/install.sh"); err != nil {
-			log.Println("Error loading nix pack", err)
-		}
-
-		if err := host.Run("bash", "-c", buf.String()); err != nil {
-			log.Println("Error loading nix pack", err)
-		}
-	}()
+	go host.Local().Run("bash", "-c", installNixpack)
 }
 
 func main() {
 	auth := app.Use("auth").(*congo_auth.AuthController)
 	coding := app.Use("coding").(*controllers.CodingController)
 
+	http.Handle("/public/", http.FileServerFS(public))
 	http.Handle("/", auth.Serve("workbench.html", "developer"))
 	http.Handle("/code/", coding.Repo.Serve(auth, "developer"))
+	http.Handle("/draw", auth.Serve("whiteboard.html", "developer"))
+	http.Handle("/settings", auth.Serve("settings.html", "developer"))
 	if coding.Workspace != nil {
 		http.Handle("/coder/", auth.Protect(coding.Workspace.Proxy("/coder/"), "developer"))
 	}

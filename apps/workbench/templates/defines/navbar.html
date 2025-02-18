@@ -1,0 +1,36 @@
+{{define "navbar"}}
+<div class="flex justify-between items-end">
+
+  {{with settings.Get "title"}}
+  <h1 class="text-3xl font-semibold capitalize" id="navbar-title">
+    {{.}}
+  </h1>
+  {{else}}
+  {{with auth.Current "developer"}}
+  <h1 class="text-3xl font-semibold capitalize" id="navbar-title">
+    Welcome back {{.Name}}!
+  </h1>
+  {{end}}
+  {{end}}
+
+  <div class="flex items-center gap-2">
+    <ul class="menu menu-sm menu-horizontal gap-2">
+      <li><a hx-boost="true" href="/" {{if eq . "code" }}class="active" {{end}}>Source Code</a></li>
+      <li><a hx-boost="true" href="/settings" {{if eq . "settings" }}class="active" {{end}}>Settings</a></li>
+    </ul>
+
+    <a target="_blank" href="/draw" class="btn btn-sm btn-outline btn-neutral">
+      <img class="w-4" src="https://excalidraw.com/favicon-16x16.png">
+      Whiteboard
+    </a>
+
+    <a target="_blank" href="/coder/?folder=/home/coder/project" class="btn btn-sm btn-primary">
+      <img class="w-4" src="https://coder.com/favicon-light.png">
+      Start Coding
+    </a>
+
+    {{template "theme-selector" "light"}}
+    {{template "logout-button"}}
+  </div>
+</div>
+{{end}}

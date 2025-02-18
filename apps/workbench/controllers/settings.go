@@ -2,11 +2,9 @@ package controllers
 
 import (
 	"net/http"
-	"os"
 
 	"github.com/ccutch/congo/pkg/congo"
 	"github.com/ccutch/congo/pkg/congo_auth"
-	"github.com/ccutch/congo/pkg/congo_host/platforms/digitalocean"
 )
 
 func Settings() (string, *SettingsController) {
@@ -22,11 +20,7 @@ func (settings *SettingsController) Setup(app *congo.Application) {
 	auth := app.Use("auth").(*congo_auth.AuthController)
 
 	http.HandleFunc("POST /_settings/theme", auth.ProtectFunc(settings.updateTheme, "developer"))
-	http.HandleFunc("POST /_settings/token", auth.ProtectFunc(settings.updateToken, "developer"))
-
-	if settings.Get("token") == "" {
-		settings.set("token", os.Getenv("DIGITAL_OCEAN_API_KEY"))
-	}
+	http.HandleFunc("POST /_settings/title", auth.ProtectFunc(settings.updateTitle, "developer"))
 }
 
 func (settings SettingsController) Handle(req *http.Request) congo.Controller {
@@ -65,12 +59,7 @@ func (settings SettingsController) updateTheme(w http.ResponseWriter, r *http.Re
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (settings SettingsController) updateToken(w http.ResponseWriter, r *http.Request) {
-	token := r.FormValue("token")
-	settings.set("token", token)
-	settings.Refresh(w, r)
-
-	if hosting, ok := settings.Use("hosting").(*HostingController); ok {
-		hosting.host.WithAPI(digitalocean.NewClient(settings.Get("token")))
-	}
+func (settings SettingsController) updateTitle(w http.ResponseWriter, r *http.Request) {
+	settings.set("title", r.FormValue("title"))
+	settings.Render(w, r, "settings.html", nil)
 }

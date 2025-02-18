@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"time"
 
 	"github.com/ccutch/congo/pkg/congo_host"
 	"github.com/ccutch/congo/pkg/congo_host/platforms/digitalocean"
@@ -61,6 +62,8 @@ func launch(args ...string) (*congo_host.RemoteHost, error) {
 		if err = domain.Verify("admin@" + domain.DomainName); err != nil {
 			return nil, errors.Wrap(err, "failed to verify domain")
 		}
+	} else {
+		time.Sleep(5 * time.Second)
 	}
 
 	if *app != "" {

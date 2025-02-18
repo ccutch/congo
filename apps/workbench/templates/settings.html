@@ -1,0 +1,35 @@
+<html data-theme="{{theme}}">
+
+<head>
+  <title>Congo Settings</title>
+  {{template "includes"}}
+</head>
+
+<body class="bg-base-200">
+  <div class="space-y-8 py-8 px-4 max-w-screen-xl w-full mx-auto">
+    {{template "navbar" "settings"}}
+
+    <div class='grid grid-cols-2 gap-8'>
+      {{template "developer-menu"}}
+      <div class="card bg-base-100 shadow">
+        <div class="card-body">
+          <h2 class="card-title mb-4">
+            Workbench Settings
+          </h2>
+
+          <label class="form-control w-full">
+            <div class="label">
+              <span class="label-text">Workspace Name</span>
+            </div>
+            <input name="title" type="text" class="input input-bordered w-full"
+                   placeholder="Welcome Back {Developer}" value='{{settings.Get "title"}}'
+                   hx-post="/_settings/title" hx-trigger="input changed delay:300ms"
+                   hx-select="#navbar-title" hx-target="#navbar-title" hx-swap="outerHTML">
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>
