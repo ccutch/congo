@@ -16,7 +16,7 @@ import (
 //go:embed all:*/*.go all:*/**/*.go
 var SourceFiles embed.FS
 
-//go:embed all:*/templates/*.html all:*/templates/**/*.html all:*/migrations/*.sql all:*/public/*
+//go:embed all:*/templates/*.html all:*/templates/**/*.html all:*/migrations/*.sql all:*/public/* all:*/resources/*
 var ResourceFiles embed.FS
 
 func Build(app string) (string, error) {

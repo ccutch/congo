@@ -84,3 +84,23 @@ func (blob *Blob) Mode() fs.FileMode {
 func (blob *Blob) ModTime() time.Time { return time.Now() }
 func (blob *Blob) IsDir() bool        { return blob.isDir }
 func (*Blob) Sys() interface{}        { return nil }
+
+func (blob *Blob) FileType() string {
+	ext := strings.ToLower(filepath.Ext(blob.Path))
+	switch ext {
+	case ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg", ".webp":
+		return "image/" + ext[1:]
+	default:
+		return "text/plain"
+	}
+}
+
+func (blob *Blob) IsImage() bool {
+	ext := strings.ToLower(filepath.Ext(blob.Path))
+	switch ext {
+	case ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg", ".webp":
+		return true
+	default:
+		return false
+	}
+}

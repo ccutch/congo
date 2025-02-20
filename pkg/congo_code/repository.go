@@ -1,13 +1,12 @@
 package congo_code
 
 import (
-	"errors"
-	"log"
 	"path/filepath"
 	"sort"
 	"strings"
 
 	"github.com/ccutch/congo/pkg/congo"
+	"github.com/pkg/errors"
 )
 
 type Repository struct {
@@ -99,8 +98,7 @@ func (repo *Repository) Open(branch, path string) (*Blob, error) {
 func (repo *Repository) Blobs(branch, path string) (blobs []*Blob, err error) {
 	stdout, stderr, err := repo.Run("ls-tree", branch, filepath.Join(".", path)+"/")
 	if err != nil {
-		log.Println("failed to run git command", err)
-		return nil, errors.New(stderr.String())
+		return nil, errors.Wrap(err, stderr.String())
 	}
 	for _, line := range strings.Split(strings.TrimSpace(stdout.String()), "\n") {
 		if parts := strings.Fields(line); len(parts) >= 4 {
@@ -128,7 +126,7 @@ func (repo *Repository) Blobs(branch, path string) (blobs []*Blob, err error) {
 func (repo *Repository) Branches() ([]string, error) {
 	stdout, stderr, err := repo.Run("branch", "--list")
 	if err != nil {
-		return nil, errors.New(stderr.String())
+		return nil, errors.Wrap(err, stderr.String())
 	}
 	var branches []string
 	for _, line := range strings.Split(strings.TrimSpace(stdout.String()), "\n") {
@@ -143,7 +141,7 @@ func (repo *Repository) Branches() ([]string, error) {
 func (repo *Repository) Commits(branch string) ([]string, error) {
 	stdout, stderr, err := repo.Run("log", branch, "--pretty=format:%h - %s", "--no-merges")
 	if err != nil {
-		return nil, errors.New(stderr.String())
+		return nil, errors.Wrap(err, stderr.String())
 	}
 	return strings.Split(strings.TrimSpace(stdout.String()), "\n"), nil
 }
@@ -154,7 +152,7 @@ func (repo *Repository) isDir(branch, path string) (bool, error) {
 	}
 	stdout, stderr, err := repo.Run("ls-tree", branch, filepath.Join(".", path))
 	if err != nil {
-		return false, errors.New(stderr.String())
+		return false, errors.Wrap(err, stderr.String())
 	}
 	output := strings.TrimSpace(stdout.String())
 	if output == "" {

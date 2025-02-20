@@ -36,7 +36,8 @@ func (coding *CodingController) Setup(app *congo.Application) {
 	}()
 
 	auth := app.Use("auth").(*congo_auth.AuthController)
-	http.HandleFunc("/_coding/download", auth.ProtectFunc(coding.handleDownload, "developer"))
+	http.Handle("/raw/{path...}", auth.ProtectFunc(coding.handleRaw, "developer"))
+	http.Handle("/_coding/download", auth.ProtectFunc(coding.handleDownload, "developer"))
 }
 
 func (coding CodingController) Handle(req *http.Request) congo.Controller {
@@ -67,4 +68,19 @@ func (coding *CodingController) handleDownload(w http.ResponseWriter, r *http.Re
 	w.Header().Set("Content-Disposition", "attachment; filename=congo")
 	w.Header().Set("Content-Type", "application/octet-stream")
 	http.ServeFile(w, r, path)
+}
+
+func (coding *CodingController) handleRaw(w http.ResponseWriter, r *http.Request) {
+	blob, err := coding.Repo.Open("master", r.PathValue("path"))
+	if err != nil {
+		coding.Render(w, r, "error-message", err)
+		return
+	}
+	content, err := blob.Content()
+	if err != nil {
+		coding.Render(w, r, "error-message", err)
+		return
+	}
+	w.Header().Set("Content-Type", blob.FileType())
+	w.Write([]byte(content))
 }
