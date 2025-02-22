@@ -17,7 +17,6 @@ func destroy(args ...string) error {
 		apiKey = cmd.String("api-key", "", "Digital Ocean API Key default to environ")
 		path   = cmd.String("data-path", "/tmp/congo", "Local storage for SSH Keys")
 		name   = cmd.String("name", "congo-server", "Name of Digital Ocean droplet")
-		purge  = cmd.Bool("purge", false, "Destroy droplet and purge data volumes")
 		force  = cmd.Bool("force", false, "Force destroy even if there are errors")
 	)
 
@@ -56,7 +55,7 @@ func destroy(args ...string) error {
 		}
 	}
 
-	if err = server.Delete(*purge, *force); err != nil {
+	if err = server.Delete(*force); err != nil {
 		return errors.Wrap(err, "failed to destroy server")
 	}
 

@@ -191,7 +191,7 @@ func (c ContentController) deleteHost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err = server.Delete(true, false); err != nil {
+	if err = server.Delete(false); err != nil {
 		c.Render(w, r, "error-message", err)
 		return
 	}

@@ -66,7 +66,7 @@ func (d *Server) Launch(region string, size string, storage int64) error {
 	return d.Run(os.Stdout, os.Stdin, fmt.Sprintf(prepareServer, d.Name, size, region))
 }
 
-func (d *Server) Delete(purge bool, force bool) error {
+func (d *Server) Delete(force bool) error {
 	if err := d.deleteDroplet(); !force && err != nil {
 		return errors.Wrap(err, "failed to delete droplet")
 	}
@@ -76,11 +76,9 @@ func (d *Server) Delete(purge bool, force bool) error {
 	if err := d.deleteLocalKeys(); !force && err != nil {
 		return errors.Wrap(err, "failed to delete local keys")
 	}
-	if purge {
-		time.Sleep(15 * time.Second)
-		if err := d.deleteVolume(); !force && err != nil {
-			return errors.Wrap(err, "failed to delete volume")
-		}
+	time.Sleep(15 * time.Second)
+	if err := d.deleteVolume(); !force && err != nil {
+		return errors.Wrap(err, "failed to delete volume")
 	}
 	return nil
 }

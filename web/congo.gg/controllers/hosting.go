@@ -212,7 +212,7 @@ func (hosting HostingController) deleteHost(w http.ResponseWriter, r *http.Reque
 				}
 			}
 
-			if err = host.Delete(true, false); err != nil {
+			if err = host.Delete(false); err != nil {
 				server.Error = err.Error()
 				server.Save()
 				return

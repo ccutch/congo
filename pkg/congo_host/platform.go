@@ -13,7 +13,7 @@ type Platform interface {
 type Server interface {
 	Addr() string
 	Launch(region, size string, storage int64) error
-	Delete(purge, force bool) error
+	Delete(force bool) error
 	Reload() error
 	Run(io.Reader, io.Writer, ...string) error
 	Copy(source, dest string) (stdout, stderr bytes.Buffer, _ error)
