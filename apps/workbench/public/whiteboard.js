@@ -6,8 +6,8 @@ function App() {
   }, React.createElement(ExcalidrawLib.Excalidraw, {}));
 }
 
-const excalidrawWrapper = document.getElementById("app");
-if (excalidrawWrapper) {
+let excalidrawWrapper
+if (excalidrawWrapper = document.getElementById("app")) {
   const root = ReactDOM.createRoot(excalidrawWrapper);
   root.render(React.createElement(App));
 }
