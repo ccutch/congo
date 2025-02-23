@@ -62,9 +62,7 @@ func main() {
 	http.Handle("/code/", coding.Repo.Serve(auth, "developer"))
 	http.Handle("/draw", auth.Serve("whiteboard.html", "developer"))
 	http.Handle("/settings", auth.Serve("settings.html", "developer"))
-	if coding.Workspace != nil {
-		http.Handle("/coder/", auth.Protect(coding.Workspace.Proxy("/coder/"), "developer"))
-	}
+	http.Handle("/coder/", auth.Protect(coding.Workspace.Proxy("/coder/"), "developer"))
 
 	app.StartFromEnv()
 }

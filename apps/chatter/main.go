@@ -25,6 +25,9 @@ var (
 	//go:embed all:migrations
 	migrations embed.FS
 
+	//go:embed all:public
+	public embed.FS
+
 	data = cmp.Or(os.Getenv("DATA_PATH"), os.TempDir()+"/congo")
 
 	auth = congo_auth.InitCongoAuth(data,
@@ -51,6 +54,7 @@ func main() {
 	http.Handle("/signup", app.Serve("signup.html"))
 	http.Handle("/{user}", auth.Protect(app.Serve("messages.html"), "user"))
 	http.Handle("/invite", auth.Protect(app.Serve("url-copied-toast"), "user"))
+	http.Handle("/public/", http.FileServerFS(public))
 
 	app.StartFromEnv()
 }
@@ -63,7 +67,7 @@ func signup(auth *congo_auth.AuthController, user *congo_auth.Identity) http.Han
 			auth.Render(w, r, "error-message", err)
 			return
 		}
-		auth.Redirect(w, r, "/me")
+		auth.Redirect(w, r, "/")
 	}
 }
 
